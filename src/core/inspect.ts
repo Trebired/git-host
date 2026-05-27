@@ -1,6 +1,6 @@
 import analyseRawContent from "linguist-js/dist/entry/analyseRaw.js";
 
-import { GitHostError } from "../errors.js";
+import { GitHostError, isGitHostError } from "../errors.js";
 import type {
   GitArchive,
   GitBlob,
@@ -8,6 +8,7 @@ import type {
   GitBlameLine,
   GitCommitDetail,
   GitCompareSummary,
+  GitLinguistProgressEvent,
   GitRepositoryHandle,
   GitRepositoryLinguist,
   GitRepositoryLinguistLanguage,
@@ -18,6 +19,7 @@ import type {
 import { normalizeRepositoryRelativePath } from "../utils/paths.js";
 import { text } from "../utils/text.js";
 import { resolveTreeEntryIcon } from "./inspect/icon_theme.js";
+import { createLinguistProgressReporter } from "./inspect/linguist_progress.js";
 import { parseCommitLogOutput, parseNameStatusOutput, parseNumstatOutput } from "./repository.js";
 import { runGit, runGitBuffer } from "./run_git.js";
 import {
@@ -119,10 +121,27 @@ async function readTreeEntryBlob(repository: GitRepositoryHandle, ref: string, e
   };
 }
 
-async function readRepositoryLinguistInput(repository: GitRepositoryHandle, ref: string): Promise<Record<string, string>> {
+async function readRepositoryLinguistInput(
+  repository: GitRepositoryHandle,
+  ref: string,
+  onProgress?: ReturnType<typeof createLinguistProgressReporter>["emit"],
+): Promise<{
+  input: Record<string, string>;
+  total_blobs: number;
+  total_entries: number;
+}> {
   const entries = await readRepositoryTreeEntries(repository, { recursive: true, ref });
   const blobEntries = entries.filter((entry) => entry.type === "blob");
   const input: Record<string, string> = {};
+  let processedBlobs = 0;
+
+  if (onProgress) {
+    await onProgress("reading_blobs", {
+      processed_blobs: 0,
+      total_blobs: blobEntries.length,
+      total_entries: entries.length,
+    });
+  }
 
   for (let index = 0; index < blobEntries.length; index += 16) {
     const chunk = blobEntries.slice(index, index + 16);
@@ -135,9 +154,22 @@ async function readRepositoryLinguistInput(repository: GitRepositoryHandle, ref:
         input[blob.path] = blob.content;
       }
     }
+
+    processedBlobs += chunk.length;
+    if (onProgress) {
+      await onProgress("reading_blobs", {
+        processed_blobs: processedBlobs,
+        total_blobs: blobEntries.length,
+        total_entries: entries.length,
+      });
+    }
   }
 
-  return input;
+  return {
+    input,
+    total_blobs: blobEntries.length,
+    total_entries: entries.length,
+  };
 }
 
 function normalizeLinguistLanguage(
@@ -228,14 +260,57 @@ function normalizeLinguistResults(
 async function readRepositoryLinguist(
   repository: GitRepositoryHandle,
   options: {
+    onProgress?: (event: GitLinguistProgressEvent) => Promise<void> | void;
     ref?: string;
   } = {},
 ): Promise<GitRepositoryLinguist> {
   await assertRepositoryReady(repository);
-  const target = await resolveCommitForRef(repository.path, text(options.ref, "HEAD"), "Repository ref does not exist.");
-  const input = await readRepositoryLinguistInput(repository, target.ref);
-  const result = await analyseRawContent(input, { offline: true });
-  return normalizeLinguistResults(result, target);
+  const progress = createLinguistProgressReporter({
+    onProgress: options.onProgress,
+    ref: text(options.ref, "HEAD"),
+    repository,
+  });
+  let target = {
+    commit: "",
+    ref: text(options.ref, "HEAD"),
+  };
+
+  try {
+    await progress.emit("queued");
+    await progress.emit("resolving_ref", { ref: target.ref });
+    target = await resolveCommitForRef(repository.path, target.ref, "Repository ref does not exist.");
+    await progress.emit("listing_tree", { commit: target.commit, ref: target.ref });
+    const linguistInput = await readRepositoryLinguistInput(repository, target.ref, progress.emit);
+    await progress.emit("analyzing", {
+      commit: target.commit,
+      processed_blobs: linguistInput.total_blobs,
+      ref: target.ref,
+      total_blobs: linguistInput.total_blobs,
+      total_entries: linguistInput.total_entries,
+    });
+    const result = await analyseRawContent(linguistInput.input, { offline: true });
+    const normalized = normalizeLinguistResults(result, target);
+    await progress.emit("completed", {
+      commit: target.commit,
+      processed_blobs: linguistInput.total_blobs,
+      ref: target.ref,
+      total_blobs: linguistInput.total_blobs,
+      total_entries: linguistInput.total_entries,
+    });
+    return normalized;
+  } catch (error) {
+    await progress.emit("failed", {
+      commit: text(target.commit) || undefined,
+      error: {
+        code: isGitHostError(error) ? error.code : (error instanceof Error ? "internal_error" : "internal_error"),
+        message: error instanceof Error ? error.message : "Linguist scan failed.",
+      },
+      ref: target.ref,
+    }).catch(() => {
+      return undefined;
+    });
+    throw error;
+  }
 }
 
 async function listRepositoryTree(
@@ -243,6 +318,7 @@ async function listRepositoryTree(
   options: {
     icons?: boolean;
     linguist?: boolean;
+    onLinguistProgress?: (event: GitLinguistProgressEvent) => Promise<void> | void;
     path?: string;
     recursive?: boolean;
     ref?: string;
@@ -258,7 +334,10 @@ async function listRepositoryTree(
   if (options.icons !== true && options.linguist !== true) return entries;
 
   const linguist = options.linguist === true
-    ? await readRepositoryLinguist(repository, { ref })
+    ? await readRepositoryLinguist(repository, {
+      onProgress: options.onLinguistProgress,
+      ref,
+    })
     : null;
 
   return entries.map((entry) => ({

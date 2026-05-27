@@ -4,6 +4,7 @@ import type {
   GitApiResource,
   GitBlob,
   GitBranchSummary,
+  GitLinguistProgressEvent,
   GitTagDetail,
   GitTagSummary,
   GitCommitDetail,
@@ -15,6 +16,7 @@ import type {
   GitTreeEntry,
   MaybePromise,
 } from "../../types.js";
+import type { ManagerOptions, SocketOptions } from "socket.io-client";
 
 type GitApiClientHeaders = Record<string, string>;
 
@@ -31,6 +33,9 @@ type CreateGitApiClientOptions = {
   baseUrl: string;
   fetch?: GitApiClientFetch;
   headers?: GitApiHeaderResolver;
+  socketOptions?: Partial<ManagerOptions & SocketOptions> & {
+    path?: string;
+  };
 };
 
 type GitApiClientRequestOptions = {
@@ -58,6 +63,47 @@ type GitApiFailureResponse = {
 type GitApiResponse<TAction extends GitApiResource, TData> =
   | GitApiFailureResponse
   | GitApiSuccessResponse<TAction, TData>;
+
+type GitApiEventStream = {
+  close: () => void;
+  completed: Promise<void>;
+};
+
+type GitLinguistSocketProgressEvent = {
+  progress: GitLinguistProgressEvent;
+  type: "progress";
+};
+
+type GitLinguistSocketResultEvent = {
+  action: "linguist";
+  data: GitRepositoryLinguist;
+  repository_id: string;
+  repository_key: string;
+  type: "result";
+};
+
+type GitLinguistSocketErrorEvent = {
+  error: {
+    code: string;
+    details?: unknown;
+    message: string;
+  };
+  status?: number;
+  type: "error";
+};
+
+type GitLinguistSocketDoneEvent = {
+  ok: boolean;
+  repository_id?: string;
+  repository_key?: string;
+  type: "done";
+};
+
+type GitLinguistSocketEvent =
+  | GitLinguistSocketDoneEvent
+  | GitLinguistSocketErrorEvent
+  | GitLinguistSocketProgressEvent
+  | GitLinguistSocketResultEvent;
 
 type GitApiClient = {
   baseUrl: string;
@@ -122,6 +168,17 @@ type GitApiClient = {
       ref?: string;
     },
   ): Promise<GitRepositoryLinguist>;
+  openLinguistSocket(
+    repositoryKey: string,
+    options?: GitApiClientRequestOptions & {
+      onDone?: (event: GitLinguistSocketDoneEvent) => MaybePromise<void>;
+      onError?: (event: GitLinguistSocketErrorEvent) => MaybePromise<void>;
+      onEvent?: (event: GitLinguistSocketEvent) => MaybePromise<void>;
+      onProgress?: (event: GitLinguistProgressEvent) => MaybePromise<void>;
+      onResult?: (event: GitLinguistSocketResultEvent) => MaybePromise<void>;
+      ref?: string;
+    },
+  ): GitApiEventStream;
   readTag(
     repositoryKey: string,
     tagName: string,
@@ -155,6 +212,7 @@ type GitApiClient = {
 
 export type {
   CreateGitApiClientOptions,
+  GitApiEventStream,
   GitApiClient,
   GitApiClientFetch,
   GitApiClientHeaders,
@@ -164,4 +222,9 @@ export type {
   GitApiResponse,
   GitApiResource,
   GitApiSuccessResponse,
+  GitLinguistSocketDoneEvent,
+  GitLinguistSocketErrorEvent,
+  GitLinguistSocketEvent,
+  GitLinguistSocketProgressEvent,
+  GitLinguistSocketResultEvent,
 };

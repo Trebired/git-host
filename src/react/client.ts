@@ -1,6 +1,20 @@
+import { io as connectSocket } from "socket.io-client";
+
+import {
+  LINGUIST_DONE_EVENT,
+  LINGUIST_ERROR_EVENT,
+  LINGUIST_PROGRESS_EVENT,
+  LINGUIST_RESULT_EVENT,
+  LINGUIST_START_EVENT,
+} from "../api/socket_events.js";
 import type {
   CreateGitApiClientOptions,
   GitApiClient,
+  GitLinguistSocketDoneEvent,
+  GitLinguistSocketErrorEvent,
+  GitLinguistSocketEvent,
+  GitLinguistSocketProgressEvent,
+  GitLinguistSocketResultEvent,
   GitApiClientRequestOptions,
   GitApiResource,
   GitApiResponse,
@@ -8,6 +22,36 @@ import type {
 } from "./client/types.js";
 import { GitApiClientError, parseJsonResponse } from "./client/error.js";
 import { appendQuery, buildQuery, encodePathSegment, mergeHeaders, normalizeBaseUrl, resolveHeaders } from "./client/helpers.js";
+
+function resolveSocketEndpoint(
+  baseUrl: string,
+  pathOverride: string | undefined,
+): {
+  path: string;
+  url?: string;
+} {
+  const trimmed = normalizeBaseUrl(baseUrl);
+  let absolute: URL | null = null;
+  try {
+    absolute = new URL(trimmed);
+  } catch {
+    absolute = null;
+  }
+
+  const basePath = absolute
+    ? absolute.pathname.replace(/\/+$/g, "")
+    : trimmed.replace(/\/+$/g, "");
+  const path = (() => {
+    const next = String(pathOverride || "").trim().replace(/\/+$/g, "");
+    if (next) return next.startsWith("/") ? next : `/${next}`;
+    const derived = `${basePath || ""}/socket.io`.replace(/\/{2,}/g, "/");
+    return derived.startsWith("/") ? derived : `/${derived}`;
+  })();
+
+  return absolute
+    ? { path, url: `${absolute.protocol}//${absolute.host}` }
+    : { path };
+}
 
 function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
@@ -170,6 +214,132 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
       });
       return response.data;
     },
+    openLinguistSocket(repositoryKey, input) {
+      const { path, url } = resolveSocketEndpoint(baseUrl, options.socketOptions && options.socketOptions.path);
+      let socket: ReturnType<typeof connectSocket> | null = null;
+      let settled = false;
+      let rejectCompleted: ((reason?: unknown) => void) | null = null;
+      let resolveCompleted: (() => void) | null = null;
+      const cleanup = () => {
+        socket?.off(LINGUIST_PROGRESS_EVENT);
+        socket?.off(LINGUIST_RESULT_EVENT);
+        socket?.off(LINGUIST_DONE_EVENT);
+        socket?.off(LINGUIST_ERROR_EVENT);
+        socket?.off("connect");
+        socket?.off("connect_error");
+        input?.signal?.removeEventListener("abort", onAbort);
+      };
+      const finish = (kind: "reject" | "resolve", value?: unknown) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (kind === "resolve") resolveCompleted && resolveCompleted();
+        else rejectCompleted && rejectCompleted(value);
+        socket?.disconnect();
+      };
+      const onAbort = () => {
+        const abortError = new Error("Git linguist socket request was aborted.");
+        abortError.name = "AbortError";
+        finish("reject", abortError);
+      };
+      input?.signal?.addEventListener("abort", onAbort, { once: true });
+
+      const completed = new Promise<void>((resolve, reject) => {
+        resolveCompleted = resolve;
+        rejectCompleted = reject;
+      });
+
+      void (async () => {
+        const repositoryBasePath = `/repositories/${encodePathSegment(repositoryKey)}`;
+        const requestPath = `${repositoryBasePath}/linguist/socket`;
+        const resolvedHeaders = mergeHeaders(
+          await resolveHeaders(options.headers, {
+            path: requestPath,
+            repositoryKey,
+          }),
+          input?.headers,
+        );
+
+        socket = connectSocket(url, {
+          ...(options.socketOptions || {}),
+          autoConnect: false,
+          extraHeaders: {
+            ...((options.socketOptions && options.socketOptions.extraHeaders) || {}),
+            ...(resolvedHeaders || {}),
+          },
+          path,
+          transports: (options.socketOptions && options.socketOptions.transports) || ["websocket"],
+        });
+        if (settled) {
+          socket.disconnect();
+          return;
+        }
+        socket.on("connect", () => {
+          socket && socket.emit(LINGUIST_START_EVENT, {
+            ref: input?.ref,
+            repositoryKey,
+          });
+        });
+        socket.on("connect_error", (error: Error) => {
+          finish("reject", error);
+        });
+        socket.on(LINGUIST_PROGRESS_EVENT, async (payload: unknown) => {
+          const nextEvent = {
+            progress: payload,
+            type: "progress",
+          } as GitLinguistSocketProgressEvent;
+          await input?.onProgress?.(nextEvent.progress);
+          await input?.onEvent?.(nextEvent);
+        });
+        socket.on(LINGUIST_RESULT_EVENT, async (payload: unknown) => {
+          const nextEvent = {
+            ...(payload as Omit<GitLinguistSocketResultEvent, "type">),
+            type: "result",
+          } as GitLinguistSocketResultEvent;
+          await input?.onResult?.(nextEvent);
+          await input?.onEvent?.(nextEvent);
+        });
+        socket.on(LINGUIST_DONE_EVENT, async (payload: unknown) => {
+          const nextEvent = {
+            ...(payload as Omit<GitLinguistSocketDoneEvent, "type">),
+            type: "done",
+          } as GitLinguistSocketDoneEvent;
+          await input?.onDone?.(nextEvent);
+          await input?.onEvent?.(nextEvent);
+          finish(nextEvent.ok === false ? "reject" : "resolve", nextEvent.ok === false
+            ? new GitApiClientError({
+              code: "git_api_error",
+              message: "Git linguist socket ended without a successful result.",
+              status: 500,
+            })
+            : undefined);
+        });
+        socket.on(LINGUIST_ERROR_EVENT, async (payload: unknown) => {
+          const nextEvent = {
+            ...(payload as Omit<GitLinguistSocketErrorEvent, "type">),
+            type: "error",
+          } as GitLinguistSocketErrorEvent;
+          await input?.onError?.(nextEvent);
+          await input?.onEvent?.(nextEvent);
+          finish("reject", new GitApiClientError({
+            code: nextEvent.error.code,
+            details: nextEvent.error.details,
+            message: nextEvent.error.message,
+            status: nextEvent.status || 500,
+          }));
+        });
+        socket.connect();
+      })().catch((error) => {
+        finish("reject", error);
+      });
+
+      return {
+        close() {
+          onAbort();
+        },
+        completed,
+      };
+    },
     async readTag(repositoryKey, tagName, input) {
       const response = await request<"tag", ReturnType<GitApiClient["readTag"]> extends Promise<infer TData> ? TData : never>(
         repositoryKey,
@@ -211,6 +381,7 @@ export { GitApiClientError, createGitApiClient };
 
 export type {
   CreateGitApiClientOptions,
+  GitApiEventStream,
   GitApiClient,
   GitApiClientFetch,
   GitApiClientHeaders,
@@ -219,4 +390,9 @@ export type {
   GitApiHeaderResolver,
   GitApiResponse,
   GitApiSuccessResponse,
+  GitLinguistSocketDoneEvent,
+  GitLinguistSocketErrorEvent,
+  GitLinguistSocketEvent,
+  GitLinguistSocketProgressEvent,
+  GitLinguistSocketResultEvent,
 } from "./client/types.js";

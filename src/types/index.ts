@@ -15,6 +15,8 @@ export type {
   GitBlob,
   GitBlobEncoding,
   GitBranchSummary,
+  GitLinguistProgressEvent,
+  GitLinguistProgressStage,
   GitCommandBufferResult,
   GitCommandResult,
   GitCommitDetail,
@@ -81,6 +83,7 @@ export type {
 } from "./host.js";
 export type {
   CreateGitApiHandlerOptions,
+  CreateGitApiSocketServerOptions,
   CreateGitHttpHandlerOptions,
   CreateGitSshServerOptions,
   GitApiAuthorizationResult,

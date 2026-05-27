@@ -1,4 +1,5 @@
-import type { IncomingMessage } from "node:http";
+import type { IncomingMessage, Server as HttpServer } from "node:http";
+import type { ServerOptions as SocketIoServerOptions } from "socket.io";
 
 import type { GitHostLogger, MaybePromise } from "./common.js";
 import type { GitHost } from "./host.js";
@@ -13,6 +14,7 @@ type GitApiResource =
   | "commits"
   | "diff"
   | "linguist"
+  | "linguist_socket"
   | "search"
   | "summary"
   | "tag"
@@ -46,6 +48,12 @@ type CreateGitApiHandlerOptions = {
     request: IncomingMessage,
   ) => MaybePromise<string | null>;
   verbose?: boolean;
+};
+
+type CreateGitApiSocketServerOptions = CreateGitApiHandlerOptions & {
+  httpServer: HttpServer;
+  socketOptions?: Partial<SocketIoServerOptions>;
+  socketPath?: string;
 };
 
 type GitHttpService = "git-receive-pack" | "git-upload-pack";
@@ -195,6 +203,7 @@ type CreateGitSshServerOptions = {
 
 export type {
   CreateGitApiHandlerOptions,
+  CreateGitApiSocketServerOptions,
   CreateGitHttpHandlerOptions,
   CreateGitSshServerOptions,
   GitApiAuthorizationResult,

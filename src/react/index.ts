@@ -20,6 +20,7 @@ export {
 
 export type {
   CreateGitApiClientOptions,
+  GitApiEventStream,
   GitApiClient,
   GitApiClientFetch,
   GitApiClientHeaders,
@@ -28,6 +29,11 @@ export type {
   GitApiHeaderResolver,
   GitApiResponse,
   GitApiSuccessResponse,
+  GitLinguistSocketDoneEvent,
+  GitLinguistSocketErrorEvent,
+  GitLinguistSocketEvent,
+  GitLinguistSocketProgressEvent,
+  GitLinguistSocketResultEvent,
 } from "./client.js";
 export type {
   GitApiClientProviderProps,

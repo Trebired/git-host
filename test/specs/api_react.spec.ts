@@ -4,7 +4,7 @@ import path from "node:path";
 import { createElement } from "react";
 import { act, create as createRenderer } from "react-test-renderer";
 
-import { createGitApiHandler } from "../../src/index.js";
+import { createGitApiHandler, createGitApiSocketServer } from "../../src/index.js";
 import {
   createGitApiClient,
   GitApiClientProvider,
@@ -16,7 +16,7 @@ import {
   useGitTags,
   useGitTree,
 } from "../../src/react/index.js";
-import { closeServer, createHost, createServer, fetchJson, listen, resolveRepositoryPath, sleep, tempDir, writeFile } from "./helpers.js";
+import { createHost, createServer, fetchJson, listen, resolveRepositoryPath, sleep, tempDir, writeFile } from "./helpers.js";
 
 describe("@trebired/git-host", () => {
   test("serves summary, branches, commits, tree, blob, and diff over the JSON API", async () => {
@@ -48,6 +48,7 @@ describe("@trebired/git-host", () => {
     });
 
     const server = createServer(createGitApiHandler({ basePath: "/api/git", gitHost: host }));
+    const socketServer = createGitApiSocketServer({ basePath: "/api/git", gitHost: host, httpServer: server });
     const port = await listen(server);
     const baseUrl = `http://127.0.0.1:${port}/api/git/repositories/demo`;
 
@@ -72,7 +73,13 @@ describe("@trebired/git-host", () => {
       expect(treeResponse.json.data.find((entry: any) => entry.path === "src/app.ts").language).toBe("TypeScript");
       expect(treeResponse.json.data.find((entry: any) => entry.path === "src/app.ts").icon.svg.includes("<svg")).toBe(true);
     } finally {
-      await closeServer(server);
+      socketServer.disconnectSockets(true);
+      server.closeIdleConnections?.();
+      server.closeAllConnections?.();
+      try {
+        server.close();
+      } catch {}
+      server.unref();
     }
   });
 
@@ -96,8 +103,11 @@ describe("@trebired/git-host", () => {
     });
 
     const server = createServer(createGitApiHandler({ basePath: "/api/git", gitHost: host }));
+    const socketServer = createGitApiSocketServer({ basePath: "/api/git", gitHost: host, httpServer: server });
     const port = await listen(server);
     const client = createGitApiClient({ baseUrl: `http://127.0.0.1:${port}/api/git` });
+    const progressStages: string[] = [];
+    let streamedLanguage = "";
 
     try {
       expect((await client.readSummary("demo")).repository.current_branch).toBe("main");
@@ -112,8 +122,27 @@ describe("@trebired/git-host", () => {
       expect((await client.diff("demo", { baseRef: "main", headRef: "main", path: "src" })).files).toHaveLength(0);
       expect((await client.readLinguist("demo", { ref: "main" })).files.results["data.json"]).toBe("JSON");
       expect((await client.listTree("demo", { icons: true, linguist: true, recursive: true, ref: "main" })).find((entry) => entry.path === "README.md")?.icon?.name).toBe("readme");
+      const socket = client.openLinguistSocket("demo", {
+        onProgress(event) {
+          progressStages.push(event.stage);
+        },
+        onResult(event) {
+          streamedLanguage = String(event.data.files.results["data.json"] || "");
+        },
+        ref: "main",
+      });
+      await socket.completed;
+      expect(progressStages).toContain("reading_blobs");
+      expect(progressStages[progressStages.length - 1]).toBe("completed");
+      expect(streamedLanguage).toBe("JSON");
     } finally {
-      await closeServer(server);
+      socketServer.disconnectSockets(true);
+      server.closeIdleConnections?.();
+      server.closeAllConnections?.();
+      try {
+        server.close();
+      } catch {}
+      server.unref();
     }
   });
 
@@ -145,6 +174,7 @@ describe("@trebired/git-host", () => {
     });
 
     const server = createServer(createGitApiHandler({ basePath: "/api/git", gitHost: host }));
+    const socketServer = createGitApiSocketServer({ basePath: "/api/git", gitHost: host, httpServer: server });
     const port = await listen(server);
     const client = createGitApiClient({ baseUrl: `http://127.0.0.1:${port}/api/git` });
 
@@ -200,7 +230,13 @@ describe("@trebired/git-host", () => {
         console.error = originalConsoleError;
       }
     } finally {
-      await closeServer(server);
+      socketServer.disconnectSockets(true);
+      server.closeIdleConnections?.();
+      server.closeAllConnections?.();
+      try {
+        server.close();
+      } catch {}
+      server.unref();
     }
   });
 });

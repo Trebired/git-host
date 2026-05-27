@@ -70,7 +70,12 @@ await gitHost.ensureRepository("demo", {
 const summary = await gitHost.readSummary("demo");
 console.log(summary.repository.current_branch);
 
-const linguist = await gitHost.readLinguist("demo", { ref: "main" });
+const linguist = await gitHost.readLinguist("demo", {
+  ref: "main",
+  onProgress(event) {
+    console.log(event.stage, event.percent);
+  },
+});
 console.log(linguist.languages.results);
 
 const tree = await gitHost.listTree("demo", {
@@ -198,7 +203,7 @@ JSON API hosting:
 
 ```ts
 import { createServer } from "node:http";
-import { createGitApiHandler, createGitHost } from "@trebired/git-host";
+import { createGitApiHandler, createGitApiSocketServer, createGitHost } from "@trebired/git-host";
 import { createLog } from "@trebired/logger";
 
 const log = createLog({
@@ -224,6 +229,16 @@ const apiServer = createServer(createGitApiHandler({
     return canReadRepository(repositoryId, action);
   },
 }));
+
+createGitApiSocketServer({
+  basePath: "/api/git",
+  gitHost,
+  httpServer: apiServer,
+  logger: log,
+  authorize({ action, repositoryId }) {
+    return canReadRepository(repositoryId, action);
+  },
+});
 
 apiServer.listen(3100);
 ```
@@ -275,6 +290,22 @@ function App() {
 }
 ```
 
+For long-running repository scans, the typed client also exposes a live Socket.IO linguist stream:
+
+```ts
+const socket = gitClient.openLinguistSocket("demo", {
+  ref: "main",
+  onProgress(event) {
+    console.log(event.stage, event.percent);
+  },
+  onResult(event) {
+    console.log(event.data.languages.results);
+  },
+});
+
+await socket.completed;
+```
+
 The React entry is intentionally headless. It helps apps fetch and mutate Git data consistently, but it does not ship a bundled styled UI.
 
 ## Current API
@@ -287,6 +318,7 @@ The first public slice is intentionally small:
 - `buildGitEnv()`
 - `RepositoryLockManager`
 - `createGitApiHandler()`
+- `createGitApiSocketServer()`
 - `createGitHttpHandler()`
 - `generateSshKeyPair()`
 - `normalizeSshPublicKey()`
@@ -338,6 +370,7 @@ The React entry currently exports:
 
 - `createGitApiClient()`
 - `GitApiClientProvider`
+- `openLinguistSocket()` through the typed client instance
 - `useGitRepositorySummary()`
 - `useGitBranches()`
 - `useGitCommits()`
@@ -411,6 +444,7 @@ Hosted transports keep identity and permission policy in your app.
 - `createGitHttpHandler()` supports host-owned repository resolution, optional identity resolution, permission checks, and request audit events.
 - `createGitSshServer()` supports host-owned public key authentication, permission checks, and command audit events.
 - `createGitApiHandler()` supports host-owned repository id mapping and per-route authorization.
+- `createGitApiSocketServer()` supports host-owned Socket.IO progress delivery for long-running linguist scans with the same repository mapping and authorization hooks.
 - `generateSshKeyPair()`, `normalizeSshPublicKey()`, `compareSshPublicKeys()`, and `fingerprintSshPublicKey()` help host apps manage SSH transport setup without owning the parsing details themselves.
 
 ## Platform Fit
@@ -454,7 +488,7 @@ log.info("git-host", "initializing repository", { repositoryId: "demo" });
 
 comes from `@trebired/logger`.
 
-You can pass that same `log` object into `createGitHost()`, `createGitHttpHandler()`, `createGitSshServer()`, and `createGitApiHandler()` through their `logger` option.
+You can pass that same `log` object into `createGitHost()`, `createGitHttpHandler()`, `createGitSshServer()`, `createGitApiHandler()`, and `createGitApiSocketServer()` through their `logger` option.
 
 If you do not pass a logger and `@trebired/logger` is installed in the host app, git-host will create a quiet console-only logger automatically before falling back to raw `console`.
 

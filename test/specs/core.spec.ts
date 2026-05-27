@@ -137,6 +137,7 @@ describe("@trebired/git-host", () => {
     const root = tempDir();
     const host = createHost(path.join(root, "repos"));
     const workspace = resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: "demo/workspace" });
+    const progress: string[] = [];
 
     fs.mkdirSync(workspace, { recursive: true });
     writeFile(workspace, "README.md", "# Linguist\n");
@@ -145,7 +146,12 @@ describe("@trebired/git-host", () => {
     fs.writeFileSync(path.join(workspace, "logo.png"), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
 
     const initialSummary = await host.ensureRepository("demo");
-    const mainLinguist = await host.readLinguist("demo", { ref: "main" });
+    const mainLinguist = await host.readLinguist("demo", {
+      onProgress(event) {
+        progress.push(event.stage);
+      },
+      ref: "main",
+    });
 
     expect(mainLinguist.commit).toBe(initialSummary.repository.head_commit);
     expect(mainLinguist.ref).toBe("main");
@@ -154,6 +160,12 @@ describe("@trebired/git-host", () => {
     expect(mainLinguist.files.results["logo.png"]).toBeUndefined();
     expect(mainLinguist.languages.results.TypeScript.type).toBe("programming");
     expect(mainLinguist.languages.results.JSON.type).toBe("data");
+    expect(progress).toContain("queued");
+    expect(progress).toContain("resolving_ref");
+    expect(progress).toContain("listing_tree");
+    expect(progress).toContain("reading_blobs");
+    expect(progress).toContain("analyzing");
+    expect(progress[progress.length - 1]).toBe("completed");
 
     await host.createBranch("demo", { name: "feature/linguist", checkout: true });
     writeFile(workspace, "script.py", "print('hello')\n");

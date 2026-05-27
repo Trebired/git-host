@@ -293,11 +293,40 @@ type GitRepositoryLinguist = {
   };
 };
 
+type GitLinguistProgressStage =
+  | "queued"
+  | "resolving_ref"
+  | "listing_tree"
+  | "reading_blobs"
+  | "analyzing"
+  | "completed"
+  | "failed";
+
+type GitLinguistProgressEvent = {
+  commit?: string;
+  emitted_at: string;
+  error?: {
+    code: string;
+    message: string;
+  };
+  message: string;
+  percent: number;
+  processed_blobs: number;
+  ref: string;
+  repository_id: string;
+  scan_id: string;
+  stage: GitLinguistProgressStage;
+  total_blobs: number;
+  total_entries: number;
+};
+
 export type {
   GitArchive,
   GitArchiveFormat,
   GitBlame,
   GitBlameLine,
+  GitLinguistProgressEvent,
+  GitLinguistProgressStage,
   GitBlob,
   GitBlobEncoding,
   GitBranchSummary,

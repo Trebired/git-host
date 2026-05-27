@@ -10,6 +10,7 @@ export { RepositoryLockManager } from "./core/locks.js";
 export { readRepositoryOperationState } from "./core/operation_state.js";
 export { createGitHost } from "./core/create_git_host.js";
 export { createGitApiHandler, parseGitApiRoute } from "./api/handler.js";
+export { createGitApiSocketServer } from "./api/socket_server.js";
 export { fetchRepository, pullRepository, pushRepository } from "./core/remote.js";
 export { createGitHttpHandler, parseGitHttpRoute } from "./http/handler.js";
 export {
@@ -67,6 +68,7 @@ export type {
   ContinueOperationInput,
   CreateBranchInput,
   CreateGitApiHandlerOptions,
+  CreateGitApiSocketServerOptions,
   CreateGitHostOptions,
   CreateTagInput,
   DeleteBranchInput,
@@ -95,6 +97,8 @@ export type {
   GitHttpResolvedRepository,
   GitHttpService,
   GitBranchSummary,
+  GitLinguistProgressEvent,
+  GitLinguistProgressStage,
   GitCommandBufferResult,
   GitCommandResult,
   GitCommitDetail,

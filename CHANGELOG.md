@@ -9,6 +9,7 @@ This project follows semantic versioning once published.
 ## 0.2.0
 
 - Added repository linguist analysis through `readLinguist()` with ref-based text blob inspection powered by `linguist-js`.
+- Added live linguist progress reporting through `readLinguist(..., { onProgress })`, plus Socket.IO delivery through `createGitApiSocketServer()` and the typed `openLinguistSocket()` client helper.
 - Added optional tree entry enrichment for detected file languages and inline SVG icons from `material-icon-theme`.
 - Added tag APIs for listing, reading, creating, and deleting tags.
 - Added path- and ref-scoped commit history plus path-scoped diff filtering.

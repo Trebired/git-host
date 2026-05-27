@@ -5,6 +5,7 @@ import type {
   GitBlame,
   GitBlob,
   GitBranchSummary,
+  GitLinguistProgressEvent,
   GitTagDetail,
   GitTagSummary,
   GitCommitDetail,
@@ -141,12 +142,14 @@ type CherryPickInput = {
 type ListTreeOptions = {
   icons?: boolean;
   linguist?: boolean;
+  onLinguistProgress?: (event: GitLinguistProgressEvent) => MaybePromise<void>;
   path?: string;
   recursive?: boolean;
   ref?: string;
 };
 
 type ReadLinguistOptions = {
+  onProgress?: (event: GitLinguistProgressEvent) => MaybePromise<void>;
   ref?: string;
 };
 

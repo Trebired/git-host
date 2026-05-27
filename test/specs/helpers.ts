@@ -118,6 +118,18 @@ async function closeServer(server: Server): Promise<void> {
       if (error) reject(error);
       else resolve();
     });
+    if (typeof (server as Server & {
+      closeAllConnections?: () => void;
+      closeIdleConnections?: () => void;
+    }).closeIdleConnections === "function") {
+      (server as Server & { closeIdleConnections: () => void }).closeIdleConnections();
+    }
+    if (typeof (server as Server & {
+      closeAllConnections?: () => void;
+      closeIdleConnections?: () => void;
+    }).closeAllConnections === "function") {
+      (server as Server & { closeAllConnections: () => void }).closeAllConnections();
+    }
   });
 }
 
@@ -128,6 +140,53 @@ async function fetchJson(url: string, init?: RequestInit) {
     response,
     json: text ? JSON.parse(text) : null,
   };
+}
+
+async function readEventStream(response: Response) {
+  if (!response.body) {
+    throw new Error("Expected an event stream response body.");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  const events: Array<{ event: string; data: any }> = [];
+
+  while (true) {
+    const chunk = await reader.read();
+    const text = chunk.value ? decoder.decode(chunk.value, { stream: !chunk.done }) : "";
+    buffer = (buffer + text).replace(/\r\n/g, "\n");
+
+    let separatorIndex = buffer.indexOf("\n\n");
+    while (separatorIndex >= 0) {
+      const block = buffer.slice(0, separatorIndex);
+      buffer = buffer.slice(separatorIndex + 2);
+      const lines = block.split("\n");
+      let event = "message";
+      const dataLines: string[] = [];
+      for (const line of lines) {
+        if (!line || line.startsWith(":")) continue;
+        if (line.startsWith("event:")) {
+          event = line.slice("event:".length).trim() || "message";
+          continue;
+        }
+        if (line.startsWith("data:")) {
+          dataLines.push(line.slice("data:".length).trimStart());
+        }
+      }
+      if (dataLines.length) {
+        events.push({
+          data: JSON.parse(dataLines.join("\n")),
+          event,
+        });
+      }
+      separatorIndex = buffer.indexOf("\n\n");
+    }
+
+    if (chunk.done) break;
+  }
+
+  return events;
 }
 
 function captureLogger() {
@@ -173,6 +232,7 @@ export {
   gitAsync,
   gitCommit,
   gitResult,
+  readEventStream,
   listen,
   normalizePublicKey,
   resolveRepositoryPath,
