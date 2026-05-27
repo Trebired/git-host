@@ -8,6 +8,12 @@ This project follows semantic versioning once published.
 
 ## 1.0.0
 
+- Marked `@trebired/git-host` as stable and bumped the package to `1.0.0`.
+- Promoted the current public API surface, including the core host, JSON API handler, smart HTTP and SSH transports, React client and hooks, and Socket.IO progress transport, as the first stable release contract.
+- Shipped the first stable repository inspection set with linguist analysis, live scan progress events, optional tree icons, tags, blame, search, archive reads, path-scoped history and diffs, and merge, rebase, and cherry-pick helpers.
+
+## 0.2.0
+
 - Added repository linguist analysis through `readLinguist()` with ref-based text blob inspection powered by `linguist-js`.
 - Added live linguist progress reporting through `readLinguist(..., { onProgress })`, plus Socket.IO delivery through `createGitApiSocketServer()` and the typed `openLinguistSocket()` client helper.
 - Added optional tree entry enrichment for detected file languages and inline SVG icons from `material-icon-theme`.
