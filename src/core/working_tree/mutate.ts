@@ -1,9 +1,12 @@
 import { GitHostError } from "../../errors.js";
 import type {
+  CherryPickInput,
   CommitInput,
   ContinueOperationInput,
   DiscardPathsInput,
   GitRepositoryHandle,
+  MergeInput,
+  RebaseInput,
   StagePathsInput,
   UnstagePathsInput,
 } from "../../types.js";
@@ -107,6 +110,121 @@ async function commitRepository(repository: GitRepositoryHandle, input: CommitIn
   }
 }
 
+async function mergeRepository(repository: GitRepositoryHandle, input: MergeInput = {}): Promise<void> {
+  await assertRepositoryReady(repository);
+  const ref = text(input && input.ref);
+  if (!ref) {
+    throw new GitHostError("git_command_failed", "A merge ref is required.", {
+      repositoryId: repository.id,
+    });
+  }
+
+  const verifyRes = await runGit(["rev-parse", "--verify", `${ref}^{commit}`], { cwd: repository.path });
+  if (!verifyRes.ok) {
+    throw new GitHostError("git_command_failed", text(verifyRes.stderr, "That merge ref does not exist."), {
+      ref,
+      repositoryId: repository.id,
+    });
+  }
+
+  const args = ["merge"];
+  if (isTruthy(input && input.ffOnly)) args.push("--ff-only");
+  if (isTruthy(input && input.noCommit)) args.push("--no-commit");
+  args.push(ref);
+
+  const mergeRes = await runGit(args, {
+    cwd: repository.path,
+    env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
+  });
+  if (!mergeRes.ok) {
+    throw new GitHostError("git_command_failed", text(mergeRes.stderr, "Failed to merge repository ref."), {
+      ref,
+      repositoryId: repository.id,
+    });
+  }
+}
+
+async function rebaseRepository(repository: GitRepositoryHandle, input: RebaseInput = {}): Promise<void> {
+  await assertRepositoryReady(repository);
+  const ref = text(input && input.ref);
+  if (!ref) {
+    throw new GitHostError("git_command_failed", "A rebase ref is required.", {
+      repositoryId: repository.id,
+    });
+  }
+
+  const verifyRes = await runGit(["rev-parse", "--verify", `${ref}^{commit}`], { cwd: repository.path });
+  if (!verifyRes.ok) {
+    throw new GitHostError("git_command_failed", text(verifyRes.stderr, "That rebase ref does not exist."), {
+      ref,
+      repositoryId: repository.id,
+    });
+  }
+
+  const onto = text(input && input.onto);
+  if (onto) {
+    const ontoVerifyRes = await runGit(["rev-parse", "--verify", `${onto}^{commit}`], { cwd: repository.path });
+    if (!ontoVerifyRes.ok) {
+      throw new GitHostError("git_command_failed", text(ontoVerifyRes.stderr, "That rebase onto ref does not exist."), {
+        onto,
+        repositoryId: repository.id,
+      });
+    }
+  }
+
+  const args = onto ? ["rebase", "--onto", onto, ref] : ["rebase", ref];
+  const rebaseRes = await runGit(args, {
+    cwd: repository.path,
+    env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
+  });
+  if (!rebaseRes.ok) {
+    throw new GitHostError("git_command_failed", text(rebaseRes.stderr, "Failed to rebase repository branch."), {
+      onto,
+      ref,
+      repositoryId: repository.id,
+    });
+  }
+}
+
+async function cherryPickRepository(repository: GitRepositoryHandle, input: CherryPickInput = {}): Promise<void> {
+  await assertRepositoryReady(repository);
+  const refsInput = input && input.refs;
+  const refs = Array.isArray(refsInput)
+    ? refsInput.map((entry) => text(entry)).filter(Boolean)
+    : [text(refsInput)].filter(Boolean);
+  if (!refs.length) {
+    throw new GitHostError("git_command_failed", "At least one cherry-pick ref is required.", {
+      repositoryId: repository.id,
+    });
+  }
+
+  for (const ref of refs) {
+    const verifyRes = await runGit(["rev-parse", "--verify", `${ref}^{commit}`], { cwd: repository.path });
+    if (!verifyRes.ok) {
+      throw new GitHostError("git_command_failed", text(verifyRes.stderr, "That cherry-pick ref does not exist."), {
+        ref,
+        repositoryId: repository.id,
+      });
+    }
+  }
+
+  const args = ["cherry-pick"];
+  if (isTruthy(input && input.noCommit)) args.push("--no-commit");
+  if (Number(input && input.mainline) > 0) args.push("-m", String(Number(input && input.mainline)));
+  args.push(...refs);
+
+  const cherryPickRes = await runGit(args, {
+    cwd: repository.path,
+    env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
+  });
+  if (!cherryPickRes.ok) {
+    throw new GitHostError("git_command_failed", text(cherryPickRes.stderr, "Failed to cherry-pick repository commit."), {
+      refs,
+      repositoryId: repository.id,
+    });
+  }
+}
+
 async function continueRepositoryOperation(repository: GitRepositoryHandle, input: ContinueOperationInput = {}): Promise<void> {
   await assertRepositoryReady(repository);
 
@@ -183,9 +301,12 @@ async function abortRepositoryOperation(repository: GitRepositoryHandle): Promis
 
 export {
   abortRepositoryOperation,
+  cherryPickRepository,
   commitRepository,
   continueRepositoryOperation,
   discardRepositoryPaths,
+  mergeRepository,
+  rebaseRepository,
   stageRepositoryPaths,
   unstageRepositoryPaths,
 };

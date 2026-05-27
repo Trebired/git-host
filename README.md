@@ -1,6 +1,6 @@
 # @trebired/git-host
 
-Embeddable Git host for Node.js and Bun apps.
+Embeddable Git host for Node.js and Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository inspection APIs, and optional React helpers.
 
 `@trebired/git-host` gives your app real Git repository operations and real Git transports without making you adopt a full forge product. It runs the real Git CLI, helps you resolve repository paths safely, serializes mutations per repository, and exposes a reusable API for repository initialization, summary reads, content inspection, branch operations, working-tree changes, remote sync helpers, JSON API handlers, and smart HTTP and SSH hosting.
 
@@ -69,6 +69,33 @@ await gitHost.ensureRepository("demo", {
 
 const summary = await gitHost.readSummary("demo");
 console.log(summary.repository.current_branch);
+
+const linguist = await gitHost.readLinguist("demo", { ref: "main" });
+console.log(linguist.languages.results);
+
+const tree = await gitHost.listTree("demo", {
+  ref: "main",
+  recursive: true,
+  linguist: true,
+  icons: true,
+});
+console.log(tree[0]?.language, Boolean(tree[0]?.icon));
+
+const tags = await gitHost.listTags("demo");
+const blame = await gitHost.readBlame("demo", {
+  ref: "main",
+  path: "src/app.ts",
+});
+const search = await gitHost.search("demo", {
+  ref: "main",
+  path: "src",
+  query: "value",
+});
+const archive = await gitHost.readArchive("demo", {
+  ref: "main",
+  format: "zip",
+});
+console.log(tags.length, blame.lines[0]?.author_name, search.match_count, archive.file_name);
 
 const workingTree = await gitHost.readWorkingTree("demo");
 console.log(workingTree.unstaged_entries);
@@ -206,17 +233,23 @@ Then apps can use routes like:
 ```txt
 GET /api/git/repositories/demo/summary
 GET /api/git/repositories/demo/branches
-GET /api/git/repositories/demo/commits?limit=20
+GET /api/git/repositories/demo/commits?limit=20&ref=main&path=src/app.ts
 GET /api/git/repositories/demo/commits/<commit-ref>
-GET /api/git/repositories/demo/tree?ref=HEAD&path=src
+GET /api/git/repositories/demo/tags
+GET /api/git/repositories/demo/tags/v1
+GET /api/git/repositories/demo/tree?ref=HEAD&path=src&linguist=true&icons=true
+GET /api/git/repositories/demo/linguist?ref=HEAD
+GET /api/git/repositories/demo/blame?ref=HEAD&path=src/app.ts
+GET /api/git/repositories/demo/search?ref=HEAD&path=src&query=value
+GET /api/git/repositories/demo/archive?ref=HEAD&format=zip
 GET /api/git/repositories/demo/blob?ref=HEAD&path=README.md
-GET /api/git/repositories/demo/diff?baseRef=main&headRef=feature%2Fx
+GET /api/git/repositories/demo/diff?baseRef=main&headRef=feature%2Fx&path=src
 ```
 
 React companion:
 
 ```ts
-import { createGitApiClient, GitApiClientProvider, useGitRepositorySummary } from "@trebired/git-host/react";
+import { createGitApiClient, GitApiClientProvider, useGitLinguist, useGitRepositorySummary } from "@trebired/git-host/react";
 
 const gitClient = createGitApiClient({
   baseUrl: "/api/git",
@@ -224,12 +257,13 @@ const gitClient = createGitApiClient({
 
 function RepositorySummaryCard() {
   const summary = useGitRepositorySummary("demo");
+  const linguist = useGitLinguist("demo", { ref: "main" });
 
   if (summary.loading) return "Loading...";
   if (summary.error) return summary.error.message;
   if (!summary.data) return "Missing repository";
 
-  return `${summary.data.repository.current_branch} @ ${summary.data.repository.head_short}`;
+  return `${summary.data.repository.current_branch} @ ${summary.data.repository.head_short} (${Object.keys(linguist.data?.languages.results || {}).length} languages)`;
 }
 
 function App() {
@@ -267,21 +301,32 @@ And the main host instance methods:
 - `readSummary()`
 - `listBranches()`
 - `listCommits()`
+- `listTags()`
 - `listTree()`
+- `readLinguist()`
+- `readBlame()`
+- `search()`
+- `readArchive()`
 - `readBlob()`
 - `readCommit()`
+- `readTag()`
 - `diff()`
 - `readWorkingTree()`
 - `readStagedFile()`
 - `readUnstagedFile()`
 - `createBranch()`
+- `createTag()`
 - `checkoutBranch()`
 - `checkoutRef()`
 - `deleteBranch()`
+- `deleteTag()`
 - `stagePaths()`
 - `unstagePaths()`
 - `discardPaths()`
 - `commit()`
+- `merge()`
+- `rebase()`
+- `cherryPick()`
 - `continueOperation()`
 - `abortOperation()`
 - `fetch()`
@@ -297,7 +342,13 @@ The React entry currently exports:
 - `useGitBranches()`
 - `useGitCommits()`
 - `useGitCommit()`
+- `useGitTags()`
+- `useGitTag()`
 - `useGitTree()`
+- `useGitLinguist()`
+- `useGitBlame()`
+- `useGitSearch()`
+- `useGitArchive()`
 - `useGitBlob()`
 - `useGitDiff()`
 - `useGitApiQuery()`
@@ -370,8 +421,8 @@ The package is meant to replace or simplify:
 
 - Git CLI execution and environment shaping
 - repository locking and mutation coordination
-- repository summary, tree, blob, commit, diff, and working-tree reads
-- branch, checkout, commit, fetch, pull, and push operations
+- repository summary, tree, linguist, blame, search, archive, blob, commit, diff, and working-tree reads
+- branch, tag, checkout, commit, merge, rebase, cherry-pick, fetch, pull, and push operations
 - smart HTTP and SSH Git transport handling
 - thin JSON API route internals around those Git operations
 

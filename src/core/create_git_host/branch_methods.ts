@@ -1,14 +1,24 @@
 import { GitHostError } from "../../errors.js";
-import type { CheckoutBranchInput, CheckoutRefInput, CreateBranchInput, DeleteBranchInput, GitHost, ListCommitsOptions } from "../../types.js";
+import { buildGitEnv } from "../run_git.js";
+import type {
+  CheckoutBranchInput,
+  CheckoutRefInput,
+  CreateBranchInput,
+  CreateTagInput,
+  DeleteBranchInput,
+  DeleteTagInput,
+  GitHost,
+  ListCommitsOptions,
+} from "../../types.js";
 import { isTruthy, text } from "../../utils/text.js";
-import { readRepositoryBranches, readRepositoryCommits } from "../repository.js";
+import { readRepositoryBranches, readRepositoryCommits, readRepositoryTag, readRepositoryTags } from "../repository.js";
 import { repositoryExists, runGit } from "../run_git.js";
 import type { GitHostMethodContext } from "./shared.js";
 import { toGitHostError } from "./shared.js";
 
 function createBranchMethods(context: GitHostMethodContext): Pick<
   GitHost,
-  "checkoutBranch" | "checkoutRef" | "createBranch" | "deleteBranch" | "listBranches" | "listCommits"
+  "checkoutBranch" | "checkoutRef" | "createBranch" | "createTag" | "deleteBranch" | "deleteTag" | "listBranches" | "listCommits" | "listTags" | "readTag"
 > {
   const { ensureRepositoryInner, lockManager, readSummaryForRepository, resolveRepository } = context;
 
@@ -41,9 +51,43 @@ function createBranchMethods(context: GitHostMethodContext): Pick<
       }
 
       try {
-        return await readRepositoryCommits(repository.path, listOptions.limit);
+        return await readRepositoryCommits(repository.path, listOptions);
       } catch (error) {
         throw toGitHostError(error, "git_command_failed", "Failed to list repository commits.");
+      }
+    },
+
+    async listTags(repositoryId: string) {
+      const repository = await resolveRepository(repositoryId);
+      const hasRepository = await repositoryExists(repository.path);
+      if (!hasRepository) {
+        throw new GitHostError("repository_not_initialized", `Repository "${repository.id}" is not initialized.`, {
+          path: repository.path,
+          repositoryId: repository.id,
+        });
+      }
+
+      try {
+        return await readRepositoryTags(repository.path);
+      } catch (error) {
+        throw toGitHostError(error, "git_command_failed", "Failed to list repository tags.");
+      }
+    },
+
+    async readTag(repositoryId: string, tagName: string) {
+      const repository = await resolveRepository(repositoryId);
+      const hasRepository = await repositoryExists(repository.path);
+      if (!hasRepository) {
+        throw new GitHostError("repository_not_initialized", `Repository "${repository.id}" is not initialized.`, {
+          path: repository.path,
+          repositoryId: repository.id,
+        });
+      }
+
+      try {
+        return await readRepositoryTag(repository.path, tagName);
+      } catch (error) {
+        throw toGitHostError(error, "git_command_failed", "Failed to read repository tag.");
       }
     },
 
@@ -151,6 +195,64 @@ function createBranchMethods(context: GitHostMethodContext): Pick<
         }
 
         return await readSummaryForRepository(repository);
+      });
+    },
+
+    async createTag(repositoryId: string, input: CreateTagInput = {}) {
+      return await lockManager.withLock(text(repositoryId), async () => {
+        const repository = await ensureRepositoryInner(repositoryId);
+        const tagName = text(input && input.name);
+        if (!tagName) throw new GitHostError("invalid_branch_name", "Tag name is required.");
+
+        const formatRes = await runGit(["check-ref-format", `refs/tags/${tagName}`], { cwd: repository.path });
+        if (!formatRes.ok) {
+          throw new GitHostError("invalid_branch_name", text(formatRes.stderr, "Invalid tag name."), {
+            repositoryId: repository.id,
+            tag: tagName,
+          });
+        }
+
+        const ref = text(input && input.ref, "HEAD");
+        const verifyRes = await runGit(["rev-parse", "--verify", `${ref}^{object}`], { cwd: repository.path });
+        if (!verifyRes.ok) {
+          throw new GitHostError("git_command_failed", text(verifyRes.stderr, "That tag target does not exist."), {
+            ref,
+            repositoryId: repository.id,
+            tag: tagName,
+          });
+        }
+
+        const message = text(input && input.message);
+        const args = message ? ["tag", "-a", tagName, "-m", message, ref] : ["tag", tagName, ref];
+        const createRes = await runGit(args, {
+          cwd: repository.path,
+          env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
+        });
+        if (!createRes.ok) {
+          throw new GitHostError("git_command_failed", text(createRes.stderr, "Failed to create repository tag."), {
+            ref,
+            repositoryId: repository.id,
+            tag: tagName,
+          });
+        }
+
+        return await readRepositoryTag(repository.path, tagName);
+      });
+    },
+
+    async deleteTag(repositoryId: string, input: DeleteTagInput = {}) {
+      return await lockManager.withLock(text(repositoryId), async () => {
+        const repository = await ensureRepositoryInner(repositoryId);
+        const tagName = text(input && input.name);
+        if (!tagName) throw new GitHostError("invalid_branch_name", "Tag name is required.");
+
+        const deleteRes = await runGit(["tag", "-d", tagName], { cwd: repository.path });
+        if (!deleteRes.ok) {
+          throw new GitHostError("git_command_failed", text(deleteRes.stderr, "Failed to delete repository tag."), {
+            repositoryId: repository.id,
+            tag: tagName,
+          });
+        }
       });
     },
   };

@@ -1,12 +1,18 @@
 import type { ReactNode } from "react";
 
 import type {
+  GitArchive,
+  GitBlame,
   GitBlob,
   GitBranchSummary,
+  GitTagDetail,
+  GitTagSummary,
   GitCommitDetail,
   GitCommitSummary,
   GitCompareSummary,
+  GitRepositoryLinguist,
   GitRepositorySummary,
+  GitSearchResult,
   GitTreeEntry,
 } from "../../types.js";
 import type { GitApiClient, GitApiClientHeaders } from "../client.js";
@@ -36,11 +42,28 @@ type UseGitRepositorySummaryOptions = GitApiQueryOptions<GitRepositorySummary> &
 
 type UseGitCommitsOptions = GitApiQueryOptions<GitCommitSummary[]> & {
   limit?: number;
+  path?: string;
+  ref?: string;
 };
 
+type UseGitLinguistOptions = GitApiQueryOptions<GitRepositoryLinguist> & {
+  ref?: string;
+};
+
+type UseGitTagsOptions = GitApiQueryOptions<GitTagSummary[]>;
+
+type UseGitTagOptions = GitApiQueryOptions<GitTagDetail>;
+
 type UseGitTreeOptions = GitApiQueryOptions<GitTreeEntry[]> & {
+  icons?: boolean;
+  linguist?: boolean;
   path?: string;
   recursive?: boolean;
+  ref?: string;
+};
+
+type UseGitBlameOptions = GitApiQueryOptions<GitBlame> & {
+  path: string;
   ref?: string;
 };
 
@@ -52,22 +75,50 @@ type UseGitBlobOptions = GitApiQueryOptions<GitBlob> & {
 type UseGitDiffOptions = GitApiQueryOptions<GitCompareSummary> & {
   baseRef: string;
   headRef: string;
+  path?: string;
+};
+
+type UseGitSearchOptions = GitApiQueryOptions<GitSearchResult> & {
+  caseSensitive?: boolean;
+  limit?: number;
+  path?: string;
+  query: string;
+  ref?: string;
+  regexp?: boolean;
+};
+
+type UseGitArchiveOptions = GitApiQueryOptions<GitArchive> & {
+  format?: "tar" | "zip";
+  prefix?: string;
+  ref?: string;
 };
 
 export type {
   GitApiClientProviderProps,
+  GitArchive,
   GitApiQueryOptions,
   GitApiQueryResult,
+  UseGitArchiveOptions,
+  UseGitBlameOptions,
   UseGitBlobOptions,
   UseGitCommitsOptions,
   UseGitDiffOptions,
+  UseGitLinguistOptions,
   UseGitRepositorySummaryOptions,
+  UseGitSearchOptions,
+  UseGitTagOptions,
+  UseGitTagsOptions,
   UseGitTreeOptions,
+  GitBlame,
   GitBranchSummary,
   GitCommitDetail,
+  GitRepositoryLinguist,
   GitRepositorySummary,
   GitCommitSummary,
+  GitTagDetail,
+  GitTagSummary,
   GitTreeEntry,
   GitBlob,
   GitCompareSummary,
+  GitSearchResult,
 };

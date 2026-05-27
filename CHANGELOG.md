@@ -4,6 +4,19 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## Unreleased
+
+## 0.2.0
+
+- Added repository linguist analysis through `readLinguist()` with ref-based text blob inspection powered by `linguist-js`.
+- Added optional tree entry enrichment for detected file languages and inline SVG icons from `material-icon-theme`.
+- Added tag APIs for listing, reading, creating, and deleting tags.
+- Added path- and ref-scoped commit history plus path-scoped diff filtering.
+- Added blame, search, and archive reads for deeper repository inspection.
+- Added merge, rebase, and cherry-pick start helpers to the core host API.
+- Added JSON API routes, typed client methods, and React hooks for linguist, tags, blame, search, archive, and enriched tree reads.
+- Added tests and README coverage for the expanded repository inspection surface.
+
 ## 0.1.0
 
 - Added the initial `@trebired/git-host` package scaffold with publishable metadata, README, MIT license, contribution guide, and TypeScript build setup.

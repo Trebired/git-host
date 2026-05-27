@@ -78,6 +78,7 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
         query: buildQuery({
           baseRef: input.baseRef,
           headRef: input.headRef,
+          path: input.path,
         }),
         signal: input.signal,
       });
@@ -92,15 +93,23 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
         headers: input?.headers,
         query: buildQuery({
           limit: input?.limit,
+          path: input?.path,
+          ref: input?.ref,
         }),
         signal: input?.signal,
       });
+      return response.data;
+    },
+    async listTags(repositoryKey, input) {
+      const response = await request<"tags", ReturnType<GitApiClient["listTags"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "tags", input);
       return response.data;
     },
     async listTree(repositoryKey, input) {
       const response = await request<"tree", ReturnType<GitApiClient["listTree"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "tree", {
         headers: input?.headers,
         query: buildQuery({
+          icons: input?.icons,
+          linguist: input?.linguist,
           path: input?.path,
           recursive: input?.recursive,
           ref: input?.ref,
@@ -120,10 +129,51 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
       });
       return response.data;
     },
+    async readArchive(repositoryKey, input) {
+      const response = await request<"archive", ReturnType<GitApiClient["readArchive"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "archive", {
+        headers: input?.headers,
+        query: buildQuery({
+          format: input?.format,
+          prefix: input?.prefix,
+          ref: input?.ref,
+        }),
+        signal: input?.signal,
+      });
+      return response.data;
+    },
+    async readBlame(repositoryKey, input) {
+      const response = await request<"blame", ReturnType<GitApiClient["readBlame"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "blame", {
+        headers: input.headers,
+        query: buildQuery({
+          path: input.path,
+          ref: input.ref,
+        }),
+        signal: input.signal,
+      });
+      return response.data;
+    },
     async readCommit(repositoryKey, commitRef, input) {
       const response = await request<"commit", ReturnType<GitApiClient["readCommit"]> extends Promise<infer TData> ? TData : never>(
         repositoryKey,
         `commits/${encodePathSegment(commitRef)}`,
+        input,
+      );
+      return response.data;
+    },
+    async readLinguist(repositoryKey, input) {
+      const response = await request<"linguist", ReturnType<GitApiClient["readLinguist"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "linguist", {
+        headers: input?.headers,
+        query: buildQuery({
+          ref: input?.ref,
+        }),
+        signal: input?.signal,
+      });
+      return response.data;
+    },
+    async readTag(repositoryKey, tagName, input) {
+      const response = await request<"tag", ReturnType<GitApiClient["readTag"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        `tags/${encodePathSegment(tagName)}`,
         input,
       );
       return response.data;
@@ -135,6 +185,21 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
           commitLimit: input?.commitLimit,
         }),
         signal: input?.signal,
+      });
+      return response.data;
+    },
+    async search(repositoryKey, input) {
+      const response = await request<"search", ReturnType<GitApiClient["search"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "search", {
+        headers: input.headers,
+        query: buildQuery({
+          caseSensitive: input.caseSensitive,
+          limit: input.limit,
+          path: input.path,
+          query: input.query,
+          ref: input.ref,
+          regexp: input.regexp,
+        }),
+        signal: input.signal,
       });
       return response.data;
     },

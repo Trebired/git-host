@@ -111,7 +111,84 @@ type GitCompareSummary = {
   merge_base: string;
 };
 
+type GitTagSummary = {
+  annotated: boolean;
+  hash: string;
+  name: string;
+  short_hash: string;
+  subject: string;
+  tagged_at: string;
+  tagger_email: string;
+  tagger_name: string;
+  target_hash: string;
+  target_short_hash: string;
+  target_type: string;
+};
+
+type GitTagDetail = GitTagSummary & {
+  message: string;
+};
+
+type GitBlameLine = {
+  author_email: string;
+  author_name: string;
+  authored_at: string;
+  commit_hash: string;
+  commit_short_hash: string;
+  content: string;
+  line_number: number;
+  original_line_number: number;
+  summary: string;
+};
+
+type GitBlame = {
+  lines: GitBlameLine[];
+  path: string;
+  ref: string;
+};
+
+type GitSearchMatch = {
+  column: number;
+  line: string;
+  line_number: number;
+};
+
+type GitSearchFileResult = {
+  match_count: number;
+  matches: GitSearchMatch[];
+  path: string;
+};
+
+type GitSearchResult = {
+  files: GitSearchFileResult[];
+  match_count: number;
+  query: string;
+  ref: string;
+  truncated: boolean;
+};
+
+type GitRepositoryLinguistLines = {
+  content: number;
+  total: number;
+};
+
+type GitRepositoryLinguistLanguage = {
+  bytes: number;
+  color?: string;
+  count: number;
+  lines: GitRepositoryLinguistLines;
+  parent?: string;
+  type: string;
+};
+
+type GitTreeEntryIcon = {
+  name: string;
+  svg: string;
+};
+
 type GitTreeEntry = {
+  icon?: GitTreeEntryIcon | null;
+  language?: string | null;
   mode: string;
   name: string;
   object: string;
@@ -128,6 +205,18 @@ type GitBlob = {
   is_binary: boolean;
   object: string;
   path: string;
+  ref: string;
+  size: number;
+};
+
+type GitArchiveFormat = "tar" | "zip";
+
+type GitArchive = {
+  content: string;
+  content_type: string;
+  encoding: "base64";
+  file_name: string;
+  format: GitArchiveFormat;
   ref: string;
   size: number;
 };
@@ -180,7 +269,35 @@ type GitRepositorySummary = {
   status: GitRepositoryStatus;
 };
 
+type GitRepositoryLinguist = {
+  commit: string;
+  files: {
+    bytes: number;
+    count: number;
+    lines: GitRepositoryLinguistLines;
+    results: Record<string, string | null>;
+  };
+  languages: {
+    bytes: number;
+    count: number;
+    lines: GitRepositoryLinguistLines;
+    results: Record<string, GitRepositoryLinguistLanguage>;
+  };
+  ref: string;
+  unknown: {
+    bytes: number;
+    count: number;
+    extensions: Record<string, number>;
+    filenames: Record<string, number>;
+    lines: GitRepositoryLinguistLines;
+  };
+};
+
 export type {
+  GitArchive,
+  GitArchiveFormat,
+  GitBlame,
+  GitBlameLine,
   GitBlob,
   GitBlobEncoding,
   GitBranchSummary,
@@ -196,10 +313,19 @@ export type {
   GitOperationState,
   GitRemoteSummary,
   GitRepositoryHandle,
+  GitRepositoryLinguist,
+  GitRepositoryLinguistLanguage,
+  GitRepositoryLinguistLines,
   GitRepositoryStatus,
   GitRepositorySummary,
+  GitSearchFileResult,
+  GitSearchMatch,
+  GitSearchResult,
   GitStatusEntry,
+  GitTagDetail,
+  GitTagSummary,
   GitTreeEntry,
+  GitTreeEntryIcon,
   GitWorkingTree,
   GitWorkingTreeEntry,
 };

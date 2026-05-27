@@ -1,8 +1,11 @@
 export {
   abortRepositoryOperation,
+  cherryPickRepository,
   commitRepository,
   continueRepositoryOperation,
   discardRepositoryPaths,
+  mergeRepository,
+  rebaseRepository,
   stageRepositoryPaths,
   unstageRepositoryPaths,
 } from "./working_tree/mutate.js";

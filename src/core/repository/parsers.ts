@@ -4,6 +4,7 @@ import type {
   GitDiffFile,
   GitRemoteSummary,
   GitRepositoryStatus,
+  GitTagSummary,
   GitStatusEntry,
 } from "../../types.js";
 import { text } from "../../utils/text.js";
@@ -152,6 +153,30 @@ function parseCommitLogOutput(stdout: string): GitCommitSummary[] {
     });
 }
 
+function parseTagsOutput(stdout: string): GitTagSummary[] {
+  return String(stdout || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [name, hash, shortHash, objectType, taggerName, taggerEmail, taggedAt, subject, targetHash, targetShortHash, targetType] = line.split("\u001f");
+      const annotated = text(objectType) === "tag";
+      return {
+        annotated,
+        hash: text(hash),
+        name: text(name),
+        short_hash: text(shortHash),
+        subject: text(subject),
+        tagged_at: text(taggedAt),
+        tagger_email: text(taggerEmail).replace(/^<|>$/g, ""),
+        tagger_name: text(taggerName),
+        target_hash: text(targetHash, text(hash)),
+        target_short_hash: text(targetShortHash, text(shortHash)),
+        target_type: text(targetType, text(objectType)),
+      };
+    });
+}
+
 function parseNameStatusOutput(stdout: string): GitDiffFile[] {
   return String(stdout || "")
     .split(/\r?\n/)
@@ -197,4 +222,5 @@ export {
   parseNumstatOutput,
   parseRemotesOutput,
   parseStatusOutput,
+  parseTagsOutput,
 };

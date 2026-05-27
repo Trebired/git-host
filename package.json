@@ -58,6 +58,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "linguist-js": "^3.0.0",
+    "material-icon-theme": "^5.35.0",
     "ssh2": "^1.17.0"
   },
   "peerDependencies": {

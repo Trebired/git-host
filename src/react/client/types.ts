@@ -1,11 +1,17 @@
 import type {
+  GitArchive,
+  GitBlame,
   GitApiResource,
   GitBlob,
   GitBranchSummary,
+  GitTagDetail,
+  GitTagSummary,
   GitCommitDetail,
   GitCommitSummary,
   GitCompareSummary,
+  GitRepositoryLinguist,
   GitRepositorySummary,
+  GitSearchResult,
   GitTreeEntry,
   MaybePromise,
 } from "../../types.js";
@@ -60,6 +66,7 @@ type GitApiClient = {
     options: GitApiClientRequestOptions & {
       baseRef: string;
       headRef: string;
+      path?: string;
     },
   ): Promise<GitCompareSummary>;
   listBranches(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitBranchSummary[]>;
@@ -67,11 +74,16 @@ type GitApiClient = {
     repositoryKey: string,
     options?: GitApiClientRequestOptions & {
       limit?: number;
+      path?: string;
+      ref?: string;
     },
   ): Promise<GitCommitSummary[]>;
+  listTags(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitTagSummary[]>;
   listTree(
     repositoryKey: string,
     options?: GitApiClientRequestOptions & {
+      icons?: boolean;
+      linguist?: boolean;
       path?: string;
       recursive?: boolean;
       ref?: string;
@@ -84,17 +96,54 @@ type GitApiClient = {
       ref?: string;
     },
   ): Promise<GitBlob>;
+  readArchive(
+    repositoryKey: string,
+    options?: GitApiClientRequestOptions & {
+      format?: "tar" | "zip";
+      prefix?: string;
+      ref?: string;
+    },
+  ): Promise<GitArchive>;
+  readBlame(
+    repositoryKey: string,
+    options: GitApiClientRequestOptions & {
+      path: string;
+      ref?: string;
+    },
+  ): Promise<GitBlame>;
   readCommit(
     repositoryKey: string,
     commitRef: string,
     options?: GitApiClientRequestOptions,
   ): Promise<GitCommitDetail>;
+  readLinguist(
+    repositoryKey: string,
+    options?: GitApiClientRequestOptions & {
+      ref?: string;
+    },
+  ): Promise<GitRepositoryLinguist>;
+  readTag(
+    repositoryKey: string,
+    tagName: string,
+    options?: GitApiClientRequestOptions,
+  ): Promise<GitTagDetail>;
   readSummary(
     repositoryKey: string,
     options?: GitApiClientRequestOptions & {
       commitLimit?: number;
     },
   ): Promise<GitRepositorySummary>;
+  search(
+    repositoryKey: string,
+    options: GitApiClientRequestOptions & {
+      caseSensitive?: boolean;
+      limit?: number;
+      path?: string;
+      query: string;
+      ref?: string;
+      regexp?: boolean;
+    },
+  ): Promise<GitSearchResult>;
   request<TAction extends GitApiResource, TData>(
     repositoryKey: string,
     actionPath: string,

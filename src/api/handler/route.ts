@@ -32,7 +32,17 @@ function parseGitApiRoute(pathnameInput: unknown, basePathInput: unknown) {
   if (!repositoryKey) return null;
 
   const action = text(segments[2]) as GitApiResource | "unknown";
-  if (action === "summary" || action === "branches" || action === "tree" || action === "blob" || action === "diff") {
+  if (
+    action === "summary"
+    || action === "branches"
+    || action === "tree"
+    || action === "blob"
+    || action === "diff"
+    || action === "linguist"
+    || action === "blame"
+    || action === "search"
+    || action === "archive"
+  ) {
     if (segments.length !== 3) return null;
     return { action, repositoryKey };
   }
@@ -43,6 +53,15 @@ function parseGitApiRoute(pathnameInput: unknown, basePathInput: unknown) {
       const commitRef = decodeRouteSegment(segments[3] || "");
       if (!commitRef) return null;
       return { action: "commit" as const, commitRef, repositoryKey };
+    }
+  }
+
+  if (action === "tags") {
+    if (segments.length === 3) return { action, repositoryKey };
+    if (segments.length === 4) {
+      const tagName = decodeRouteSegment(segments[3] || "");
+      if (!tagName) return null;
+      return { action: "tag" as const, repositoryKey, tagName };
     }
   }
 

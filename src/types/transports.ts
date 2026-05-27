@@ -4,7 +4,20 @@ import type { GitHostLogger, MaybePromise } from "./common.js";
 import type { GitHost } from "./host.js";
 import type { GitRepositoryHandle } from "./repository.js";
 
-type GitApiResource = "blob" | "branches" | "commit" | "commits" | "diff" | "summary" | "tree";
+type GitApiResource =
+  | "archive"
+  | "blame"
+  | "blob"
+  | "branches"
+  | "commit"
+  | "commits"
+  | "diff"
+  | "linguist"
+  | "search"
+  | "summary"
+  | "tag"
+  | "tags"
+  | "tree";
 
 type GitApiAuthorizationResult = boolean | {
   allowed: boolean;

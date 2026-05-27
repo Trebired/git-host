@@ -1,21 +1,27 @@
 import type {
+  CherryPickInput,
   CommitInput,
   ContinueOperationInput,
   DiscardPathsInput,
   GitHost,
+  MergeInput,
   ReadWorkingTreeFileOptions,
+  RebaseInput,
   StagePathsInput,
   UnstagePathsInput,
 } from "../../types.js";
 import { text } from "../../utils/text.js";
 import {
   abortRepositoryOperation,
+  cherryPickRepository,
   commitRepository,
   continueRepositoryOperation,
   discardRepositoryPaths,
+  mergeRepository,
   readRepositoryStagedFile,
   readRepositoryUnstagedFile,
   readRepositoryWorkingTree,
+  rebaseRepository,
   stageRepositoryPaths,
   unstageRepositoryPaths,
 } from "../working_tree.js";
@@ -24,12 +30,15 @@ import type { GitHostMethodContext } from "./shared.js";
 function createWorkingTreeMethods(context: GitHostMethodContext): Pick<
   GitHost,
   | "abortOperation"
+  | "cherryPick"
   | "commit"
   | "continueOperation"
   | "discardPaths"
+  | "merge"
   | "readStagedFile"
   | "readUnstagedFile"
   | "readWorkingTree"
+  | "rebase"
   | "stagePaths"
   | "unstagePaths"
 > {
@@ -79,6 +88,30 @@ function createWorkingTreeMethods(context: GitHostMethodContext): Pick<
       return await lockManager.withLock(text(repositoryId), async () => {
         const repository = await ensureRepositoryInner(repositoryId);
         await commitRepository(repository, input);
+        return await readSummaryForRepository(repository);
+      });
+    },
+
+    async merge(repositoryId: string, input: MergeInput = {}) {
+      return await lockManager.withLock(text(repositoryId), async () => {
+        const repository = await ensureRepositoryInner(repositoryId);
+        await mergeRepository(repository, input);
+        return await readSummaryForRepository(repository);
+      });
+    },
+
+    async rebase(repositoryId: string, input: RebaseInput = {}) {
+      return await lockManager.withLock(text(repositoryId), async () => {
+        const repository = await ensureRepositoryInner(repositoryId);
+        await rebaseRepository(repository, input);
+        return await readSummaryForRepository(repository);
+      });
+    },
+
+    async cherryPick(repositoryId: string, input: CherryPickInput = {}) {
+      return await lockManager.withLock(text(repositoryId), async () => {
+        const repository = await ensureRepositoryInner(repositoryId);
+        await cherryPickRepository(repository, input);
         return await readSummaryForRepository(repository);
       });
     },
