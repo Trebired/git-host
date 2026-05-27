@@ -6,7 +6,7 @@ This project follows semantic versioning once published.
 
 ## Unreleased
 
-## 0.2.0
+## 1.0.0
 
 - Added repository linguist analysis through `readLinguist()` with ref-based text blob inspection powered by `linguist-js`.
 - Added live linguist progress reporting through `readLinguist(..., { onProgress })`, plus Socket.IO delivery through `createGitApiSocketServer()` and the typed `openLinguistSocket()` client helper.
