@@ -36,14 +36,15 @@ function createGitApiSocketServer(options: CreateGitApiSocketServerOptions) {
   }
 
   const logger = resolveLogger(options.logger, options.loggerAdapter);
+  const logGroup = "git-host.api.socket";
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
+    group: logGroup,
     logger: options.logger,
     source: "@trebired/git-host",
   });
   const verbose = options.verbose === true;
-  const logGroup = "git-host.api.socket";
   const basePath = text(options.basePath, "/api/git");
   const path = normalizeSocketPath(basePath, options.socketPath);
   const io = new SocketIoServer(options.httpServer, {

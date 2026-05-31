@@ -30,6 +30,7 @@ function createGitSshServer(options: CreateGitSshServerOptions) {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
+    group: "git-host.ssh",
     logger: options.logger,
     source: "@trebired/git-host",
   });

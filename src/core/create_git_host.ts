@@ -36,14 +36,15 @@ function createGitHost(options: CreateGitHostOptions): GitHost {
   }
 
   const logger = resolveLogger(options.logger, options.loggerAdapter);
+  const logGroup = "git-host";
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
+    group: logGroup,
     logger: options.logger,
     source: "@trebired/git-host",
   });
   const verbose = options.verbose === true;
-  const logGroup = "git-host";
   const lockManager = new RepositoryLockManager();
   const managedExcludeHeader = text(options.managedExcludeHeader, DEFAULT_MANAGED_EXCLUDE_HEADER);
   const managedExcludePatterns = normalizeManagedExcludePatterns(options.managedExcludePatterns);

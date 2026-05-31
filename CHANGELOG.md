@@ -6,7 +6,7 @@ This project follows semantic versioning once published.
 
 ## 1.2.0
 
-- Added package startup logs through `logger.loader` so the main `git-host` constructors emit `@trebired/git-host initialized` before normal diagnostics.
+- Added package startup logs through package-specific `.initialize` groups such as `git-host.initialize`, `git-host.http.initialize`, `git-host.api.initialize`, and `git-host.ssh.initialize`.
 
 ## 1.1.0
 

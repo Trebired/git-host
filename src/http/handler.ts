@@ -225,6 +225,7 @@ function createGitHttpHandler(options: CreateGitHttpHandlerOptions) {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
+    group: "git-host.http",
     logger: options.logger,
     source: "@trebired/git-host",
   });

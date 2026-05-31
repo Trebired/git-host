@@ -126,6 +126,7 @@ function createGitApiHandler(options: CreateGitApiHandlerOptions) {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
+    group: "git-host.api",
     logger: options.logger,
     source: "@trebired/git-host",
   });
