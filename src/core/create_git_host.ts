@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { logPackageInitialized } from "@trebired/logger-adapter";
 
 import {
   DEFAULT_BRANCH,
@@ -35,6 +36,12 @@ function createGitHost(options: CreateGitHostOptions): GitHost {
   }
 
   const logger = resolveLogger(options.logger, options.loggerAdapter);
+  logPackageInitialized({
+    adapter: options.loggerAdapter,
+    fallback: "console",
+    logger: options.logger,
+    source: "@trebired/git-host",
+  });
   const verbose = options.verbose === true;
   const logGroup = "git-host";
   const lockManager = new RepositoryLockManager();

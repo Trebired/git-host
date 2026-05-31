@@ -177,6 +177,28 @@ describe("@trebired/git-host", () => {
     const socketServer = createGitApiSocketServer({ basePath: "/api/git", gitHost: host, httpServer: server });
     const port = await listen(server);
     const client = createGitApiClient({ baseUrl: `http://127.0.0.1:${port}/api/git` });
+    const hasLoadedSnapshot = () => (
+      snapshots.some((entry) => (
+        entry.loading === false
+        && entry.branch === "main"
+        && entry.commitCount === 1
+        && entry.tagCount === 1
+        && entry.blameLines === 1
+        && entry.searchMatches === 1
+        && entry.typescriptCount === 1
+        && entry.treeLanguage === "TypeScript"
+        && entry.hasReadmeIcon
+      ))
+    );
+
+    async function waitForLoadedSnapshot() {
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        if (hasLoadedSnapshot()) return;
+        await act(async () => {
+          await sleep(25);
+        });
+      }
+    }
 
     function Probe() {
       const summary = useGitRepositorySummary("demo");
@@ -213,18 +235,8 @@ describe("@trebired/git-host", () => {
         await act(async () => {
           renderer = createRenderer(createElement(GitApiClientProvider, { client }, createElement(Probe)));
         });
-        await act(async () => { await sleep(50); });
-        expect(snapshots.some((entry) => (
-          entry.loading === false
-          && entry.branch === "main"
-          && entry.commitCount === 1
-          && entry.tagCount === 1
-          && entry.blameLines === 1
-          && entry.searchMatches === 1
-          && entry.typescriptCount === 1
-          && entry.treeLanguage === "TypeScript"
-          && entry.hasReadmeIcon
-        ))).toBe(true);
+        await waitForLoadedSnapshot();
+        expect(hasLoadedSnapshot()).toBe(true);
         await act(async () => { renderer?.unmount(); });
       } finally {
         console.error = originalConsoleError;

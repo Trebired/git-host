@@ -1,4 +1,5 @@
 import { Server as SocketIoServer } from "socket.io";
+import { logPackageInitialized } from "@trebired/logger-adapter";
 
 import { resolveLogger } from "../logging.js";
 import type {
@@ -35,6 +36,12 @@ function createGitApiSocketServer(options: CreateGitApiSocketServerOptions) {
   }
 
   const logger = resolveLogger(options.logger, options.loggerAdapter);
+  logPackageInitialized({
+    adapter: options.loggerAdapter,
+    fallback: "console",
+    logger: options.logger,
+    source: "@trebired/git-host",
+  });
   const verbose = options.verbose === true;
   const logGroup = "git-host.api.socket";
   const basePath = text(options.basePath, "/api/git");

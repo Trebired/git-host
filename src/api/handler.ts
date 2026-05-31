@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
+import { logPackageInitialized } from "@trebired/logger-adapter";
 
 import { resolveLogger } from "../logging.js";
 import type { CreateGitApiHandlerOptions } from "../types.js";
@@ -121,6 +122,13 @@ function createGitApiHandler(options: CreateGitApiHandlerOptions) {
   if (!options || typeof options.gitHost !== "object") {
     throw new TypeError("createGitApiHandler() requires a gitHost instance.");
   }
+
+  logPackageInitialized({
+    adapter: options.loggerAdapter,
+    fallback: "console",
+    logger: options.logger,
+    source: "@trebired/git-host",
+  });
 
   return function gitApiHandler(req: IncomingMessage, res: ServerResponse) {
     void handleGitApiRequest(req, res, options).catch((error) => {

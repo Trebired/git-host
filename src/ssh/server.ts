@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { logPackageInitialized } from "@trebired/logger-adapter";
 
 import { Server as GitSshServerTransport, utils as sshUtils } from "ssh2";
 
@@ -26,6 +27,12 @@ function createGitSshServer(options: CreateGitSshServerOptions) {
   }
 
   const logger = resolveLogger(options.logger, options.loggerAdapter);
+  logPackageInitialized({
+    adapter: options.loggerAdapter,
+    fallback: "console",
+    logger: options.logger,
+    source: "@trebired/git-host",
+  });
   const verbose = options.verbose === true;
   const sshServer: any = new GitSshServerTransport({
     hostKeys: options.hostKeys,

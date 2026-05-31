@@ -1,6 +1,6 @@
 {
   "name": "@trebired/git-host",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Embeddable Git host for Node.js and Bun apps, built on the real Git CLI with HTTP, SSH, and worktree APIs.",
   "license": "MIT",
   "keywords": [
@@ -58,7 +58,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@trebired/logger-adapter": "^0.1.0",
+    "@trebired/logger-adapter": "^0.2.0",
     "linguist-js": "^3.0.0",
     "material-icon-theme": "^5.35.0",
     "socket.io": "^4.8.3",

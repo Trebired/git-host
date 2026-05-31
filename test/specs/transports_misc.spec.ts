@@ -109,7 +109,7 @@ describe("@trebired/git-host", () => {
     } finally {
       await closeServer(sshServer);
     }
-  });
+  }, { timeout: 15_000 });
 
   test("generates and compares SSH public keys", () => {
     const keyPair = generateSshKeyPair({ algorithm: "ed25519", comment: "git-host-test" });

@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { spawn } from "node:child_process";
 import path from "node:path";
+import { logPackageInitialized } from "@trebired/logger-adapter";
 
 import { resolveLogger } from "../logging.js";
 import type { CreateGitHttpHandlerOptions, GitHttpAuditEvent } from "../types.js";
@@ -220,6 +221,13 @@ function createGitHttpHandler(options: CreateGitHttpHandlerOptions) {
   if (!options || typeof options.resolveRepository !== "function") {
     throw new TypeError("createGitHttpHandler() requires a resolveRepository() function.");
   }
+
+  logPackageInitialized({
+    adapter: options.loggerAdapter,
+    fallback: "console",
+    logger: options.logger,
+    source: "@trebired/git-host",
+  });
 
   return function gitHttpHandler(req: IncomingMessage, res: ServerResponse) {
     void handleGitHttpRequest(req, res, options).catch((error) => {

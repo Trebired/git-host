@@ -4,6 +4,10 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 1.2.0
+
+- Added package startup logs through `logger.loader` so the main `git-host` constructors emit `@trebired/git-host initialized` before normal diagnostics.
+
 ## 1.1.0
 
 - Switched package logger adaptation over to `@trebired/logger-adapter`.
