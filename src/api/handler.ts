@@ -14,7 +14,7 @@ import {
 import { parseGitApiRoute } from "./handler/route.js";
 
 async function handleGitApiRequest(req: IncomingMessage, res: ServerResponse, options: CreateGitApiHandlerOptions) {
-  const logger = resolveLogger(options.logger);
+  const logger = resolveLogger(options.logger, options.loggerAdapter);
   const verbose = options.verbose === true;
   const logGroup = "git-host.api";
   const method = text(req.method).toUpperCase() || "GET";

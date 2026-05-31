@@ -488,6 +488,8 @@ log.info("git-host", "initializing repository", { repositoryId: "demo" });
 
 comes from `@trebired/logger`.
 
+The runtime adaptation behind `logger` and `loggerAdapter` is powered by `@trebired/logger-adapter`.
+
 You can pass that same `log` object into `createGitHost()`, `createGitHttpHandler()`, `createGitSshServer()`, `createGitApiHandler()`, and `createGitApiSocketServer()` through their `logger` option.
 
 If you do not pass a logger and `@trebired/logger` is installed in the host app, git-host will create a quiet console-only logger automatically before falling back to raw `console`.
@@ -521,6 +523,31 @@ type SinkLogger = {
 ```
 
 Common logger objects such as `console`, pino-style level methods, or Winston-style sinks are also adapted as sensibly as possible.
+
+If you want exact control over the emitted structure, pass `logger` plus `loggerAdapter`:
+
+```ts
+const rows: unknown[] = [];
+
+const host = createGitHost({
+  logger: rows,
+  loggerAdapter(logger, event) {
+    logger.push({
+      when: event.timestamp,
+      scope: event.group,
+      severity: event.level,
+      text: event.message,
+      extra: event.metadata,
+    });
+  },
+  resolveRepository(repositoryId) {
+    return {
+      id: repositoryId,
+      path: `/srv/repos/${repositoryId}`,
+    };
+  },
+});
+```
 
 If no logger is provided and `@trebired/logger` is not installed, git-host falls back to plain `console` output for its own diagnostics.
 

@@ -1,7 +1,7 @@
 import type { IncomingMessage, Server as HttpServer } from "node:http";
 import type { ServerOptions as SocketIoServerOptions } from "socket.io";
 
-import type { GitHostLogger, MaybePromise } from "./common.js";
+import type { GitHostLogger, GitHostLoggerAdapter, MaybePromise } from "./common.js";
 import type { GitHost } from "./host.js";
 import type { GitRepositoryHandle } from "./repository.js";
 
@@ -43,6 +43,7 @@ type CreateGitApiHandlerOptions = {
   basePath?: string;
   gitHost: GitHost;
   logger?: GitHostLogger;
+  loggerAdapter?: GitHostLoggerAdapter;
   resolveRepositoryId?: (
     repositoryKey: string,
     request: IncomingMessage,
@@ -121,6 +122,7 @@ type CreateGitHttpHandlerOptions = {
   }) => MaybePromise<GitHttpAuthorizationResult>;
   basePath?: string;
   logger?: GitHostLogger;
+  loggerAdapter?: GitHostLoggerAdapter;
   onAuditEvent?: (event: GitHttpAuditEvent) => MaybePromise<void>;
   resolveRepository: (
     repositoryKey: string,
@@ -187,6 +189,7 @@ type CreateGitSshServerOptions = {
   basePath?: string;
   hostKeys: string[];
   logger?: GitHostLogger;
+  loggerAdapter?: GitHostLoggerAdapter;
   resolveRepository: (
     repositoryKey: string,
     input: {

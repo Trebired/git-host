@@ -110,6 +110,7 @@ export type {
   GitHostLogEvent,
   GitHostLogMethod,
   GitHostLogger,
+  GitHostLoggerAdapter,
   GitOperationKind,
   GitOperationState,
   GitRemoteCredentials,

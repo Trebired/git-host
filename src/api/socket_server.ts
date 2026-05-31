@@ -34,7 +34,7 @@ function createGitApiSocketServer(options: CreateGitApiSocketServerOptions) {
     throw new TypeError("createGitApiSocketServer() requires an httpServer.");
   }
 
-  const logger = resolveLogger(options.logger);
+  const logger = resolveLogger(options.logger, options.loggerAdapter);
   const verbose = options.verbose === true;
   const logGroup = "git-host.api.socket";
   const basePath = text(options.basePath, "/api/git");

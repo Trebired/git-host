@@ -4,18 +4,21 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
-## Unreleased
+## 1.1.0
+
+- Switched package logger adaptation over to `@trebired/logger-adapter`.
+- Added the `loggerAdapter(logger, event)` option across the logging entrypoints for callers who want exact control over the final emitted log structure.
 
 ## 1.0.0
 
 - Marked `@trebired/git-host` as stable and bumped the package to `1.0.0`.
+- Replaced the earlier live linguist scan streaming transport with Socket.IO through `createGitApiSocketServer()` and the typed `openLinguistSocket()` client helper.
 - Promoted the current public API surface, including the core host, JSON API handler, smart HTTP and SSH transports, React client and hooks, and Socket.IO progress transport, as the first stable release contract.
-- Shipped the first stable repository inspection set with linguist analysis, live scan progress events, optional tree icons, tags, blame, search, archive reads, path-scoped history and diffs, and merge, rebase, and cherry-pick helpers.
 
 ## 0.2.0
 
 - Added repository linguist analysis through `readLinguist()` with ref-based text blob inspection powered by `linguist-js`.
-- Added live linguist progress reporting through `readLinguist(..., { onProgress })`, plus Socket.IO delivery through `createGitApiSocketServer()` and the typed `openLinguistSocket()` client helper.
+- Added live linguist progress reporting through `readLinguist(..., { onProgress })` and the initial API/client streaming support for long-running scans.
 - Added optional tree entry enrichment for detected file languages and inline SVG icons from `material-icon-theme`.
 - Added tag APIs for listing, reading, creating, and deleting tags.
 - Added path- and ref-scoped commit history plus path-scoped diff filtering.

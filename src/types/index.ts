@@ -3,6 +3,7 @@ export type {
   GitHostGenericLogMethod,
   GitHostLogEvent,
   GitHostLogger,
+  GitHostLoggerAdapter,
   GitHostLogMethod,
   MaybePromise,
   NormalizedGitHostLogger,

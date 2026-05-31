@@ -211,9 +211,9 @@ function captureLogger() {
 }
 
 function captureEventSink() {
-  const rows: Array<{ group: string; level: string; message: string; metadata?: unknown }> = [];
+  const rows: Array<{ group: string; level: string; message: string; metadata?: unknown; timestamp?: string }> = [];
   return {
-    logger(event: { group: string; level: string; message: string; metadata?: unknown }) {
+    logger(event: { group: string; level: string; message: string; metadata?: unknown; timestamp?: string }) {
       rows.push(event);
     },
     rows,

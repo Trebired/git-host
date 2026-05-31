@@ -25,7 +25,7 @@ function createGitSshServer(options: CreateGitSshServerOptions) {
     throw new TypeError("createGitSshServer() requires at least one host key.");
   }
 
-  const logger = resolveLogger(options.logger);
+  const logger = resolveLogger(options.logger, options.loggerAdapter);
   const verbose = options.verbose === true;
   const sshServer: any = new GitSshServerTransport({
     hostKeys: options.hostKeys,

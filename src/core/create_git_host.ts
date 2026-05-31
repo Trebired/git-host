@@ -34,7 +34,7 @@ function createGitHost(options: CreateGitHostOptions): GitHost {
     throw new TypeError("createGitHost() requires a resolveRepository() function.");
   }
 
-  const logger = resolveLogger(options.logger);
+  const logger = resolveLogger(options.logger, options.loggerAdapter);
   const verbose = options.verbose === true;
   const logGroup = "git-host";
   const lockManager = new RepositoryLockManager();

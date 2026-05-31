@@ -82,6 +82,34 @@ describe("@trebired/git-host", () => {
     expect(rows.some((entry) => entry.level === "info" && entry.group === "git-host" && entry.message === "initializing repository")).toBe(true);
   });
 
+  test("supports explicit logger adapters for exact emitted shapes", async () => {
+    const root = tempDir();
+    const rows: Array<{ severity: string; text: string }> = [];
+    const host = createGitHost({
+      logger: rows as any,
+      loggerAdapter(logger, event) {
+        (logger as Array<{ severity: string; text: string }>).push({
+          severity: event.level,
+          text: `${event.timestamp} ${event.group} ${event.message}`,
+        });
+      },
+      resolveRepository(repositoryId) {
+        return {
+          id: repositoryId,
+          path: resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: `${repositoryId}/workspace` }),
+        };
+      },
+      verbose: true,
+    });
+    const workspace = resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeFile(workspace, "README.md", "# Adapter\n");
+    await host.ensureRepository("demo");
+
+    expect(rows.some((entry) => entry.severity === "info" && entry.text.includes("git-host initializing repository"))).toBe(true);
+  });
+
   test("lists, creates, and deletes branches", async () => {
     const root = tempDir();
     const host = createHost(path.join(root, "repos"));

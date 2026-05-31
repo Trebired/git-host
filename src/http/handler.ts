@@ -18,7 +18,7 @@ import {
 } from "./handler/helpers.js";
 
 async function handleGitHttpRequest(req: IncomingMessage, res: ServerResponse, options: CreateGitHttpHandlerOptions) {
-  const logger = resolveLogger(options.logger);
+  const logger = resolveLogger(options.logger, options.loggerAdapter);
   const verbose = options.verbose === true;
   const logGroup = "git-host.http";
   const url = new URL(String(req.url || "/"), "http://127.0.0.1");

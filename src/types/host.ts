@@ -1,4 +1,4 @@
-import type { GitActor, GitHostLogger, MaybePromise } from "./common.js";
+import type { GitActor, GitHostLogger, GitHostLoggerAdapter, MaybePromise } from "./common.js";
 import type {
   GitArchive,
   GitArchiveFormat,
@@ -40,6 +40,7 @@ type GitRemoteTransportOptions = {
 type CreateGitHostOptions = {
   defaultActor?: GitActor;
   logger?: GitHostLogger;
+  loggerAdapter?: GitHostLoggerAdapter;
   managedExcludeHeader?: string;
   managedExcludePatterns?: string[];
   resolveRepository: (repositoryId: string) => MaybePromise<GitRepositoryHandle | null>;
