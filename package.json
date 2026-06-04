@@ -13,12 +13,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/trebired/git-host.git"
+    "url": "https://github.com/Trebired/git-host"
   },
   "bugs": {
-    "url": "https://github.com/trebired/git-host/issues"
+    "url": "https://github.com/Trebired/git-host/issues"
   },
-  "homepage": "https://github.com/trebired/git-host#readme",
+  "homepage": "https://github.com/Trebired/git-host#readme",
   "type": "module",
   "engines": {
     "node": ">=18",
