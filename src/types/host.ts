@@ -3,20 +3,28 @@ import type {
   GitArchive,
   GitArchiveFormat,
   GitBlame,
+  GitDirectorySnapshot,
   GitBlob,
   GitBranchSummary,
+  GitFileSnapshot,
+  GitInspectionEmptyBehavior,
+  GitInspectionProgressEvent,
+  GitInspectionRef,
+  GitInspectionTarget,
   GitLinguistProgressEvent,
   GitTagDetail,
   GitTagSummary,
   GitCommitDetail,
   GitCommitSummary,
   GitCompareSummary,
+  GitRepositoryAnalysis,
   GitFileContent,
   GitRepositoryHandle,
   GitRepositoryLinguist,
   GitRepositorySummary,
   GitSearchResult,
   GitTreeEntry,
+  GitTreeSnapshot,
   GitWorkingTree,
 } from "./repository.js";
 
@@ -149,6 +157,51 @@ type ListTreeOptions = {
   ref?: string;
 };
 
+type GitInspectionRefOptions = {
+  ifMissingRef?: GitInspectionEmptyBehavior;
+  ifUnborn?: GitInspectionEmptyBehavior;
+  ref?: GitInspectionRef;
+};
+
+type ResolveInspectionTargetOptions = GitInspectionRefOptions;
+
+type ReadTreeOptions = GitInspectionRefOptions & {
+  ascii?: boolean;
+  icons?: boolean;
+  linguist?: boolean;
+  nested?: boolean;
+  onLinguistProgress?: (event: GitLinguistProgressEvent) => MaybePromise<void>;
+  onProgress?: (event: GitInspectionProgressEvent) => MaybePromise<void>;
+  path?: string;
+  recursive?: boolean;
+};
+
+type ReadDirectoryOptions = GitInspectionRefOptions & {
+  icons?: boolean;
+  includeLineCounts?: boolean;
+  linguist?: boolean;
+  onLinguistProgress?: (event: GitLinguistProgressEvent) => MaybePromise<void>;
+  onProgress?: (event: GitInspectionProgressEvent) => MaybePromise<void>;
+  path?: string;
+};
+
+type ReadFileOptions = GitInspectionRefOptions & {
+  includeIcon?: boolean;
+  includeLanguage?: boolean;
+  onProgress?: (event: GitInspectionProgressEvent) => MaybePromise<void>;
+  path?: string;
+};
+
+type ReadRepositoryAnalysisOptions = GitInspectionRefOptions & {
+  ascii?: boolean;
+  icons?: boolean;
+  nested?: boolean;
+  onLinguistProgress?: (event: GitLinguistProgressEvent) => MaybePromise<void>;
+  onProgress?: (event: GitInspectionProgressEvent) => MaybePromise<void>;
+  path?: string;
+  recursive?: boolean;
+};
+
 type ReadLinguistOptions = {
   onProgress?: (event: GitLinguistProgressEvent) => MaybePromise<void>;
   ref?: string;
@@ -239,13 +292,18 @@ type GitHost = {
   readBlame(repositoryId: string, options: ReadBlameOptions): Promise<GitBlame>;
   readBlob(repositoryId: string, options: ReadBlobOptions): Promise<GitBlob>;
   readCommit(repositoryId: string, commitRef: string): Promise<GitCommitDetail>;
+  readDirectory(repositoryId: string, options?: ReadDirectoryOptions): Promise<GitDirectorySnapshot>;
+  readFile(repositoryId: string, options: ReadFileOptions): Promise<GitFileSnapshot>;
+  readRepositoryAnalysis(repositoryId: string, options?: ReadRepositoryAnalysisOptions): Promise<GitRepositoryAnalysis>;
   readLinguist(repositoryId: string, options?: ReadLinguistOptions): Promise<GitRepositoryLinguist>;
   readTag(repositoryId: string, tagName: string): Promise<GitTagDetail>;
+  readTree(repositoryId: string, options?: ReadTreeOptions): Promise<GitTreeSnapshot>;
   readStagedFile(repositoryId: string, options: ReadWorkingTreeFileOptions): Promise<GitFileContent>;
   readSummary(repositoryId: string, options?: ReadSummaryOptions): Promise<GitRepositorySummary>;
   readUnstagedFile(repositoryId: string, options: ReadWorkingTreeFileOptions): Promise<GitFileContent>;
   readWorkingTree(repositoryId: string): Promise<GitWorkingTree>;
   rebase(repositoryId: string, input: RebaseInput): Promise<GitRepositorySummary>;
+  resolveInspectionTarget(repositoryId: string, options?: ResolveInspectionTargetOptions): Promise<GitInspectionTarget>;
   search(repositoryId: string, options: SearchRepositoryOptions): Promise<GitSearchResult>;
   stagePaths(repositoryId: string, input?: StagePathsInput): Promise<GitRepositorySummary>;
   unstagePaths(repositoryId: string, input?: UnstagePathsInput): Promise<GitRepositorySummary>;
@@ -274,6 +332,7 @@ export type {
   EnsureRepositoryOptions,
   FetchOptions,
   GitHost,
+  GitInspectionRefOptions,
   GitRemoteCredentials,
   GitRemoteTransportOptions,
   ListCommitsOptions,
@@ -284,10 +343,15 @@ export type {
   ReadArchiveOptions,
   ReadBlameOptions,
   ReadBlobOptions,
+  ReadDirectoryOptions,
+  ReadFileOptions,
   ReadLinguistOptions,
+  ReadRepositoryAnalysisOptions,
   ReadSummaryOptions,
+  ReadTreeOptions,
   ReadWorkingTreeFileOptions,
   RebaseInput,
+  ResolveInspectionTargetOptions,
   ResolveRepositoryPathOptions,
   SearchRepositoryOptions,
   StagePathsInput,

@@ -367,14 +367,14 @@ async function readRepositoryBlob(
   ]);
 
   if (!revRes.ok) {
-    throw new GitHostError("git_command_failed", text(revRes.stderr, "Blob does not exist."), {
+    throw new GitHostError("path_not_found", text(revRes.stderr, "Blob does not exist."), {
       path: blobPath,
       ref,
       repositoryId: repository.id,
     });
   }
   if (!typeRes.ok || text(typeRes.stdout) !== "blob") {
-    throw new GitHostError("git_command_failed", text(typeRes.stderr, "Requested path is not a blob."), {
+    throw new GitHostError("path_not_blob", text(typeRes.stderr, "Requested path is not a blob."), {
       path: blobPath,
       ref,
       repositoryId: repository.id,
@@ -709,6 +709,7 @@ async function readRepositoryArchive(
 
 export {
   listRepositoryTree,
+  readRepositoryTreeEntries,
   readRepositoryArchive,
   readRepositoryBlame,
   readRepositoryBlob,

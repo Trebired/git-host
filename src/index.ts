@@ -31,6 +31,15 @@ export {
   searchRepository,
 } from "./core/inspect.js";
 export {
+  formatTreeAscii,
+  nestTreeEntries,
+  readRepositoryAnalysis,
+  readRepositoryDirectory,
+  readRepositoryFile,
+  readRepositoryTree,
+  resolveRepositoryInspectionTarget,
+} from "./core/inspection.js";
+export {
   abortRepositoryOperation,
   cherryPickRepository,
   commitRepository,

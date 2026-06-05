@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
-import { createGitHost } from "../../src/index.js";
+import { createGitHost, formatTreeAscii, nestTreeEntries } from "../../src/index.js";
 import {
   captureEventSink,
   captureLogger,
@@ -229,6 +229,153 @@ describe("@trebired/git-host", () => {
     expect(Boolean(appEntry && appEntry.icon && appEntry.icon.svg.includes("<svg"))).toBe(true);
     expect(logoEntry && logoEntry.language).toBeNull();
     expect(Boolean(logoEntry && logoEntry.icon && logoEntry.icon.svg.includes("<svg"))).toBe(true);
+  });
+
+  test("resolves inspection targets and returns empty snapshots for unborn repositories", async () => {
+    const root = tempDir();
+    const host = createHost(path.join(root, "repos"));
+    const workspace = resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: "empty/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    await host.ensureRepository("empty");
+
+    const target = await host.resolveInspectionTarget("empty");
+    expect(target.state).toBe("empty");
+    if (target.state === "empty") {
+      expect(target.reason).toBe("unborn");
+      expect(target.resolved_ref).toBe("main");
+    }
+
+    const tree = await host.readTree("empty", {
+      ascii: true,
+      linguist: true,
+      nested: true,
+    });
+    expect(tree.empty).toBe(true);
+    expect(tree.entries).toHaveLength(0);
+    expect(tree.ascii).toBe("");
+    expect(tree.nested).toEqual([]);
+    expect(tree.linguist && tree.linguist.files.count).toBe(0);
+
+    const file = await host.readFile("empty", {
+      path: "README.md",
+    });
+    expect(file.empty).toBe(true);
+    expect(file.blob).toBeNull();
+    expect(file.text).toBeNull();
+
+    await expect(host.resolveInspectionTarget("empty", {
+      ref: "main",
+    })).rejects.toMatchObject({
+      code: "repository_unborn",
+    });
+  });
+
+  test("reads high-level repository inspection snapshots and coordinated analysis", async () => {
+    const root = tempDir();
+    const host = createHost(path.join(root, "repos"));
+    const workspace = resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: "demo/workspace" });
+    const progressPhases: string[] = [];
+    const linguistStages: string[] = [];
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeFile(workspace, "README.md", "# Snapshot\n");
+    writeFile(workspace, "data.json", "{\n  \"value\": true\n}\n");
+    writeFile(workspace, "src/app.ts", "export const value = 1;\n");
+    fs.writeFileSync(path.join(workspace, "logo.png"), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+
+    const summary = await host.ensureRepository("demo");
+    const target = await host.resolveInspectionTarget("demo", { ref: "main" });
+    expect(target.state).toBe("resolved");
+    if (target.state === "resolved") {
+      expect(target.commit).toBe(summary.repository.head_commit);
+    }
+
+    const tree = await host.readTree("demo", {
+      ascii: true,
+      icons: true,
+      linguist: true,
+      nested: true,
+      recursive: true,
+    });
+    expect(tree.empty).toBe(false);
+    expect(tree.target.state).toBe("resolved");
+    if (tree.target.state === "resolved") {
+      expect(tree.target.commit).toBe(summary.repository.head_commit);
+    }
+    expect(tree.entries.some((entry) => entry.path === "src/app.ts" && entry.language === "TypeScript")).toBe(true);
+    expect(tree.entries.some((entry) => entry.path === "README.md" && entry.icon && entry.icon.name === "readme")).toBe(true);
+    expect(tree.ascii).toContain("README.md");
+    expect(tree.nested && tree.nested.some((entry) => entry.path === "src" && entry.kind === "dir")).toBe(true);
+    expect(tree.linguist && tree.linguist.files.results["data.json"]).toBe("JSON");
+
+    const nestedTree = nestTreeEntries(tree.entries);
+    expect(nestedTree.some((entry) => entry.path === "src" && entry.kind === "dir")).toBe(true);
+    expect(formatTreeAscii(nestedTree)).toContain("src");
+
+    const directory = await host.readDirectory("demo", {
+      icons: true,
+      includeLineCounts: true,
+      linguist: true,
+      path: "src",
+    });
+    expect(directory.kind).toBe("dir");
+    if (directory.kind === "dir") {
+      expect(directory.entries).toHaveLength(1);
+      expect(directory.entries[0].path).toBe("src/app.ts");
+      expect(directory.entries[0].language).toBe("TypeScript");
+      expect((directory.entries[0].line_count || 0) > 0).toBe(true);
+    }
+
+    const filePointer = await host.readDirectory("demo", {
+      icons: true,
+      includeLineCounts: true,
+      linguist: true,
+      path: "README.md",
+    });
+    expect(filePointer.kind).toBe("file");
+    if (filePointer.kind === "file") {
+      expect(filePointer.entry.path).toBe("README.md");
+      expect(filePointer.entry.kind).toBe("file");
+      expect((filePointer.entry.line_count || 0) > 0).toBe(true);
+    }
+
+    const file = await host.readFile("demo", {
+      includeIcon: true,
+      includeLanguage: true,
+      path: "src/app.ts",
+    });
+    expect(file.empty).toBe(false);
+    expect(file.language).toBe("TypeScript");
+    expect(file.icon && file.icon.name).toBe("typescript");
+    expect(file.text).toContain("export const value = 1;");
+    expect((file.line_count || 0) > 0).toBe(true);
+
+    const analysis = await host.readRepositoryAnalysis("demo", {
+      ascii: true,
+      icons: true,
+      nested: true,
+      onLinguistProgress(event) {
+        linguistStages.push(event.stage);
+      },
+      onProgress(event) {
+        progressPhases.push(event.phase);
+      },
+    });
+    expect(analysis.empty).toBe(false);
+    expect(analysis.linguist.files.results["src/app.ts"]).toBe("TypeScript");
+    expect(analysis.tree.entries.some((entry) => entry.path === "logo.png")).toBe(true);
+    expect(progressPhases).toContain("resolving_ref");
+    expect(progressPhases).toContain("reading_tree");
+    expect(progressPhases).toContain("running_linguist");
+    expect(progressPhases).toContain("completed");
+    expect(linguistStages).toContain("reading_blobs");
+
+    await expect(host.readTree("demo", {
+      path: "missing.txt",
+    })).rejects.toMatchObject({
+      code: "path_not_found",
+    });
   });
 
   test("supports tags, path-scoped history and compare, blame, search, and archives", async () => {

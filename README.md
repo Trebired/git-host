@@ -102,6 +102,49 @@ const archive = await gitHost.readArchive("demo", {
 });
 console.log(tags.length, blame.lines[0]?.author_name, search.match_count, archive.file_name);
 
+const inspectionTarget = await gitHost.resolveInspectionTarget("demo", {
+  ref: "auto",
+});
+console.log(inspectionTarget.state, inspectionTarget.resolved_ref);
+
+const treeSnapshot = await gitHost.readTree("demo", {
+  ref: "auto",
+  recursive: true,
+  nested: true,
+  ascii: true,
+  icons: true,
+  linguist: true,
+});
+console.log(treeSnapshot.ascii);
+
+const directorySnapshot = await gitHost.readDirectory("demo", {
+  path: "src",
+  ref: "auto",
+  icons: true,
+  linguist: true,
+  includeLineCounts: true,
+});
+console.log(directorySnapshot.kind);
+
+const fileSnapshot = await gitHost.readFile("demo", {
+  path: "src/app.ts",
+  ref: "auto",
+  includeLanguage: true,
+  includeIcon: true,
+});
+console.log(fileSnapshot.language, fileSnapshot.icon?.name);
+
+const repositoryAnalysis = await gitHost.readRepositoryAnalysis("demo", {
+  ref: "auto",
+  icons: true,
+  nested: true,
+  ascii: true,
+  onProgress(event) {
+    console.log(event.phase, event.percent);
+  },
+});
+console.log(repositoryAnalysis.linguist.languages.results);
+
 const workingTree = await gitHost.readWorkingTree("demo");
 console.log(workingTree.unstaged_entries);
 

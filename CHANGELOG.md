@@ -4,6 +4,14 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 1.3.0
+
+- Added a first-class repository inspection layer with `resolveInspectionTarget()`, `readTree()`, `readDirectory()`, `readFile()`, and `readRepositoryAnalysis()`.
+- Added generic auto-ref resolution with safe empty/unborn repository handling for inspection calls, without assuming the repository default branch.
+- Added nested-tree and ASCII-tree helpers through `nestTreeEntries()` and `formatTreeAscii()`.
+- Added normalized high-level inspection progress events alongside the existing raw linguist progress stream.
+- Added structured inspection result types for tree, directory, file, and repository analysis snapshots.
+
 ## 1.2.0
 
 - Added package startup logs through package-specific `.initialize` groups such as `git-host.initialize`, `git-host.http.initialize`, `git-host.api.initialize`, and `git-host.ssh.initialize`.
