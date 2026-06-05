@@ -124,13 +124,27 @@ describe("@trebired/git-host", () => {
     writeFile(workspace, "README.md", "# Main\n");
     gitCommit(workspace, "Main change");
 
-    expect(gitResult(["merge", "feature/merge"], workspace).status).not.toBe(0);
+    expect(gitResult([
+      "-c",
+      "user.name=Alice",
+      "-c",
+      "user.email=alice@example.com",
+      "merge",
+      "feature/merge",
+    ], workspace).status).not.toBe(0);
     expect((await host.readSummary("demo")).status.operation.kind).toBe("merge");
 
     await host.abortOperation("demo");
     expect((await host.readSummary("demo")).status.operation.in_progress).toBe(false);
 
-    expect(gitResult(["merge", "feature/merge"], workspace).status).not.toBe(0);
+    expect(gitResult([
+      "-c",
+      "user.name=Alice",
+      "-c",
+      "user.email=alice@example.com",
+      "merge",
+      "feature/merge",
+    ], workspace).status).not.toBe(0);
     writeFile(workspace, "README.md", "# Resolved\n");
     await host.stagePaths("demo", { paths: ["README.md"] });
     await host.continueOperation("demo", { actor: { name: "Alice", email: "alice@example.com" } });
