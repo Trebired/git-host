@@ -1,13 +1,15 @@
 {
   "name": "@trebired/git-host",
-  "version": "1.3.0",
-  "description": "Embeddable Git host for Node.js and Bun apps, built on the real Git CLI with HTTP, SSH, and worktree APIs.",
+  "version": "1.4.0",
+  "description": "Embeddable Git forge for Node.js and Bun apps, built on the real Git CLI with HTTP, SSH, browser, and repository platform APIs.",
   "license": "MIT",
   "keywords": [
     "git",
     "git-host",
+    "git-forge",
     "hosting",
     "backend",
+    "browser",
     "node",
     "bun"
   ],
@@ -39,7 +41,12 @@
     "./react": {
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.js"
-    }
+    },
+    "./browser": {
+      "types": "./dist/browser/index.d.ts",
+      "import": "./dist/browser/index.js"
+    },
+    "./browser/styles.css": "./dist/browser/styles.css"
   },
   "files": [
     "dist",
@@ -48,7 +55,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && mkdir -p dist/browser && cp src/browser/styles.css dist/browser/styles.css",
     "demo": "bun run examples/dummy.ts",
     "demo:api": "bun run examples/api_server.ts",
     "demo:http": "bun run examples/http_server.ts",

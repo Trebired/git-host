@@ -9,7 +9,7 @@ import {
 } from "react";
 
 import type { GitApiClient } from "../client.js";
-import type { GitApiClientProviderProps, GitApiQueryOptions, GitApiQueryResult } from "./types.js";
+import type { GitApiClientProviderProps, GitApiMutationResult, GitApiQueryOptions, GitApiQueryResult } from "./types.js";
 
 const GitApiClientContext = createContext<GitApiClient | null>(null);
 
@@ -95,4 +95,50 @@ function useGitApiQuery<TData>(
   };
 }
 
-export { GitApiClientProvider, useGitApiClient, useGitApiQuery };
+function useGitApiMutation<TInput, TData>(
+  input: {
+    client?: GitApiClient;
+    mutate: (client: GitApiClient, input: TInput) => Promise<TData>;
+  },
+): GitApiMutationResult<TInput, TData> {
+  const client = useGitApiClient(input.client);
+  const mutateRef = useRef(input.mutate);
+  mutateRef.current = input.mutate;
+  const [data, setData] = useState<TData | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  return {
+    data,
+    error,
+    loading,
+    async mutate(nextInput: TInput) {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await mutateRef.current(client, nextInput);
+        startTransition(() => {
+          setData(result);
+          setLoading(false);
+        });
+        return result;
+      } catch (nextError) {
+        const normalized = nextError instanceof Error ? nextError : new Error(String(nextError));
+        startTransition(() => {
+          setError(normalized);
+          setLoading(false);
+        });
+        throw normalized;
+      }
+    },
+    reset() {
+      startTransition(() => {
+        setData(null);
+        setError(null);
+        setLoading(false);
+      });
+    },
+  };
+}
+
+export { GitApiClientProvider, useGitApiClient, useGitApiMutation, useGitApiQuery };

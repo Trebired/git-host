@@ -1,19 +1,19 @@
 # @trebired/git-host
 
-Embeddable Git host for Node.js and Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository inspection APIs, and optional React helpers.
+Embeddable Git forge for Node.js and Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository inspection APIs, forge features such as releases and forks, and optional React/browser companions.
 
-`@trebired/git-host` gives your app real Git repository operations and real Git transports without making you adopt a full forge product. It runs the real Git CLI, helps you resolve repository paths safely, serializes mutations per repository, and exposes a reusable API for repository initialization, summary reads, content inspection, branch operations, working-tree changes, remote sync helpers, JSON API handlers, and smart HTTP and SSH hosting.
+`@trebired/git-host` gives your app real Git repository operations, forge-style repository metadata, and real Git transports without forcing you into a monolithic hosted product. It runs the real Git CLI, helps you resolve repository paths safely, serializes mutations per repository, and exposes reusable APIs for repository initialization, summary reads, content inspection, branch operations, working-tree changes, releases, forks, stars, watching, activity feeds, JSON API handlers, browser-ready pages, and smart HTTP and SSH hosting.
 
 It is aimed at platforms and products that already own users, permissions, tokens, repository records, and UI, but want to stop hand-rolling the Git layer underneath all of that.
 
-The package keeps auth, permission, and persistence decisions host-owned while giving you reusable Git behavior and transport adapters.
+The package keeps auth, permission, and persistence decisions host-owned while giving you reusable Git behavior, forge adapters, and browser integration.
 
-It also exposes an optional React companion at `@trebired/git-host/react` for typed API clients, providers, and headless data hooks on top of the JSON API.
+It also exposes an optional React companion at `@trebired/git-host/react` for typed API clients, providers, and headless data hooks, plus an optional browser UI entry at `@trebired/git-host/browser` for full repository pages.
 
 In plain terms:
 
-- it is a Git hosting layer you embed into your app
-- it is not a full Git forge like GitLab, Gitea, or Forgejo
+- it is a Git hosting and lightweight forge layer you embed into your app
+- it is not a full hosted SaaS product with built-in accounts, billing, or platform ownership
 - it is not a reimplementation of Git
 - it uses the real `git` binary for the hard parts
 
@@ -30,6 +30,12 @@ npm install @trebired/logger
 ```
 
 Optional React companion:
+
+```sh
+npm install react
+```
+
+Optional browser pages:
 
 ```sh
 npm install react

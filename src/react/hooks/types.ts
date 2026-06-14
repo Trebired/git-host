@@ -5,6 +5,12 @@ import type {
   GitBlame,
   GitBlob,
   GitBranchSummary,
+  GitForgeActivityEntry,
+  GitForgeFork,
+  GitForgeRelease,
+  GitForgeReleaseAsset,
+  GitForgeRepositoryOverview,
+  GitForgeSocialState,
   GitTagDetail,
   GitTagSummary,
   GitCommitDetail,
@@ -34,6 +40,14 @@ type GitApiQueryResult<TData> = {
   error: Error | null;
   loading: boolean;
   reload: () => void;
+};
+
+type GitApiMutationResult<TInput, TData> = {
+  data: TData | null;
+  error: Error | null;
+  loading: boolean;
+  mutate: (input: TInput) => Promise<TData>;
+  reset: () => void;
 };
 
 type UseGitRepositorySummaryOptions = GitApiQueryOptions<GitRepositorySummary> & {
@@ -93,19 +107,38 @@ type UseGitArchiveOptions = GitApiQueryOptions<GitArchive> & {
   ref?: string;
 };
 
+type UseGitOverviewOptions = GitApiQueryOptions<GitForgeRepositoryOverview>;
+
+type UseGitSocialStateOptions = GitApiQueryOptions<GitForgeSocialState>;
+
+type UseGitReleasesOptions = GitApiQueryOptions<GitForgeRelease[]>;
+
+type UseGitReleaseOptions = GitApiQueryOptions<GitForgeRelease>;
+
+type UseGitForksOptions = GitApiQueryOptions<GitForgeFork[]>;
+
+type UseGitActivityOptions = GitApiQueryOptions<GitForgeActivityEntry[]>;
+
 export type {
   GitApiClientProviderProps,
+  GitApiMutationResult,
   GitArchive,
   GitApiQueryOptions,
   GitApiQueryResult,
   UseGitArchiveOptions,
+  UseGitActivityOptions,
   UseGitBlameOptions,
   UseGitBlobOptions,
   UseGitCommitsOptions,
   UseGitDiffOptions,
+  UseGitForksOptions,
   UseGitLinguistOptions,
+  UseGitOverviewOptions,
+  UseGitReleaseOptions,
+  UseGitReleasesOptions,
   UseGitRepositorySummaryOptions,
   UseGitSearchOptions,
+  UseGitSocialStateOptions,
   UseGitTagOptions,
   UseGitTagsOptions,
   UseGitTreeOptions,
@@ -120,5 +153,11 @@ export type {
   GitTreeEntry,
   GitBlob,
   GitCompareSummary,
+  GitForgeActivityEntry,
+  GitForgeFork,
+  GitForgeRelease,
+  GitForgeReleaseAsset,
+  GitForgeRepositoryOverview,
+  GitForgeSocialState,
   GitSearchResult,
 };

@@ -10,7 +10,10 @@ export { RepositoryLockManager } from "./core/locks.js";
 export { readRepositoryOperationState } from "./core/operation_state.js";
 export { createGitHost } from "./core/create_git_host.js";
 export { createGitApiHandler, parseGitApiRoute } from "./api/handler.js";
+export { createGitForgeApiHandler, parseGitForgeApiRoute } from "./api/forge/handler.js";
 export { createGitApiSocketServer } from "./api/socket_server.js";
+export { createGitForge } from "./core/create_git_forge.js";
+export { createInMemoryGitForgeStorageAdapter } from "./core/git_forge/storage_memory.js";
 export { fetchRepository, pullRepository, pushRepository } from "./core/remote.js";
 export { createGitHttpHandler, parseGitHttpRoute } from "./http/handler.js";
 export {
@@ -78,9 +81,14 @@ export type {
   CreateBranchInput,
   CreateGitApiHandlerOptions,
   CreateGitApiSocketServerOptions,
+  CreateGitForgeApiHandlerOptions,
+  CreateGitForgeForkInput,
+  CreateGitForgeOptions,
+  CreateGitForgeReleaseInput,
   CreateGitHostOptions,
   CreateTagInput,
   DeleteBranchInput,
+  DeleteGitForgeReleaseInput,
   DeleteTagInput,
   DiscardPathsInput,
   DiffOptions,
@@ -114,6 +122,26 @@ export type {
   GitCommitSummary,
   GitCompareSummary,
   GitDiffFile,
+  GitForge,
+  GitForgeActivityEntry,
+  GitForgeActivityKind,
+  GitForgeActor,
+  GitForgeApiAuthorizationResult,
+  GitForgeFork,
+  GitForgeForkStatus,
+  GitForgeForkStorage,
+  GitForgeForkStorageRecord,
+  GitForgeForkSyncStrategy,
+  GitForgeOperation,
+  GitForgeRelease,
+  GitForgeReleaseAsset,
+  GitForgeReleaseAssetStore,
+  GitForgeReleaseStorage,
+  GitForgeRepositoryOverview,
+  GitForgeResource,
+  GitForgeSocialState,
+  GitForgeSocialStorage,
+  GitForgeStorageAdapter,
   GitHost,
   GitHostGenericLogMethod,
   GitHostLogEvent,
@@ -162,7 +190,9 @@ export type {
   ReadWorkingTreeFileOptions,
   RebaseInput,
   ResolveRepositoryPathOptions,
+  SyncGitForgeForkInput,
   SearchRepositoryOptions,
   StagePathsInput,
   UnstagePathsInput,
+  UpdateGitForgeReleaseInput,
 } from "./types.js";

@@ -3,6 +3,11 @@ import type {
   GitBlame,
   GitBlob,
   GitBranchSummary,
+  GitForgeActivityEntry,
+  GitForgeFork,
+  GitForgeRelease,
+  GitForgeRepositoryOverview,
+  GitForgeSocialState,
   GitTagDetail,
   GitTagSummary,
   GitCommitDetail,
@@ -13,18 +18,25 @@ import type {
   GitSearchResult,
   GitTreeEntry,
 } from "../../types.js";
-import { useGitApiQuery } from "./query.js";
+import type { GitApiClient } from "../client.js";
+import { useGitApiMutation, useGitApiQuery } from "./query.js";
 import type {
   GitApiQueryOptions,
   GitApiQueryResult,
   UseGitArchiveOptions,
+  UseGitActivityOptions,
   UseGitBlameOptions,
   UseGitBlobOptions,
   UseGitCommitsOptions,
   UseGitDiffOptions,
+  UseGitForksOptions,
   UseGitLinguistOptions,
+  UseGitOverviewOptions,
+  UseGitReleaseOptions,
+  UseGitReleasesOptions,
   UseGitRepositorySummaryOptions,
   UseGitSearchOptions,
+  UseGitSocialStateOptions,
   UseGitTagOptions,
   UseGitTagsOptions,
   UseGitTreeOptions,
@@ -312,18 +324,282 @@ function useGitArchive(
   });
 }
 
+function useGitOverview(
+  repositoryKey: string,
+  options?: UseGitOverviewOptions,
+): GitApiQueryResult<GitForgeRepositoryOverview> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: ["overview", repositoryKey],
+    load(client, signal) {
+      return client.readOverview(repositoryKey, {
+        headers: options?.headers,
+        signal,
+      });
+    },
+  });
+}
+
+function useGitSocialState(
+  repositoryKey: string,
+  options?: UseGitSocialStateOptions,
+): GitApiQueryResult<GitForgeSocialState> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: ["social", repositoryKey],
+    load(client, signal) {
+      return client.readSocialState(repositoryKey, {
+        headers: options?.headers,
+        signal,
+      });
+    },
+  });
+}
+
+function useGitReleases(
+  repositoryKey: string,
+  options?: UseGitReleasesOptions,
+): GitApiQueryResult<GitForgeRelease[]> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: ["releases", repositoryKey],
+    load(client, signal) {
+      return client.listReleases(repositoryKey, {
+        headers: options?.headers,
+        signal,
+      });
+    },
+  });
+}
+
+function useGitRelease(
+  repositoryKey: string,
+  releaseId: string,
+  options?: UseGitReleaseOptions,
+): GitApiQueryResult<GitForgeRelease> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey) && Boolean(releaseId);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: ["release", repositoryKey, releaseId],
+    load(client, signal) {
+      return client.readRelease(repositoryKey, releaseId, {
+        headers: options?.headers,
+        signal,
+      });
+    },
+  });
+}
+
+function useGitForks(
+  repositoryKey: string,
+  options?: UseGitForksOptions,
+): GitApiQueryResult<GitForgeFork[]> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: ["forks", repositoryKey],
+    load(client, signal) {
+      return client.listForks(repositoryKey, {
+        headers: options?.headers,
+        signal,
+      });
+    },
+  });
+}
+
+function useGitActivity(
+  repositoryKey: string,
+  options?: UseGitActivityOptions,
+): GitApiQueryResult<GitForgeActivityEntry[]> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: ["activity", repositoryKey],
+    load(client, signal) {
+      return client.listActivity(repositoryKey, {
+        headers: options?.headers,
+        signal,
+      });
+    },
+  });
+}
+
+function applyGitStarOptimisticState(
+  current: GitForgeSocialState | null,
+  starred: boolean,
+): GitForgeSocialState | null {
+  if (!current) return current;
+  const nextCount = current.star_count + (starred ? (current.viewer_has_starred ? 0 : 1) : (current.viewer_has_starred ? -1 : 0));
+  return {
+    ...current,
+    star_count: Math.max(0, nextCount),
+    viewer_has_starred: starred,
+  };
+}
+
+function applyGitWatchOptimisticState(
+  current: GitForgeSocialState | null,
+  watching: boolean,
+): GitForgeSocialState | null {
+  if (!current) return current;
+  const nextCount = current.watcher_count + (watching ? (current.viewer_is_watching ? 0 : 1) : (current.viewer_is_watching ? -1 : 0));
+  return {
+    ...current,
+    viewer_is_watching: watching,
+    watcher_count: Math.max(0, nextCount),
+  };
+}
+
+function useGitStarRepository(repositoryKey: string, options?: GitApiQueryOptions<GitForgeSocialState>) {
+  return useGitApiMutation<void, GitForgeSocialState>({
+    client: options?.client,
+    mutate(client) {
+      return client.starRepository(repositoryKey, {
+        headers: options?.headers,
+      });
+    },
+  });
+}
+
+function useGitUnstarRepository(repositoryKey: string, options?: GitApiQueryOptions<GitForgeSocialState>) {
+  return useGitApiMutation<void, GitForgeSocialState>({
+    client: options?.client,
+    mutate(client) {
+      return client.unstarRepository(repositoryKey, {
+        headers: options?.headers,
+      });
+    },
+  });
+}
+
+function useGitWatchRepository(repositoryKey: string, options?: GitApiQueryOptions<GitForgeSocialState>) {
+  return useGitApiMutation<void, GitForgeSocialState>({
+    client: options?.client,
+    mutate(client) {
+      return client.watchRepository(repositoryKey, {
+        headers: options?.headers,
+      });
+    },
+  });
+}
+
+function useGitUnwatchRepository(repositoryKey: string, options?: GitApiQueryOptions<GitForgeSocialState>) {
+  return useGitApiMutation<void, GitForgeSocialState>({
+    client: options?.client,
+    mutate(client) {
+      return client.unwatchRepository(repositoryKey, {
+        headers: options?.headers,
+      });
+    },
+  });
+}
+
+function useGitCreateRelease(repositoryKey: string, options?: GitApiQueryOptions<GitForgeRelease>) {
+  return useGitApiMutation<Parameters<GitApiClient["createRelease"]>[1], GitForgeRelease>({
+    client: options?.client,
+    mutate(client, input) {
+      return client.createRelease(repositoryKey, {
+        ...input,
+        headers: {
+          ...(options?.headers || {}),
+          ...(input.headers || {}),
+        },
+      });
+    },
+  });
+}
+
+function useGitUpdateRelease(repositoryKey: string, releaseId: string, options?: GitApiQueryOptions<GitForgeRelease>) {
+  return useGitApiMutation<Parameters<GitApiClient["updateRelease"]>[2], GitForgeRelease>({
+    client: options?.client,
+    mutate(client, input) {
+      return client.updateRelease(repositoryKey, releaseId, {
+        ...input,
+        headers: {
+          ...(options?.headers || {}),
+          ...(input.headers || {}),
+        },
+      });
+    },
+  });
+}
+
+function useGitDeleteRelease(repositoryKey: string, releaseId: string, options?: GitApiQueryOptions<{ deleted: boolean; release_id: string }>) {
+  return useGitApiMutation<Parameters<GitApiClient["deleteRelease"]>[2], { deleted: boolean; release_id: string }>({
+    client: options?.client,
+    mutate(client, input) {
+      return client.deleteRelease(repositoryKey, releaseId, {
+        ...input,
+        headers: {
+          ...(options?.headers || {}),
+          ...((input && input.headers) || {}),
+        },
+      });
+    },
+  });
+}
+
+function useGitCreateFork(repositoryKey: string, options?: GitApiQueryOptions<GitForgeFork>) {
+  return useGitApiMutation<void, GitForgeFork>({
+    client: options?.client,
+    mutate(client) {
+      return client.createFork(repositoryKey, {
+        headers: options?.headers,
+      });
+    },
+  });
+}
+
+function useGitSyncFork(repositoryKey: string, forkId: string, options?: GitApiQueryOptions<GitForgeFork>) {
+  return useGitApiMutation<{ strategy?: "ff-only" | "merge" } | void, GitForgeFork>({
+    client: options?.client,
+    mutate(client, input) {
+      return client.syncFork(repositoryKey, forkId, {
+        headers: options?.headers,
+        strategy: input && typeof input === "object" ? input.strategy : undefined,
+      });
+    },
+  });
+}
+
 export {
+  applyGitStarOptimisticState,
+  applyGitWatchOptimisticState,
   useGitArchive,
+  useGitActivity,
   useGitBlame,
   useGitBlob,
   useGitBranches,
   useGitCommit,
   useGitCommits,
+  useGitCreateFork,
+  useGitCreateRelease,
+  useGitDeleteRelease,
   useGitDiff,
+  useGitForks,
   useGitLinguist,
+  useGitOverview,
+  useGitRelease,
+  useGitReleases,
   useGitRepositorySummary,
   useGitSearch,
+  useGitSocialState,
+  useGitStarRepository,
+  useGitSyncFork,
   useGitTag,
   useGitTags,
   useGitTree,
+  useGitUnstarRepository,
+  useGitUnwatchRepository,
+  useGitUpdateRelease,
+  useGitWatchRepository,
 };

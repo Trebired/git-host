@@ -4,6 +4,14 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 1.4.0
+
+- Added a new forge layer through `createGitForge()` with host-owned storage adapters for releases, forks, stars, watching, and repository activity timelines.
+- Added `createGitForgeApiHandler()` plus new repository routes for overview, social state, releases, forks, fork sync, and activity while keeping the existing read-only JSON API stable.
+- Extended the typed React client and hooks with forge reads and mutations, including optimistic star and watch helpers.
+- Added `@trebired/git-host/browser` with reusable SSR-safe repository pages and bundled browser styles for overview, code, commits, releases, forks, and activity views.
+- Added an in-memory forge storage adapter for tests, prototypes, and local embedding.
+
 ## 1.3.0
 
 - Added a first-class repository inspection layer with `resolveInspectionTarget()`, `readTree()`, `readDirectory()`, `readFile()`, and `readRepositoryAnalysis()`.

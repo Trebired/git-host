@@ -4,6 +4,12 @@ import type {
   GitApiResource,
   GitBlob,
   GitBranchSummary,
+  GitForgeActivityEntry,
+  GitForgeFork,
+  GitForgeRelease,
+  GitForgeReleaseAsset,
+  GitForgeRepositoryOverview,
+  GitForgeSocialState,
   GitLinguistProgressEvent,
   GitTagDetail,
   GitTagSummary,
@@ -39,7 +45,9 @@ type CreateGitApiClientOptions = {
 };
 
 type GitApiClientRequestOptions = {
+  body?: unknown;
   headers?: GitApiClientHeaders;
+  method?: "DELETE" | "GET" | "PATCH" | "POST";
   signal?: AbortSignal;
 };
 
@@ -125,6 +133,9 @@ type GitApiClient = {
     },
   ): Promise<GitCommitSummary[]>;
   listTags(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitTagSummary[]>;
+  listActivity(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeActivityEntry[]>;
+  listForks(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeFork[]>;
+  listReleases(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeRelease[]>;
   listTree(
     repositoryKey: string,
     options?: GitApiClientRequestOptions & {
@@ -184,12 +195,50 @@ type GitApiClient = {
     tagName: string,
     options?: GitApiClientRequestOptions,
   ): Promise<GitTagDetail>;
+  readOverview(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeRepositoryOverview>;
+  readRelease(
+    repositoryKey: string,
+    releaseId: string,
+    options?: GitApiClientRequestOptions,
+  ): Promise<GitForgeRelease>;
+  readSocialState(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeSocialState>;
   readSummary(
     repositoryKey: string,
     options?: GitApiClientRequestOptions & {
       commitLimit?: number;
     },
   ): Promise<GitRepositorySummary>;
+  createFork(
+    repositoryKey: string,
+    options?: GitApiClientRequestOptions,
+  ): Promise<GitForgeFork>;
+  createRelease(
+    repositoryKey: string,
+    input: GitApiClientRequestOptions & {
+      assets?: GitForgeReleaseAsset[];
+      createTag?: {
+        annotatedMessage?: string;
+        name: string;
+        targetRef?: string;
+      };
+      draft?: boolean;
+      existingTagName?: string;
+      notes?: string;
+      prerelease?: boolean;
+      publishedAt?: string | null;
+      title?: string;
+    },
+  ): Promise<GitForgeRelease>;
+  deleteRelease(
+    repositoryKey: string,
+    releaseId: string,
+    input?: GitApiClientRequestOptions & {
+      deleteTag?: boolean;
+    },
+  ): Promise<{
+    deleted: boolean;
+    release_id: string;
+  }>;
   search(
     repositoryKey: string,
     options: GitApiClientRequestOptions & {
@@ -208,6 +257,29 @@ type GitApiClient = {
       query?: URLSearchParams;
     },
   ): Promise<GitApiSuccessResponse<TAction, TData>>;
+  starRepository(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeSocialState>;
+  syncFork(
+    repositoryKey: string,
+    forkId: string,
+    options?: GitApiClientRequestOptions & {
+      strategy?: "ff-only" | "merge";
+    },
+  ): Promise<GitForgeFork>;
+  unstarRepository(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeSocialState>;
+  unwatchRepository(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeSocialState>;
+  updateRelease(
+    repositoryKey: string,
+    releaseId: string,
+    input: GitApiClientRequestOptions & {
+      assets?: GitForgeReleaseAsset[];
+      draft?: boolean;
+      notes?: string;
+      prerelease?: boolean;
+      publishedAt?: string | null;
+      title?: string;
+    },
+  ): Promise<GitForgeRelease>;
+  watchRepository(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeSocialState>;
 };
 
 export type {

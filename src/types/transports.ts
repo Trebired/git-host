@@ -6,6 +6,7 @@ import type { GitHost } from "./host.js";
 import type { GitRepositoryHandle } from "./repository.js";
 
 type GitApiResource =
+  | "activity"
   | "archive"
   | "blame"
   | "blob"
@@ -13,13 +14,21 @@ type GitApiResource =
   | "commit"
   | "commits"
   | "diff"
+  | "fork_sync"
+  | "forks"
   | "linguist"
   | "linguist_socket"
+  | "overview"
+  | "release"
+  | "releases"
   | "search"
+  | "social"
+  | "stars"
   | "summary"
   | "tag"
   | "tags"
-  | "tree";
+  | "tree"
+  | "watch";
 
 type GitApiAuthorizationResult = boolean | {
   allowed: boolean;

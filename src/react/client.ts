@@ -78,10 +78,18 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
       }),
       input?.headers,
     );
+    const method = input?.method || "GET";
+    const body = input?.body == null || method === "GET"
+      ? undefined
+      : JSON.stringify(input.body);
+    const finalHeaders = body
+      ? mergeHeaders({ "content-type": "application/json; charset=utf-8" }, resolvedHeaders)
+      : resolvedHeaders;
 
     const response = await fetchImpl(url, {
-      headers: resolvedHeaders,
-      method: "GET",
+      body,
+      headers: finalHeaders,
+      method,
       signal: input?.signal,
     });
     const payload = await parseJsonResponse(response) as GitApiResponse<TAction, TData> | null;
@@ -132,6 +140,10 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
       const response = await request<"branches", ReturnType<GitApiClient["listBranches"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "branches", input);
       return response.data;
     },
+    async listActivity(repositoryKey, input) {
+      const response = await request<"activity", ReturnType<GitApiClient["listActivity"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "activity", input);
+      return response.data;
+    },
     async listCommits(repositoryKey, input) {
       const response = await request<"commits", ReturnType<GitApiClient["listCommits"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "commits", {
         headers: input?.headers,
@@ -146,6 +158,14 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
     },
     async listTags(repositoryKey, input) {
       const response = await request<"tags", ReturnType<GitApiClient["listTags"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "tags", input);
+      return response.data;
+    },
+    async listForks(repositoryKey, input) {
+      const response = await request<"forks", ReturnType<GitApiClient["listForks"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "forks", input);
+      return response.data;
+    },
+    async listReleases(repositoryKey, input) {
+      const response = await request<"releases", ReturnType<GitApiClient["listReleases"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "releases", input);
       return response.data;
     },
     async listTree(repositoryKey, input) {
@@ -348,6 +368,22 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
       );
       return response.data;
     },
+    async readOverview(repositoryKey, input) {
+      const response = await request<"overview", ReturnType<GitApiClient["readOverview"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "overview", input);
+      return response.data;
+    },
+    async readRelease(repositoryKey, releaseId, input) {
+      const response = await request<"release", ReturnType<GitApiClient["readRelease"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        `releases/${encodePathSegment(releaseId)}`,
+        input,
+      );
+      return response.data;
+    },
+    async readSocialState(repositoryKey, input) {
+      const response = await request<"social", ReturnType<GitApiClient["readSocialState"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "social", input);
+      return response.data;
+    },
     async readSummary(repositoryKey, input) {
       const response = await request<"summary", ReturnType<GitApiClient["readSummary"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "summary", {
         headers: input?.headers,
@@ -356,6 +392,119 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
         }),
         signal: input?.signal,
       });
+      return response.data;
+    },
+    async createFork(repositoryKey, input) {
+      const response = await request<"forks", ReturnType<GitApiClient["createFork"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "forks", {
+        body: {},
+        headers: input?.headers,
+        method: "POST",
+        signal: input?.signal,
+      });
+      return response.data;
+    },
+    async createRelease(repositoryKey, input) {
+      const response = await request<"releases", ReturnType<GitApiClient["createRelease"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "releases", {
+        body: {
+          assets: input.assets,
+          createTag: input.createTag,
+          draft: input.draft,
+          existingTagName: input.existingTagName,
+          notes: input.notes,
+          prerelease: input.prerelease,
+          publishedAt: input.publishedAt,
+          title: input.title,
+        },
+        headers: input.headers,
+        method: "POST",
+        signal: input.signal,
+      });
+      return response.data;
+    },
+    async updateRelease(repositoryKey, releaseId, input) {
+      const response = await request<"release", ReturnType<GitApiClient["updateRelease"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        `releases/${encodePathSegment(releaseId)}`,
+        {
+          body: {
+            assets: input.assets,
+            draft: input.draft,
+            notes: input.notes,
+            prerelease: input.prerelease,
+            publishedAt: input.publishedAt,
+            title: input.title,
+          },
+          headers: input.headers,
+          method: "PATCH",
+          signal: input.signal,
+        },
+      );
+      return response.data;
+    },
+    async deleteRelease(repositoryKey, releaseId, input) {
+      const response = await request<"release", ReturnType<GitApiClient["deleteRelease"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        `releases/${encodePathSegment(releaseId)}`,
+        {
+          body: {
+            deleteTag: input?.deleteTag === true,
+          },
+          headers: input?.headers,
+          method: "DELETE",
+          signal: input?.signal,
+        },
+      );
+      return response.data;
+    },
+    async starRepository(repositoryKey, input) {
+      const response = await request<"stars", ReturnType<GitApiClient["starRepository"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "stars", {
+        body: {},
+        headers: input?.headers,
+        method: "POST",
+        signal: input?.signal,
+      });
+      return response.data;
+    },
+    async unstarRepository(repositoryKey, input) {
+      const response = await request<"stars", ReturnType<GitApiClient["unstarRepository"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "stars", {
+        body: {},
+        headers: input?.headers,
+        method: "DELETE",
+        signal: input?.signal,
+      });
+      return response.data;
+    },
+    async watchRepository(repositoryKey, input) {
+      const response = await request<"watch", ReturnType<GitApiClient["watchRepository"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "watch", {
+        body: {},
+        headers: input?.headers,
+        method: "POST",
+        signal: input?.signal,
+      });
+      return response.data;
+    },
+    async unwatchRepository(repositoryKey, input) {
+      const response = await request<"watch", ReturnType<GitApiClient["unwatchRepository"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "watch", {
+        body: {},
+        headers: input?.headers,
+        method: "DELETE",
+        signal: input?.signal,
+      });
+      return response.data;
+    },
+    async syncFork(repositoryKey, forkId, input) {
+      const response = await request<"fork_sync", ReturnType<GitApiClient["syncFork"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        `forks/${encodePathSegment(forkId)}/sync`,
+        {
+          body: {
+            strategy: input?.strategy,
+          },
+          headers: input?.headers,
+          method: "POST",
+          signal: input?.signal,
+        },
+      );
       return response.data;
     },
     async search(repositoryKey, input) {
