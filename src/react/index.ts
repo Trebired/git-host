@@ -1,5 +1,40 @@
 export { GitApiClientError, createGitApiClient } from "./client.js";
 export {
+  GitActivityList,
+  GitBlameView,
+  GitBlobView,
+  GitBranchList,
+  GitBranchSelector,
+  GitCommitList,
+  GitCopyCloneUrlButton,
+  GitCreateReleaseButton,
+  GitDeleteReleaseButton,
+  GitDiffView,
+  GitDownloadArchiveButton,
+  GitEditReleaseButton,
+  GitEmptyState,
+  GitErrorState,
+  GitForkButton,
+  GitForkList,
+  GitLoadingState,
+  GitPathBreadcrumbs,
+  GitReleaseList,
+  GitRepositoryActionBar,
+  GitRepositoryHeader,
+  GitRepositoryShell,
+  GitRepositorySocialButtons,
+  GitRepositoryStats,
+  GitRepositoryTabs,
+  GitRepositoryUiProvider,
+  GitSearchResults,
+  GitStarButton,
+  GitSyncForkButton,
+  GitTagList,
+  GitTagSelector,
+  GitTreeView,
+  GitWatchButton,
+} from "./components.js";
+export {
   GitApiClientProvider,
   useGitApiClient,
   useGitApiMutation,
@@ -35,6 +70,12 @@ export {
   useGitUpdateRelease,
   useGitWatchRepository,
 } from "./hooks.js";
+export {
+  createGitRepositoryRouteAdapter,
+  useGitRepositoryDiagnostics,
+  useGitRepositoryRouteAdapter,
+  useGitRepositoryUi,
+} from "./ui/context.js";
 
 export type {
   CreateGitApiClientOptions,
@@ -76,3 +117,15 @@ export type {
   UseGitTagsOptions,
   UseGitTreeOptions,
 } from "./hooks.js";
+export type {
+  GitRepositoryFrontEndInitialData,
+  GitRepositoryPageKey,
+  GitRepositoryRouteAdapter,
+  GitRepositoryUiBranding,
+  GitRepositoryUiContextValue,
+  GitRepositoryUiDiagnostics,
+  GitRepositoryUiFetchEvent,
+  GitRepositoryUiPolicy,
+  GitRepositoryUiProviderProps,
+  GitRepositoryUiTheme,
+} from "./ui/context.js";

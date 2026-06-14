@@ -4,6 +4,14 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 1.5.0
+
+- Expanded the frontend ownership model across `@trebired/git-host/browser` and `@trebired/git-host/react` with a package-owned repository shell, route adapter system, diagnostics hooks, theme/token support, and shared UI provider state.
+- Added reusable React repository components and action primitives such as `GitRepositoryShell`, `GitRepositoryHeader`, `GitRepositoryTabs`, `GitCommitList`, `GitReleaseList`, `GitForkList`, `GitTreeView`, `GitBlobView`, `GitBranchSelector`, `GitTagSelector`, and repository action buttons.
+- Extended the browser entry to ship a broader first-class repository page surface including branches, tags, search, blame, compare, and richer release flows in addition to the existing overview/code/commits/releases/forks/activity pages.
+- Added query dedupe/caching plus frontend diagnostics hooks for fetch, action, render, empty-state, and navigation observation.
+- Updated the README with explicit frontend integration modes and thinner host-app examples.
+
 ## 1.4.0
 
 - Added a new forge layer through `createGitForge()` with host-owned storage adapters for releases, forks, stars, watching, and repository activity timelines.

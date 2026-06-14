@@ -119,6 +119,11 @@
   gap: 18px;
 }
 
+.git-browser-shell-body {
+  display: grid;
+  gap: 18px;
+}
+
 .git-browser-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -190,6 +195,76 @@
   border: 1px solid rgba(111, 76, 34, 0.1);
   border-radius: 16px;
   padding: 14px 16px;
+}
+
+.git-browser-list-link,
+.git-browser-breadcrumb,
+.git-browser-blame-commit {
+  background: transparent;
+  border: 0;
+  color: var(--git-browser-accent-strong);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.git-browser-list-link:hover,
+.git-browser-breadcrumb:hover,
+.git-browser-blame-commit:hover {
+  text-decoration: underline;
+}
+
+.git-browser-breadcrumbs {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.git-browser-breadcrumb::after {
+  color: var(--git-browser-muted);
+  content: "/";
+  margin-left: 8px;
+}
+
+.git-browser-breadcrumb:last-child::after {
+  content: "";
+  margin: 0;
+}
+
+.git-browser-empty-state {
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px dashed var(--git-browser-border);
+  border-radius: 18px;
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.git-browser-empty-title {
+  margin: 0;
+}
+
+.git-browser-blame {
+  display: grid;
+  gap: 10px;
+}
+
+.git-browser-blame-row {
+  background: rgba(255, 253, 250, 0.82);
+  border: 1px solid rgba(111, 76, 34, 0.1);
+  border-radius: 16px;
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+}
+
+.git-browser-code-inline {
+  font-family: var(--git-browser-mono);
+  margin: 0;
+  white-space: pre-wrap;
 }
 
 .git-browser-list-item.is-selected {

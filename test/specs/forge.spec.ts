@@ -9,12 +9,23 @@ import {
   createGitForgeApiHandler,
   createInMemoryGitForgeStorageAdapter,
 } from "../../src/index.js";
-import { createGitApiClient } from "../../src/react/index.js";
+import { GitApiClientProvider, createGitApiClient } from "../../src/react/index.js";
 import {
   GitRepositoryForksPage,
   GitRepositoryOverviewPage,
+  GitRepositoryBranchesPage,
+  GitRepositoryBlamePage,
+  GitRepositoryComparePage,
   GitRepositoryReleasesPage,
+  GitRepositorySearchPage,
+  GitRepositoryTagsPage,
 } from "../../src/browser/index.js";
+import {
+  GitCommitList,
+  GitRepositoryShell,
+  GitRepositoryUiProvider,
+  createGitRepositoryRouteAdapter,
+} from "../../src/react/index.js";
 import { closeServer, createHost, createServer, fetchJson, git, gitCommit, listen, resolveRepositoryPath, sleep, tempDir, writeFile } from "./helpers.js";
 
 function actorHeaders(actorId = "alice") {
@@ -322,13 +333,184 @@ describe("@trebired/git-host forge", () => {
           }));
         });
 
-        await waitFor(() => JSON.stringify(forksRenderer?.toJSON()).includes("Create forks"));
-        expect(JSON.stringify(forksRenderer?.toJSON())).toContain("Create forks");
+        await waitFor(() => JSON.stringify(forksRenderer?.toJSON()).includes("Fork Network"));
+        expect(JSON.stringify(forksRenderer?.toJSON())).toContain("Fork Network");
 
         await act(async () => {
           overviewRenderer?.unmount();
           releasesRenderer?.unmount();
           forksRenderer?.unmount();
+        });
+      } finally {
+        console.error = originalConsoleError;
+      }
+    } finally {
+      await closeServer(server);
+      server.unref();
+    }
+  });
+
+  test("supports package-owned route adapters and hybrid react repository sections", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const host = createHost(repositoriesRoot);
+    const storage = createInMemoryGitForgeStorageAdapter();
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+    const navigateCalls: string[] = [];
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeFile(workspace, "README.md", "# Hybrid\n");
+    writeFile(workspace, "src/app.ts", "export const searchable = true;\n");
+    await host.ensureRepository("demo", {
+      actor: { name: "Alice", email: "alice@example.com", id: "alice" },
+    });
+    await host.createTag("demo", {
+      actor: { name: "Alice", email: "alice@example.com", id: "alice" },
+      message: "Hybrid release",
+      name: "v1",
+      ref: "main",
+    });
+
+    const forge = createGitForge({
+      createForkRepository({ upstreamRepositoryId }) {
+        return {
+          id: `${upstreamRepositoryId}-fork`,
+          path: resolveRepositoryPath({
+            rootDir: repositoriesRoot,
+            repositoryPath: `${upstreamRepositoryId}-fork/workspace`,
+          }),
+        };
+      },
+      gitHost: host,
+      storage,
+    });
+
+    const server = createServer(createGitForgeApiHandler({
+      basePath: "/api/git",
+      forge,
+      gitHost: host,
+      resolveActor() {
+        return { id: "alice", name: "Alice", email: "alice@example.com" };
+      },
+    }));
+    const port = await listen(server);
+    const baseUrl = `http://127.0.0.1:${port}/api/git`;
+    const routeAdapter = {
+      ...createGitRepositoryRouteAdapter({ repositoryBasePath: "/workspaces" }),
+      code(repositoryKey: string, path?: string, ref?: string) {
+        return `/custom/${repositoryKey}/files${path ? `/${path}` : ""}${ref ? `?ref=${encodeURIComponent(ref)}` : ""}`;
+      },
+    };
+
+    try {
+      const originalConsoleError = console.error;
+      console.error = (...args: unknown[]) => {
+        if (!String(args[0] || "").includes("react-test-renderer is deprecated")) {
+          originalConsoleError(...args as Parameters<typeof console.error>);
+        }
+      };
+
+      try {
+        let branchesRenderer: ReturnType<typeof createRenderer> | null = null;
+        await act(async () => {
+          branchesRenderer = createRenderer(createElement(GitRepositoryBranchesPage, {
+            baseUrl,
+            headers: actorHeaders(),
+            navigate: (to: string) => navigateCalls.push(to),
+            repositoryKey: "demo",
+            routeAdapter,
+          }));
+        });
+        await waitFor(() => JSON.stringify(branchesRenderer?.toJSON()).includes("Branches"));
+        const codeTab = branchesRenderer?.root.findAll((node) => node.type === "button").find((node) => node.props.children === "Code");
+        await act(async () => {
+          codeTab?.props.onClick();
+        });
+        expect(navigateCalls.some((value) => value.startsWith("/custom/demo/files"))).toBe(true);
+
+        let tagsRenderer: ReturnType<typeof createRenderer> | null = null;
+        await act(async () => {
+          tagsRenderer = createRenderer(createElement(GitRepositoryTagsPage, {
+            baseUrl,
+            headers: actorHeaders(),
+            repositoryKey: "demo",
+          }));
+        });
+        await waitFor(() => JSON.stringify(tagsRenderer?.toJSON()).includes("v1"));
+        expect(JSON.stringify(tagsRenderer?.toJSON())).toContain("v1");
+
+        let searchRenderer: ReturnType<typeof createRenderer> | null = null;
+        await act(async () => {
+          searchRenderer = createRenderer(createElement(GitRepositorySearchPage, {
+            baseUrl,
+            headers: actorHeaders(),
+            query: "searchable",
+            repositoryKey: "demo",
+          }));
+        });
+        await waitFor(() => JSON.stringify(searchRenderer?.toJSON()).includes("src/app.ts"));
+        expect(JSON.stringify(searchRenderer?.toJSON())).toContain("src/app.ts");
+
+        let blameRenderer: ReturnType<typeof createRenderer> | null = null;
+        await act(async () => {
+          blameRenderer = createRenderer(createElement(GitRepositoryBlamePage, {
+            baseUrl,
+            headers: actorHeaders(),
+            path: "README.md",
+            repositoryKey: "demo",
+          }));
+        });
+        await waitFor(() => JSON.stringify(blameRenderer?.toJSON()).includes("Alice"));
+        expect(JSON.stringify(blameRenderer?.toJSON())).toContain("Alice");
+
+        let compareRenderer: ReturnType<typeof createRenderer> | null = null;
+        await act(async () => {
+          compareRenderer = createRenderer(createElement(GitRepositoryComparePage, {
+            baseRef: "main",
+            baseUrl,
+            headRef: "main",
+            headers: actorHeaders(),
+            repositoryKey: "demo",
+          }));
+        });
+        await waitFor(() => JSON.stringify(compareRenderer?.toJSON()).includes("Compare Summary"));
+        expect(JSON.stringify(compareRenderer?.toJSON())).toContain("Compare Summary");
+
+        const client = createGitApiClient({ baseUrl, headers: actorHeaders() });
+        const commits = await client.listCommits("demo");
+        let hybridRenderer: ReturnType<typeof createRenderer> | null = null;
+        await act(async () => {
+          hybridRenderer = createRenderer(createElement(GitApiClientProvider, {
+            client,
+            children: createElement(GitRepositoryUiProvider, {
+              navigate: (to: string) => navigateCalls.push(to),
+              routeAdapter,
+              children: createElement(GitRepositoryShell, {
+                page: "commits",
+                repositoryKey: "demo",
+                subtitle: "Hybrid host chrome",
+                title: "Commits",
+                children: createElement(GitCommitList, {
+                  commits,
+                  repositoryKey: "demo",
+                }),
+              }),
+            }),
+          }));
+        });
+        const commitButton = hybridRenderer?.root.findAll((node) => node.type === "button").find((node) => String(node.props.children).includes("Initial import"));
+        await act(async () => {
+          commitButton?.props.onClick();
+        });
+        expect(navigateCalls.some((value) => value.includes("/workspaces/demo/commits/"))).toBe(true);
+
+        await act(async () => {
+          branchesRenderer?.unmount();
+          tagsRenderer?.unmount();
+          searchRenderer?.unmount();
+          blameRenderer?.unmount();
+          compareRenderer?.unmount();
+          hybridRenderer?.unmount();
         });
       } finally {
         console.error = originalConsoleError;

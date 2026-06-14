@@ -310,38 +310,229 @@ GET /api/git/repositories/demo/blob?ref=HEAD&path=README.md
 GET /api/git/repositories/demo/diff?baseRef=main&headRef=feature%2Fx&path=src
 ```
 
-React companion:
+## Frontend Integration
+
+The package now supports three frontend integration modes.
+
+### 1. Full Browser Pages
+
+Use `@trebired/git-host/browser` when you want git-host to own the whole repository area:
+
+- repository shell
+- tabs and navigation behavior
+- stats, actions, and social controls
+- loading, error, retry, and empty states
+- code browsing, blame, compare, releases, forks, activity, branches, tags, and search pages
+
+Host apps mostly provide:
+
+- auth
+- API base URL
+- repository key
+- route adapter
+- theme tokens
+- optional policy and diagnostics hooks
 
 ```ts
-import { createGitApiClient, GitApiClientProvider, useGitLinguist, useGitRepositorySummary } from "@trebired/git-host/react";
+import {
+  GitRepositoryOverviewPage,
+  createGitRepositoryRouteAdapter,
+} from "@trebired/git-host/browser";
 
-const gitClient = createGitApiClient({
-  baseUrl: "/api/git",
+const routeAdapter = createGitRepositoryRouteAdapter({
+  repositoryBasePath: "/workspaces",
 });
 
-function RepositorySummaryCard() {
-  const summary = useGitRepositorySummary("demo");
-  const linguist = useGitLinguist("demo", { ref: "main" });
+function RepositoryScreen() {
+  return (
+    <GitRepositoryOverviewPage
+      baseUrl="/api/git"
+      repositoryKey="demo"
+      routeAdapter={routeAdapter}
+      branding={{
+        getCloneUrl(repositoryKey) {
+          return `https://git.example.com/${repositoryKey}.git`;
+        },
+      }}
+      theme={{
+        variables: {
+          "--git-browser-accent": "#0a7f5a",
+        },
+      }}
+    />
+  );
+}
+```
 
-  if (summary.loading) return "Loading...";
-  if (summary.error) return summary.error.message;
-  if (!summary.data) return "Missing repository";
+### 2. Hybrid Shell + Package Sections
 
-  return `${summary.data.repository.current_branch} @ ${summary.data.repository.head_short} (${Object.keys(linguist.data?.languages.results || {}).length} languages)`;
+Use `@trebired/git-host/react` when your app owns the outer chrome but git-host should own the repository section UI patterns:
+
+```ts
+import {
+  GitApiClientProvider,
+  GitCommitList,
+  GitRepositoryShell,
+  GitRepositoryUiProvider,
+  createGitApiClient,
+  createGitRepositoryRouteAdapter,
+  useGitCommits,
+  useGitOverview,
+} from "@trebired/git-host/react";
+
+const client = createGitApiClient({ baseUrl: "/api/git" });
+const routes = createGitRepositoryRouteAdapter({
+  repositoryBasePath: "/app/repos",
+});
+
+function RepositoryCommitsSection({ repositoryKey }: { repositoryKey: string }) {
+  const overview = useGitOverview(repositoryKey);
+  const commits = useGitCommits(repositoryKey, {
+    ref: overview.data?.repository.repository.current_branch,
+  });
+
+  return (
+    <GitRepositoryShell
+      page="commits"
+      repositoryKey={repositoryKey}
+      loading={overview.loading || commits.loading}
+      error={overview.error || commits.error}
+      social={overview.data?.social}
+      stats={[
+        { label: "Branch", value: overview.data?.repository.repository.current_branch || "-" },
+        { label: "Forks", value: String(overview.data?.fork_count || 0) },
+      ]}
+    >
+      <GitCommitList commits={commits.data || []} repositoryKey={repositoryKey} />
+    </GitRepositoryShell>
+  );
 }
 
 function App() {
   return (
-    <GitApiClientProvider client={gitClient}>
-      <RepositorySummaryCard />
+    <GitApiClientProvider client={client}>
+      <GitRepositoryUiProvider routeAdapter={routes}>
+        <RepositoryCommitsSection repositoryKey="demo" />
+      </GitRepositoryUiProvider>
     </GitApiClientProvider>
   );
 }
 ```
 
-For long-running repository scans, the typed client also exposes a live Socket.IO linguist stream:
+### 3. Fully Custom Layout
+
+Use the typed client, hooks, diagnostics, route adapter, and low-level models when you want full control over the page structure:
 
 ```ts
+import {
+  GitApiClientProvider,
+  createGitApiClient,
+  useGitOverview,
+  useGitSearch,
+} from "@trebired/git-host/react";
+
+const client = createGitApiClient({ baseUrl: "/api/git" });
+
+function CustomRepositorySearch({ repositoryKey }: { repositoryKey: string }) {
+  const overview = useGitOverview(repositoryKey);
+  const search = useGitSearch(repositoryKey, {
+    query: "value",
+    ref: overview.data?.repository.repository.current_branch,
+  });
+
+  if (search.loading) return "Searching...";
+  if (search.error) return search.error.message;
+  return JSON.stringify(search.data?.files || []);
+}
+```
+
+## Frontend Surface
+
+`@trebired/git-host/browser` ships package-owned repository pages for:
+
+- overview
+- code/tree/blob
+- commits
+- commit detail
+- releases
+- release detail
+- forks
+- activity
+- blame
+- diff/compare
+- branches
+- tags
+- search
+
+`@trebired/git-host/react` now ships reusable repository primitives such as:
+
+- `GitRepositoryUiProvider`
+- `GitRepositoryShell`
+- `GitRepositoryHeader`
+- `GitRepositoryTabs`
+- `GitRepositoryStats`
+- `GitRepositoryActionBar`
+- `GitRepositorySocialButtons`
+- `GitCommitList`
+- `GitReleaseList`
+- `GitForkList`
+- `GitBranchList`
+- `GitTagList`
+- `GitTreeView`
+- `GitBlobView`
+- `GitBlameView`
+- `GitDiffView`
+- `GitSearchResults`
+- `GitBranchSelector`
+- `GitTagSelector`
+- `GitEmptyState`
+- `GitErrorState`
+- `GitLoadingState`
+
+### Route Adapter
+
+Both `browser` and `react` use a package-owned route adapter:
+
+```ts
+import { createGitRepositoryRouteAdapter } from "@trebired/git-host/react";
+
+const routes = createGitRepositoryRouteAdapter({
+  repositoryBasePath: "/repos",
+});
+
+routes.overview("demo");
+routes.code("demo", "src/app.ts", "main");
+routes.commit("demo", "abc123");
+routes.release("demo", "release-1");
+routes.compare("demo", "main", "feature/x");
+```
+
+### Diagnostics Hooks
+
+Repository UIs are brittle, so the package also exposes lifecycle diagnostics through `GitRepositoryUiProvider`:
+
+- `onNavigate`
+- `onViewMount`
+- `onFetchStart`
+- `onFetchSuccess`
+- `onFetchError`
+- `onActionStart`
+- `onActionSuccess`
+- `onActionError`
+- `onEmptyState`
+- `onRenderStateChange`
+
+### Initial Data
+
+Browser pages and hybrid sections can take a stable `initialData` shape through `GitRepositoryFrontEndInitialData`, so host apps do not need to invent per-page bootstrap payloads.
+
+For long-running repository scans, the typed client still exposes a live Socket.IO linguist stream:
+
+```ts
+const gitClient = createGitApiClient({
+  baseUrl: "/api/git",
+});
+
 const socket = gitClient.openLinguistSocket("demo", {
   ref: "main",
   onProgress(event) {
@@ -355,18 +546,18 @@ const socket = gitClient.openLinguistSocket("demo", {
 await socket.completed;
 ```
 
-The React entry is intentionally headless. It helps apps fetch and mutate Git data consistently, but it does not ship a bundled styled UI.
-
 ## Current API
 
-The first public slice is intentionally small:
+The package now exposes three main frontend/backend layers:
 
 - `createGitHost()`
+- `createGitForge()`
 - `resolveRepositoryPath()`
 - `runGit()`
 - `buildGitEnv()`
 - `RepositoryLockManager`
 - `createGitApiHandler()`
+- `createGitForgeApiHandler()`
 - `createGitApiSocketServer()`
 - `createGitHttpHandler()`
 - `generateSshKeyPair()`
@@ -375,6 +566,7 @@ The first public slice is intentionally small:
 - `fingerprintSshPublicKey()`
 - `createGitSshServer()`
 - `@trebired/git-host/react`
+- `@trebired/git-host/browser`
 
 And the main host instance methods:
 
@@ -415,12 +607,16 @@ And the main host instance methods:
 - `push()`
 - `withRepositoryLock()`
 
-The React entry currently exports:
+The React entry now exports:
 
 - `createGitApiClient()`
 - `GitApiClientProvider`
+- `GitRepositoryUiProvider`
+- `createGitRepositoryRouteAdapter()`
 - `openLinguistSocket()` through the typed client instance
 - `useGitRepositorySummary()`
+- `useGitOverview()`
+- `useGitSocialState()`
 - `useGitBranches()`
 - `useGitCommits()`
 - `useGitCommit()`
@@ -434,6 +630,48 @@ The React entry currently exports:
 - `useGitBlob()`
 - `useGitDiff()`
 - `useGitApiQuery()`
+- `GitRepositoryShell`
+- `GitRepositoryHeader`
+- `GitRepositoryTabs`
+- `GitRepositoryStats`
+- `GitRepositoryActionBar`
+- `GitRepositorySocialButtons`
+- `GitCommitList`
+- `GitReleaseList`
+- `GitForkList`
+- `GitBranchList`
+- `GitTagList`
+- `GitTreeView`
+- `GitBlobView`
+- `GitBlameView`
+- `GitDiffView`
+- `GitSearchResults`
+- `GitBranchSelector`
+- `GitTagSelector`
+- `GitStarButton`
+- `GitWatchButton`
+- `GitForkButton`
+- `GitSyncForkButton`
+- `GitCreateReleaseButton`
+- `GitDeleteReleaseButton`
+- `GitCopyCloneUrlButton`
+- `GitDownloadArchiveButton`
+
+The browser entry exports full-page repository surfaces such as:
+
+- `GitRepositoryOverviewPage`
+- `GitRepositoryCodePage`
+- `GitRepositoryCommitsPage`
+- `GitRepositoryCommitPage`
+- `GitRepositoryReleasesPage`
+- `GitRepositoryReleasePage`
+- `GitRepositoryForksPage`
+- `GitRepositoryActivityPage`
+- `GitRepositoryBranchesPage`
+- `GitRepositoryTagsPage`
+- `GitRepositorySearchPage`
+- `GitRepositoryBlamePage`
+- `GitRepositoryComparePage`
 
 ## Repository Model
 
@@ -441,7 +679,7 @@ This package does not own your app database.
 
 Your app resolves a repository id to an absolute repository path. The package then runs Git operations against that path. This keeps repository metadata, permissions, tokens, SSH keys, and UI decisions inside the host app where they belong.
 
-The current public API is worktree-first because that keeps the reusable boundary compact and predictable.
+The repository runtime is still worktree-first, but the frontend surface is intentionally much broader now so host apps can stay thin.
 
 Private remotes are still host-owned. The package now helps with the transport plumbing by supporting:
 
@@ -462,10 +700,11 @@ Most alternatives fall into one of three buckets:
 Use it when you want:
 
 - your app to keep owning users, permissions, tokens, SSH keys, repository records, and UI
+- your app to keep owning users, permissions, tokens, SSH keys, repository records, branding, auth, and top-level route mounting while git-host owns most repository UI
 - real Git behavior from the system `git` binary
 - clone, fetch, pull, and push over smart HTTP and SSH
 - a reusable Git runtime instead of spreading Git shell calls all over your platform code
-- optional headless React helpers over the JSON API without coupling the core package to a UI framework
+- full browser-ready repository pages or reusable React repository primitives without rebuilding the same repository shell in every host app
 
 Do not use it when you want:
 
@@ -515,7 +754,7 @@ The host platform should still own:
 - permission checks and route authorization policy
 - access token issuance, revocation, and storage
 - SSH key ownership, private key storage, and known-host persistence
-- merge requests, reviews, UI flows, and other product-specific features
+- top-level product chrome, auth flows, branding decisions, and any product-specific features outside the repository area
 
 That boundary is where the package simplifies a platform the most without turning into a forge product of its own.
 
