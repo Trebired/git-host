@@ -3,6 +3,7 @@ import {
   createElement,
   useContext,
   type CSSProperties,
+  type ComponentType,
   type ReactNode,
 } from "react";
 
@@ -38,6 +39,51 @@ type GitRepositoryPageKey =
   | "releases"
   | "search"
   | "tags";
+
+type GitRepositoryUiSlot =
+  | "action-bar"
+  | "actions"
+  | "badge"
+  | "blame"
+  | "blame-commit"
+  | "blame-row"
+  | "breadcrumb"
+  | "breadcrumbs"
+  | "button"
+  | "button-active"
+  | "button-primary"
+  | "card"
+  | "card-header"
+  | "card-subtitle"
+  | "card-title"
+  | "code-block"
+  | "code-inline"
+  | "definition-grid"
+  | "empty-action"
+  | "empty-state"
+  | "empty-title"
+  | "error-state"
+  | "grid"
+  | "header"
+  | "header-actions"
+  | "header-top"
+  | "input"
+  | "list"
+  | "list-item"
+  | "list-link"
+  | "loading-state"
+  | "note"
+  | "page"
+  | "shell-body"
+  | "split"
+  | "stats"
+  | "status"
+  | "subtitle"
+  | "tab-link"
+  | "tabs"
+  | "textarea"
+  | "title"
+  | "title-block";
 
 type GitRepositoryRouteAdapter = {
   activity: (repositoryKey: string) => string;
@@ -79,14 +125,21 @@ type GitRepositoryUiDiagnostics = {
 };
 
 type GitRepositoryUiTheme = {
+  classNames?: Partial<Record<GitRepositoryUiSlot, string>>;
   className?: string;
   density?: "comfortable" | "compact";
   iconOverrides?: Partial<Record<"activity" | "branch" | "code" | "commit" | "compare" | "fork" | "release" | "search" | "star" | "tag" | "watch", string>>;
   mode?: "auto" | "dark" | "light";
+  slots?: Partial<Record<GitRepositoryUiSlot, {
+    attributes?: Record<string, string | number | boolean | undefined>;
+    className?: string;
+    style?: CSSProperties;
+  }>>;
   typography?: {
     bodyClassName?: string;
     headingClassName?: string;
   };
+  unstyled?: boolean;
   variables?: Record<string, string>;
 };
 
@@ -120,8 +173,33 @@ type GitRepositoryFrontEndInitialData = {
   tree?: GitTreeEntry[] | null;
 };
 
+type GitRepositoryLoadingStateProps = {
+  className?: string;
+  message?: string;
+};
+
+type GitRepositoryErrorStateProps = {
+  className?: string;
+  error: Error | null;
+  onRetry?: () => void;
+};
+
+type GitRepositoryEmptyStateProps = {
+  action?: ReactNode;
+  className?: string;
+  message?: string;
+  title?: string;
+};
+
+type GitRepositoryUiComponents = {
+  EmptyState?: ComponentType<GitRepositoryEmptyStateProps>;
+  ErrorState?: ComponentType<GitRepositoryErrorStateProps>;
+  LoadingState?: ComponentType<GitRepositoryLoadingStateProps>;
+};
+
 type GitRepositoryUiContextValue = {
   client?: GitApiClient;
+  components: GitRepositoryUiComponents;
   diagnostics: GitRepositoryUiDiagnostics;
   navigate: (to: string) => void;
   policy: GitRepositoryUiPolicy;
@@ -135,6 +213,7 @@ type GitRepositoryUiProviderProps = {
   branding?: GitRepositoryUiBranding;
   children?: ReactNode;
   client?: GitApiClient;
+  components?: GitRepositoryUiComponents;
   diagnostics?: GitRepositoryUiDiagnostics;
   navigate?: (to: string) => void;
   policy?: GitRepositoryUiPolicy;
@@ -213,8 +292,92 @@ function buildThemeStyle(theme: GitRepositoryUiTheme | undefined): CSSProperties
 
 const defaultRouteAdapter = createGitRepositoryRouteAdapter();
 
+const defaultSlotClassNames: Record<GitRepositoryUiSlot, string> = {
+  "action-bar": "git-browser-header-actions",
+  actions: "git-browser-actions",
+  badge: "git-browser-badge",
+  blame: "git-browser-blame",
+  "blame-commit": "git-browser-blame-commit",
+  "blame-row": "git-browser-blame-row",
+  breadcrumb: "git-browser-breadcrumb",
+  breadcrumbs: "git-browser-breadcrumbs",
+  button: "git-browser-action-button",
+  "button-active": "is-active",
+  "button-primary": "is-primary",
+  card: "git-browser-card",
+  "card-header": "git-browser-card-header",
+  "card-subtitle": "git-browser-card-subtitle",
+  "card-title": "git-browser-card-title",
+  "code-block": "git-browser-code-block",
+  "code-inline": "git-browser-code-inline",
+  "definition-grid": "git-browser-definition-grid",
+  "empty-action": "git-browser-empty-action",
+  "empty-state": "git-browser-empty-state",
+  "empty-title": "git-browser-empty-title",
+  "error-state": "git-browser-error-state",
+  grid: "git-browser-grid",
+  header: "git-browser-hero",
+  "header-actions": "git-browser-header-actions",
+  "header-top": "git-browser-hero-top",
+  input: "git-browser-input",
+  list: "git-browser-list",
+  "list-item": "git-browser-list-item",
+  "list-link": "git-browser-list-link",
+  "loading-state": "git-browser-loading-state",
+  note: "git-browser-note",
+  page: "git-browser-page",
+  "shell-body": "git-browser-shell-body",
+  split: "git-browser-split",
+  stats: "git-browser-stats",
+  status: "git-browser-status",
+  subtitle: "git-browser-subtitle",
+  "tab-link": "git-browser-nav-link",
+  tabs: "git-browser-nav",
+  textarea: "git-browser-textarea",
+  title: "git-browser-title",
+  "title-block": "git-browser-title-block",
+};
+
+function joinClassNames(...values: Array<string | undefined | null | false>) {
+  return values.filter(Boolean).join(" ");
+}
+
+function resolveGitRepositorySlotProps(
+  ui: GitRepositoryUiContextValue,
+  slot: GitRepositoryUiSlot,
+  input: {
+    className?: string;
+    style?: CSSProperties;
+    [key: string]: unknown;
+  } = {},
+) {
+  const slotConfig = ui.theme.slots?.[slot];
+  const { className, style, ...rest } = input;
+
+  return {
+    ...slotConfig?.attributes,
+    ...rest,
+    className: joinClassNames(
+      ui.theme.unstyled ? undefined : defaultSlotClassNames[slot],
+      ui.theme.classNames?.[slot],
+      slotConfig?.className,
+      className,
+    ),
+    "data-density": ui.theme.density || "comfortable",
+    "data-slot": slot,
+    "data-theme-mode": ui.theme.mode || "auto",
+    style: slotConfig?.style || style
+      ? {
+        ...(slotConfig?.style || {}),
+        ...(style || {}),
+      }
+      : undefined,
+  };
+}
+
 const GitRepositoryUiContext = createContext<GitRepositoryUiContextValue>({
   branding: {},
+  components: {},
   diagnostics: {},
   navigate() {},
   policy: {},
@@ -232,6 +395,7 @@ function GitRepositoryUiProvider(props: GitRepositoryUiProviderProps) {
     value: {
       branding: props.branding || {},
       client: props.client,
+      components: props.components || {},
       diagnostics: props.diagnostics || {},
       navigate(to: string) {
         props.diagnostics?.onNavigate?.({ to });
@@ -258,23 +422,52 @@ function useGitRepositoryDiagnostics() {
   return useGitRepositoryUi().diagnostics;
 }
 
+function useGitRepositoryClassName(slot: GitRepositoryUiSlot, ...values: Array<string | undefined | null | false>) {
+  const ui = useGitRepositoryUi();
+  return joinClassNames(
+    ui.theme.unstyled ? undefined : defaultSlotClassNames[slot],
+    ui.theme.classNames?.[slot],
+    ui.theme.slots?.[slot]?.className,
+    ...values,
+  );
+}
+
+function useGitRepositorySlotProps(
+  slot: GitRepositoryUiSlot,
+  input: {
+    className?: string;
+    style?: CSSProperties;
+    [key: string]: unknown;
+  } = {},
+) {
+  return resolveGitRepositorySlotProps(useGitRepositoryUi(), slot, input);
+}
+
 export {
   GitRepositoryUiProvider,
   createGitRepositoryRouteAdapter,
+  resolveGitRepositorySlotProps,
+  useGitRepositoryClassName,
   useGitRepositoryDiagnostics,
   useGitRepositoryRouteAdapter,
+  useGitRepositorySlotProps,
   useGitRepositoryUi,
 };
 
 export type {
+  GitRepositoryEmptyStateProps,
   GitRepositoryFrontEndInitialData,
+  GitRepositoryErrorStateProps,
+  GitRepositoryLoadingStateProps,
   GitRepositoryPageKey,
   GitRepositoryRouteAdapter,
   GitRepositoryUiBranding,
+  GitRepositoryUiComponents,
   GitRepositoryUiContextValue,
   GitRepositoryUiDiagnostics,
   GitRepositoryUiFetchEvent,
   GitRepositoryUiPolicy,
   GitRepositoryUiProviderProps,
+  GitRepositoryUiSlot,
   GitRepositoryUiTheme,
 };

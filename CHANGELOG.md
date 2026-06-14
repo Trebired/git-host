@@ -4,6 +4,13 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 1.6.0
+
+- Made package styling optional instead of required for frontend integration by adding `unstyled` support across the shared repository UI provider and browser pages.
+- Added slot-based frontend skinning through `theme.classNames`, `theme.slots`, stable `data-slot` markers, and exported slot helpers so host apps can keep their own design system while reusing git-host structure.
+- Added render-state component overrides for loading, error, and empty states through `GitRepositoryUiProvider`.
+- Updated the README with explicit package structure plus app styling guidance and examples that do not depend on `@trebired/git-host/browser/styles.css`.
+
 ## 1.5.0
 
 - Expanded the frontend ownership model across `@trebired/git-host/browser` and `@trebired/git-host/react` with a package-owned repository shell, route adapter system, diagnostics hooks, theme/token support, and shared UI provider state.

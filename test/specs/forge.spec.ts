@@ -520,4 +520,61 @@ describe("@trebired/git-host forge", () => {
       server.unref();
     }
   });
+
+  test("supports unstyled repository shells with host-owned slot classes and render overrides", async () => {
+    let renderer: ReturnType<typeof createRenderer> | null = null;
+
+    const originalConsoleError = console.error;
+    console.error = (...args: unknown[]) => {
+      if (!String(args[0] || "").includes("react-test-renderer is deprecated")) {
+        originalConsoleError(...args as Parameters<typeof console.error>);
+      }
+    };
+
+    try {
+      await act(async () => {
+        renderer = createRenderer(createElement(GitRepositoryUiProvider, {
+          components: {
+            EmptyState(props) {
+              return createElement("aside", {
+                className: "host-empty-state",
+                children: `${props.title || "Nothing"} :: ${props.message || ""}`,
+              });
+            },
+          },
+          theme: {
+            classNames: {
+              page: "host-page",
+              title: "host-title",
+            },
+            slots: {
+              page: {
+                attributes: {
+                  "data-host-shell": "true",
+                },
+              },
+            },
+            unstyled: true,
+          },
+          children: createElement(GitRepositoryShell, {
+            empty: true,
+            page: "overview",
+            repositoryKey: "demo",
+            title: "Demo",
+          }),
+        }));
+      });
+
+      const page = renderer?.root.find((node) => node.props?.["data-slot"] === "page");
+      expect(String(page?.props.className || "")).toContain("host-page");
+      expect(String(page?.props.className || "")).not.toContain("git-browser-page");
+      expect(page?.props["data-host-shell"]).toBe("true");
+      expect(JSON.stringify(renderer?.toJSON())).toContain("host-empty-state");
+    } finally {
+      console.error = originalConsoleError;
+      await act(async () => {
+        renderer?.unmount();
+      });
+    }
+  });
 });

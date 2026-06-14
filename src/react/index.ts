@@ -72,8 +72,11 @@ export {
 } from "./hooks.js";
 export {
   createGitRepositoryRouteAdapter,
+  resolveGitRepositorySlotProps,
+  useGitRepositoryClassName,
   useGitRepositoryDiagnostics,
   useGitRepositoryRouteAdapter,
+  useGitRepositorySlotProps,
   useGitRepositoryUi,
 } from "./ui/context.js";
 
@@ -118,14 +121,19 @@ export type {
   UseGitTreeOptions,
 } from "./hooks.js";
 export type {
+  GitRepositoryEmptyStateProps,
   GitRepositoryFrontEndInitialData,
+  GitRepositoryErrorStateProps,
+  GitRepositoryLoadingStateProps,
   GitRepositoryPageKey,
   GitRepositoryRouteAdapter,
   GitRepositoryUiBranding,
+  GitRepositoryUiComponents,
   GitRepositoryUiContextValue,
   GitRepositoryUiDiagnostics,
   GitRepositoryUiFetchEvent,
   GitRepositoryUiPolicy,
   GitRepositoryUiProviderProps,
+  GitRepositoryUiSlot,
   GitRepositoryUiTheme,
 } from "./ui/context.js";

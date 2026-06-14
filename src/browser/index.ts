@@ -49,6 +49,7 @@ import {
   useGitTree,
   useGitUpdateRelease,
   type GitRepositoryUiProviderProps,
+  type GitRepositoryUiTheme,
 } from "../react/index.js";
 import type { GitRepositoryFrontEndInitialData, GitRepositoryRouteAdapter } from "../react/ui/context.js";
 import type { GitForgeRelease, GitForgeRepositoryOverview } from "../types.js";
@@ -61,6 +62,7 @@ type GitBrowserProviderProps = GitRepositoryUiProviderProps & {
   children?: ReactNode;
   client?: GitApiClient;
   headers?: GitApiClientHeaders;
+  unstyled?: boolean;
 };
 
 type GitBrowserPageProps = GitRepositoryUiProviderProps & {
@@ -70,6 +72,7 @@ type GitBrowserPageProps = GitRepositoryUiProviderProps & {
   headers?: GitApiClientHeaders;
   initialData?: GitRepositoryFrontEndInitialData | null;
   repositoryKey: string;
+  unstyled?: boolean;
 };
 
 type GitRepositoryCodePageProps = GitBrowserPageProps & {
@@ -123,6 +126,17 @@ function createClient(options: GitBrowserProviderProps) {
   });
 }
 
+function resolveTheme(
+  theme: GitRepositoryUiTheme | undefined,
+  unstyled?: boolean,
+): GitRepositoryUiTheme | undefined {
+  if (!unstyled) return theme;
+  return {
+    ...(theme || {}),
+    unstyled: true,
+  };
+}
+
 function GitBrowserProvider(props: GitBrowserProviderProps) {
   const [client] = useState(() => createClient(props));
   return h(GitApiClientProvider, {
@@ -134,7 +148,7 @@ function GitBrowserProvider(props: GitBrowserProviderProps) {
       navigate: props.navigate,
       policy: props.policy,
       routeAdapter: props.routeAdapter,
-      theme: props.theme,
+      theme: resolveTheme(props.theme, props.unstyled),
       children: props.children,
     }),
   });
@@ -154,7 +168,8 @@ function withBrowserProvider(
     navigate: props.navigate,
     policy: props.policy,
     routeAdapter: props.routeAdapter,
-    theme: props.theme,
+    theme: resolveTheme(props.theme, props.unstyled),
+    unstyled: props.unstyled,
     children: render(),
   });
 }

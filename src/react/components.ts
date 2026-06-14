@@ -24,10 +24,16 @@ import {
 } from "./hooks.js";
 import {
   GitRepositoryUiProvider,
+  resolveGitRepositorySlotProps,
+  useGitRepositoryClassName,
   useGitRepositoryDiagnostics,
   useGitRepositoryRouteAdapter,
   useGitRepositoryUi,
+  type GitRepositoryUiSlot,
   type GitRepositoryPageKey,
+  type GitRepositoryEmptyStateProps,
+  type GitRepositoryErrorStateProps,
+  type GitRepositoryLoadingStateProps,
   type GitRepositoryUiProviderProps,
 } from "./ui/context.js";
 import type {
@@ -64,6 +70,11 @@ function formatDate(value: string | null | undefined): string {
   }
 }
 
+function useGitRepositorySlots() {
+  const ui = useGitRepositoryUi();
+  return (slot: GitRepositoryUiSlot, input: Record<string, unknown> = {}) => resolveGitRepositorySlotProps(ui, slot, input);
+}
+
 function useGitRepositoryRenderState(
   page: GitRepositoryPageKey,
   repositoryKey: string,
@@ -98,20 +109,28 @@ function useGitRepositoryRenderState(
 }
 
 function GitLoadingState(props: { message?: string; className?: string }) {
-  return h("div", {
-    className: joinClassNames("git-browser-status git-browser-loading-state", props.className),
+  const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
+  const Override = ui.components.LoadingState;
+  if (Override) return h(Override, props as GitRepositoryLoadingStateProps);
+  return h("div", slot("loading-state", {
+    className: useGitRepositoryClassName("status", props.className),
     children: props.message || "Loading repository data...",
-  });
+  }));
 }
 
 function GitErrorState(props: { error: Error | null; onRetry?: () => void; className?: string }) {
-  return h("div", {
-    className: joinClassNames("git-browser-status is-error git-browser-error-state", props.className),
+  const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
+  const Override = ui.components.ErrorState;
+  if (Override) return h(Override, props as GitRepositoryErrorStateProps);
+  return h("div", slot("error-state", {
+    className: useGitRepositoryClassName("status", "is-error", props.className),
     children: [
       h("div", { key: "message", children: props.error?.message || "This repository view failed to load." }),
       props.onRetry
         ? h("button", {
-          className: "git-browser-action-button",
+          ...slot("button", {}),
           key: "retry",
           onClick: props.onRetry,
           type: "button",
@@ -119,18 +138,22 @@ function GitErrorState(props: { error: Error | null; onRetry?: () => void; class
         })
         : null,
     ],
-  });
+  }));
 }
 
 function GitEmptyState(props: { title?: string; message?: string; action?: ReactNode; className?: string }) {
-  return h("section", {
-    className: joinClassNames("git-browser-empty-state", props.className),
+  const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
+  const Override = ui.components.EmptyState;
+  if (Override) return h(Override, props as GitRepositoryEmptyStateProps);
+  return h("section", slot("empty-state", {
+    className: props.className,
     children: [
-      h("h3", { className: "git-browser-empty-title", key: "title", children: props.title || "Nothing here yet" }),
-      h("p", { className: "git-browser-note", key: "message", children: props.message || "This repository section is empty." }),
-      props.action ? h("div", { className: "git-browser-empty-action", key: "action", children: props.action }) : null,
+      h("h3", slot("empty-title", { key: "title", children: props.title || "Nothing here yet" })),
+      h("p", slot("note", { key: "message", children: props.message || "This repository section is empty." })),
+      props.action ? h("div", slot("empty-action", { key: "action", children: props.action })) : null,
     ],
-  });
+  }));
 }
 
 function GitRepositoryTabs(props: {
@@ -139,7 +162,9 @@ function GitRepositoryTabs(props: {
   repositoryKey: string;
 }) {
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   const routes = useGitRepositoryRouteAdapter();
+  const activeClassName = useGitRepositoryClassName("button-active");
   const items: Array<{ key: GitRepositoryPageKey; label: string; to: string }> = [
     { key: "overview", label: "Overview", to: routes.overview(props.repositoryKey) },
     { key: "code", label: "Code", to: routes.code(props.repositoryKey) },
@@ -152,16 +177,18 @@ function GitRepositoryTabs(props: {
     { key: "search", label: "Search", to: routes.search(props.repositoryKey) },
   ];
 
-  return h("nav", {
-    className: joinClassNames("git-browser-nav", props.className),
+  return h("nav", slot("tabs", {
+    className: props.className,
     children: items.map((item) => h("button", {
-      className: joinClassNames("git-browser-nav-link", item.key === props.active && "is-active"),
+      ...slot("tab-link", {
+        className: item.key === props.active ? activeClassName : undefined,
+      }),
       key: item.key,
       onClick: () => ui.navigate(item.to),
       type: "button",
       children: item.label,
     })),
-  });
+  }));
 }
 
 function GitRepositoryStats(props: {
@@ -170,13 +197,14 @@ function GitRepositoryStats(props: {
   social?: GitForgeSocialState | null;
   stats: Array<{ label: string; value: ReactNode }>;
 }) {
-  return h("dl", {
-    className: joinClassNames("git-browser-definition-grid", "git-browser-stats", props.className),
+  const slot = useGitRepositorySlots();
+  return h("dl", slot("stats", {
+    className: useGitRepositoryClassName("definition-grid", props.className),
     children: props.stats.flatMap((entry) => ([
       h("dt", { key: `${entry.label}:label`, children: entry.label }),
       h("dd", { key: `${entry.label}:value`, children: entry.value }),
     ])),
-  });
+  }));
 }
 
 function GitStarButton(props: {
@@ -185,6 +213,8 @@ function GitStarButton(props: {
   social?: GitForgeSocialState | null;
 }) {
   const [optimistic, setOptimistic] = useState<GitForgeSocialState | null>(props.social || null);
+  const slot = useGitRepositorySlots();
+  const activeClassName = useGitRepositoryClassName("button-active");
   const star = useGitStarRepository(props.repositoryKey, { headers: props.headers });
   const unstar = useGitUnstarRepository(props.repositoryKey, { headers: props.headers });
   useEffect(() => {
@@ -192,7 +222,9 @@ function GitStarButton(props: {
   }, [props.social]);
 
   return h("button", {
-    className: joinClassNames("git-browser-action-button", optimistic?.viewer_has_starred && "is-active"),
+    ...slot("button", {
+      className: optimistic?.viewer_has_starred ? activeClassName : undefined,
+    }),
     disabled: star.loading || unstar.loading,
     onClick: async () => {
       const next = optimistic?.viewer_has_starred !== true;
@@ -214,6 +246,8 @@ function GitWatchButton(props: {
   social?: GitForgeSocialState | null;
 }) {
   const [optimistic, setOptimistic] = useState<GitForgeSocialState | null>(props.social || null);
+  const slot = useGitRepositorySlots();
+  const activeClassName = useGitRepositoryClassName("button-active");
   const watch = useGitWatchRepository(props.repositoryKey, { headers: props.headers });
   const unwatch = useGitUnwatchRepository(props.repositoryKey, { headers: props.headers });
   useEffect(() => {
@@ -221,7 +255,9 @@ function GitWatchButton(props: {
   }, [props.social]);
 
   return h("button", {
-    className: joinClassNames("git-browser-action-button", optimistic?.viewer_is_watching && "is-active"),
+    ...slot("button", {
+      className: optimistic?.viewer_is_watching ? activeClassName : undefined,
+    }),
     disabled: watch.loading || unwatch.loading,
     onClick: async () => {
       const next = optimistic?.viewer_is_watching !== true;
@@ -239,8 +275,11 @@ function GitWatchButton(props: {
 
 function GitForkButton(props: { headers?: GitApiClientHeaders; repositoryKey: string; onCreated?: (fork: GitForgeFork) => void }) {
   const mutation = useGitCreateFork(props.repositoryKey, { headers: props.headers });
+  const slot = useGitRepositorySlots();
   return h("button", {
-    className: "git-browser-action-button is-primary",
+    ...slot("button", {
+      className: useGitRepositoryClassName("button-primary"),
+    }),
     disabled: mutation.loading,
     onClick: async () => {
       const created = await mutation.mutate();
@@ -253,8 +292,9 @@ function GitForkButton(props: { headers?: GitApiClientHeaders; repositoryKey: st
 
 function GitSyncForkButton(props: { headers?: GitApiClientHeaders; repositoryKey: string; forkId: string; onSynced?: (fork: GitForgeFork) => void }) {
   const mutation = useGitSyncFork(props.repositoryKey, props.forkId, { headers: props.headers });
+  const slot = useGitRepositorySlots();
   return h("button", {
-    className: "git-browser-action-button",
+    ...slot("button", {}),
     disabled: mutation.loading,
     onClick: async () => {
       const synced = await mutation.mutate({ strategy: "ff-only" });
@@ -272,8 +312,11 @@ function GitCreateReleaseButton(props: {
   repositoryKey: string;
 }) {
   const mutation = useGitCreateRelease(props.repositoryKey, { headers: props.headers });
+  const slot = useGitRepositorySlots();
   return h("button", {
-    className: "git-browser-action-button is-primary",
+    ...slot("button", {
+      className: useGitRepositoryClassName("button-primary"),
+    }),
     disabled: mutation.loading,
     onClick: async () => {
       const release = await mutation.mutate(props.input);
@@ -285,8 +328,9 @@ function GitCreateReleaseButton(props: {
 }
 
 function GitEditReleaseButton(props: { onClick?: () => void; disabled?: boolean }) {
+  const slot = useGitRepositorySlots();
   return h("button", {
-    className: "git-browser-action-button",
+    ...slot("button", {}),
     disabled: props.disabled,
     onClick: props.onClick,
     type: "button",
@@ -296,8 +340,9 @@ function GitEditReleaseButton(props: { onClick?: () => void; disabled?: boolean 
 
 function GitDeleteReleaseButton(props: { headers?: GitApiClientHeaders; releaseId: string; repositoryKey: string; deleteTag?: boolean; onDeleted?: () => void }) {
   const mutation = useGitDeleteRelease(props.repositoryKey, props.releaseId, { headers: props.headers });
+  const slot = useGitRepositorySlots();
   return h("button", {
-    className: "git-browser-action-button",
+    ...slot("button", {}),
     disabled: mutation.loading,
     onClick: async () => {
       await mutation.mutate({ deleteTag: props.deleteTag });
@@ -317,8 +362,9 @@ function GitRepositorySocialButtons(props: {
     headers: props.headers,
     initialData: props.social || null,
   });
+  const slot = useGitRepositorySlots();
   return h("div", {
-    className: "git-browser-actions",
+    ...slot("actions", {}),
     children: [
       h(GitStarButton, { headers: props.headers, key: "star", repositoryKey: props.repositoryKey, social: social.data }),
       h(GitWatchButton, { headers: props.headers, key: "watch", repositoryKey: props.repositoryKey, social: social.data }),
@@ -335,9 +381,10 @@ function GitBranchSelector(props: {
 }) {
   const branches = useGitBranches(props.repositoryKey, { headers: props.headers });
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   const routes = useGitRepositoryRouteAdapter();
   return h("select", {
-    className: joinClassNames("git-browser-input", props.className),
+    ...slot("input", { className: props.className }),
     disabled: branches.loading,
     onChange: (event: any) => {
       const branch = text(event.target?.value);
@@ -365,9 +412,10 @@ function GitTagSelector(props: {
 }) {
   const tags = useGitTags(props.repositoryKey, { headers: props.headers });
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   const routes = useGitRepositoryRouteAdapter();
   return h("select", {
-    className: joinClassNames("git-browser-input", props.className),
+    ...slot("input", { className: props.className }),
     disabled: tags.loading,
     onChange: (event: any) => {
       const tag = text(event.target?.value);
@@ -388,11 +436,12 @@ function GitTagSelector(props: {
 
 function GitDownloadArchiveButton(props: { format?: "tar" | "zip"; refName?: string; repositoryKey: string }) {
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   const href = ui.client
     ? `${ui.client.baseUrl}/repositories/${encodeURIComponent(props.repositoryKey)}/archive?format=${encodeURIComponent(props.format || "zip")}${props.refName ? `&ref=${encodeURIComponent(props.refName)}` : ""}`
     : undefined;
   return h("a", {
-    className: "git-browser-action-button",
+    ...slot("button", {}),
     href,
     children: "Download Archive",
   });
@@ -400,9 +449,10 @@ function GitDownloadArchiveButton(props: { format?: "tar" | "zip"; refName?: str
 
 function GitCopyCloneUrlButton(props: { protocol?: "http" | "ssh"; repositoryKey: string }) {
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   const value = ui.branding.getCloneUrl?.(props.repositoryKey, props.protocol || "http") || "";
   return h("button", {
-    className: "git-browser-action-button",
+    ...slot("button", {}),
     disabled: !value,
     onClick: async () => {
       try {
@@ -422,23 +472,25 @@ function GitCopyCloneUrlButton(props: { protocol?: "http" | "ssh"; repositoryKey
 }
 
 function GitRepositoryActionBar(props: { children?: ReactNode; className?: string }) {
-  return h("div", {
-    className: joinClassNames("git-browser-header-actions", props.className),
+  const slot = useGitRepositorySlots();
+  return h("div", slot("action-bar", {
+    className: props.className,
     children: props.children,
-  });
+  }));
 }
 
 function GitPathBreadcrumbs(props: { path?: string; repositoryKey: string; refName?: string }) {
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   const routes = useGitRepositoryRouteAdapter();
   const parts = text(props.path).split("/").filter(Boolean);
   let current = "";
 
   return h("div", {
-    className: "git-browser-breadcrumbs",
+    ...slot("breadcrumbs", {}),
     children: [
       h("button", {
-        className: "git-browser-breadcrumb",
+        ...slot("breadcrumb", {}),
         key: "root",
         onClick: () => ui.navigate(routes.code(props.repositoryKey, "", props.refName)),
         type: "button",
@@ -447,7 +499,7 @@ function GitPathBreadcrumbs(props: { path?: string; repositoryKey: string; refNa
       ...parts.map((part, index) => {
         current = current ? `${current}/${part}` : part;
         return h("button", {
-          className: "git-browser-breadcrumb",
+          ...slot("breadcrumb", {}),
           key: `${part}:${index}`,
           onClick: () => ui.navigate(routes.code(props.repositoryKey, current, props.refName)),
           type: "button",
@@ -469,30 +521,33 @@ function GitRepositoryHeader(props: {
   title?: string;
 }) {
   const ui = useGitRepositoryUi();
-  return h("section", {
-    className: joinClassNames("git-browser-hero", props.className, ui.theme.className),
+  const slot = useGitRepositorySlots();
+  return h("section", slot("header", {
+    className: joinClassNames(props.className, ui.theme.className),
     style: ui.themeStyle,
     children: [
-      h("div", {
-        className: "git-browser-hero-top",
+      h("div", slot("header-top", {
         key: "title",
         children: [
-          h("div", {
-            className: "git-browser-title-block",
+          h("div", slot("title-block", {
             key: "block",
             children: [
-              h("div", { className: "git-browser-badge", key: "badge", children: "Embeddable Forge UI" }),
-              h("h1", { className: joinClassNames("git-browser-title", ui.theme.typography?.headingClassName), key: "title", children: props.title || props.repositoryKey }),
-              h("p", {
-                className: joinClassNames("git-browser-subtitle", ui.theme.typography?.bodyClassName),
+              h("div", slot("badge", { key: "badge", children: "Embeddable Forge UI" })),
+              h("h1", slot("title", {
+                className: ui.theme.typography?.headingClassName,
+                key: "title",
+                children: props.title || props.repositoryKey,
+              })),
+              h("p", slot("subtitle", {
+                className: ui.theme.typography?.bodyClassName,
                 key: "subtitle",
                 children: props.subtitle || (typeof ui.branding.subtitle === "string" ? ui.branding.subtitle : "Repository workspace"),
-              }),
+              })),
             ],
-          }),
-          props.actions ? h("div", { className: "git-browser-header-actions", key: "actions", children: props.actions }) : null,
+          })),
+          props.actions ? h("div", slot("header-actions", { key: "actions", children: props.actions })) : null,
         ],
-      }),
+      })),
       props.stats?.length ? h(GitRepositoryStats, {
         key: "stats",
         repositoryKey: props.repositoryKey,
@@ -505,7 +560,7 @@ function GitRepositoryHeader(props: {
         repositoryKey: props.repositoryKey,
       }),
     ],
-  });
+  }));
 }
 
 function GitRepositoryShell(props: {
@@ -530,8 +585,9 @@ function GitRepositoryShell(props: {
     loading: props.loading,
   });
 
-  return h("div", {
-    className: joinClassNames("git-browser-page", props.className),
+  const slot = useGitRepositorySlots();
+  return h("div", slot("page", {
+    className: props.className,
     children: [
       h(GitRepositoryHeader, {
         actions: props.actions,
@@ -549,31 +605,32 @@ function GitRepositoryShell(props: {
           ? h(GitErrorState, { error: props.error, key: "error", onRetry: props.retry })
           : props.empty
             ? (props.emptyState || h(GitEmptyState, { key: "empty" }))
-            : h("div", { className: "git-browser-shell-body", key: "body", children: props.children }),
+            : h("div", slot("shell-body", { key: "body", children: props.children })),
     ],
-  });
+  }));
 }
 
 function GitCommitList(props: { commits: GitCommitSummary[]; repositoryKey: string; emptyMessage?: string }) {
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   const routes = useGitRepositoryRouteAdapter();
   if (!props.commits.length) {
     return h(GitEmptyState, { message: props.emptyMessage || "No commits matched this repository view." });
   }
   return h("ul", {
-    className: "git-browser-list",
+    ...slot("list", {}),
     children: props.commits.map((commit) => h("li", {
-      className: "git-browser-list-item",
+      ...slot("list-item", {}),
       key: commit.hash,
       children: [
         h("button", {
-          className: "git-browser-list-link",
+          ...slot("list-link", {}),
           key: "subject",
           onClick: () => ui.navigate(routes.commit(props.repositoryKey, commit.hash)),
           type: "button",
           children: `${commit.short_hash} · ${commit.subject}`,
         }),
-        h("div", { className: "git-browser-note", key: "meta", children: `${commit.author_name} · ${formatDate(commit.authored_at)}` }),
+        h("div", slot("note", { key: "meta", children: `${commit.author_name} · ${formatDate(commit.authored_at)}` })),
       ],
     })),
   });
@@ -581,42 +638,44 @@ function GitCommitList(props: { commits: GitCommitSummary[]; repositoryKey: stri
 
 function GitReleaseList(props: { releases: GitForgeRelease[]; repositoryKey: string; emptyMessage?: string }) {
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   const routes = useGitRepositoryRouteAdapter();
   if (!props.releases.length) {
     return h(GitEmptyState, { message: props.emptyMessage || "No releases have been published yet." });
   }
   return h("ul", {
-    className: "git-browser-list",
+    ...slot("list", {}),
     children: props.releases.map((release) => h("li", {
-      className: "git-browser-list-item",
+      ...slot("list-item", {}),
       key: release.id,
       children: [
         h("button", {
-          className: "git-browser-list-link",
+          ...slot("list-link", {}),
           key: "title",
           onClick: () => ui.navigate(routes.release(props.repositoryKey, release.id)),
           type: "button",
           children: `${release.title} · ${release.tag_name}`,
         }),
-        h("div", { className: "git-browser-note", key: "meta", children: `${release.prerelease ? "Prerelease" : "Release"} · ${formatDate(release.published_at || release.created_at)}` }),
-        h("p", { className: "git-browser-note", key: "notes", children: release.notes || "No release notes." }),
+        h("div", slot("note", { key: "meta", children: `${release.prerelease ? "Prerelease" : "Release"} · ${formatDate(release.published_at || release.created_at)}` })),
+        h("p", slot("note", { key: "notes", children: release.notes || "No release notes." })),
       ],
     })),
   });
 }
 
 function GitForkList(props: { forks: GitForgeFork[]; repositoryKey: string; headers?: GitApiClientHeaders }) {
+  const slot = useGitRepositorySlots();
   if (!props.forks.length) {
     return h(GitEmptyState, { message: "No forks exist for this repository yet." });
   }
   return h("ul", {
-    className: "git-browser-list",
+    ...slot("list", {}),
     children: props.forks.map((fork) => h("li", {
-      className: "git-browser-list-item",
+      ...slot("list-item", {}),
       key: fork.fork_repository_id,
       children: [
         h("strong", { key: "name", children: fork.fork_repository_id }),
-        h("div", { className: "git-browser-note", key: "meta", children: `Ahead ${fork.fork_status.ahead} · Behind ${fork.fork_status.behind} · ${fork.fork_status.fork_branch}` }),
+        h("div", slot("note", { key: "meta", children: `Ahead ${fork.fork_status.ahead} · Behind ${fork.fork_status.behind} · ${fork.fork_status.fork_branch}` })),
         h(GitSyncForkButton, { forkId: fork.fork_repository_id, headers: props.headers, key: "sync", repositoryKey: props.repositoryKey }),
       ],
     })),
@@ -624,16 +683,19 @@ function GitForkList(props: { forks: GitForgeFork[]; repositoryKey: string; head
 }
 
 function GitTreeView(props: { entries: GitTreeEntry[]; onSelectPath?: (path: string) => void; selectedPath?: string }) {
+  const slot = useGitRepositorySlots();
   if (!props.entries.length) {
     return h(GitEmptyState, { message: "This tree is empty." });
   }
   return h("ul", {
-    className: "git-browser-list",
+    ...slot("list", {}),
     children: props.entries.map((entry) => h("li", {
-      className: joinClassNames("git-browser-list-item", entry.path === props.selectedPath && "is-selected"),
+      ...slot("list-item", {
+        className: entry.path === props.selectedPath ? "is-selected" : undefined,
+      }),
       key: entry.path,
       children: h("button", {
-        className: "git-browser-list-link",
+        ...slot("list-link", {}),
         onClick: () => props.onSelectPath?.(entry.path),
         type: "button",
         children: `${entry.type === "tree" ? "dir" : "file"} · ${entry.path}${entry.language ? ` · ${entry.language}` : ""}`,
@@ -643,66 +705,66 @@ function GitTreeView(props: { entries: GitTreeEntry[]; onSelectPath?: (path: str
 }
 
 function GitBlobView(props: { content?: string; path?: string; subtitle?: string }) {
-  return h("section", {
-    className: "git-browser-card",
+  const slot = useGitRepositorySlots();
+  return h("section", slot("card", {
     children: [
-      h("div", {
-        className: "git-browser-card-header",
+      h("div", slot("card-header", {
         key: "header",
         children: [
-          h("h2", { className: "git-browser-card-title", key: "title", children: props.path || "File Preview" }),
-          props.subtitle ? h("div", { className: "git-browser-card-subtitle", key: "subtitle", children: props.subtitle }) : null,
+          h("h2", slot("card-title", { key: "title", children: props.path || "File Preview" })),
+          props.subtitle ? h("div", slot("card-subtitle", { key: "subtitle", children: props.subtitle })) : null,
         ],
-      }),
+      })),
       props.content
-        ? h("pre", { className: "git-browser-code-block", key: "body", children: props.content })
+        ? h("pre", slot("code-block", { key: "body", children: props.content }))
         : h(GitEmptyState, { key: "empty", message: "Select a file to preview its content." }),
     ],
-  });
+  }));
 }
 
 function GitSearchResults(props: { repositoryKey: string; results: GitSearchResult | null }) {
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   const routes = useGitRepositoryRouteAdapter();
   const files = props.results?.files || [];
   if (!files.length) {
     return h(GitEmptyState, { message: "No search results matched that query." });
   }
   return h("ul", {
-    className: "git-browser-list",
+    ...slot("list", {}),
     children: files.map((file) => h("li", {
-      className: "git-browser-list-item",
+      ...slot("list-item", {}),
       key: file.path,
       children: [
         h("button", {
-          className: "git-browser-list-link",
+          ...slot("list-link", {}),
           key: "path",
           onClick: () => ui.navigate(routes.code(props.repositoryKey, file.path, props.results?.ref)),
           type: "button",
           children: `${file.path} · ${file.match_count} matches`,
         }),
-        ...file.matches.slice(0, 5).map((match, index) => h("div", {
-          className: "git-browser-note",
+        ...file.matches.slice(0, 5).map((match, index) => h("div", slot("note", {
           key: `${file.path}:${index}`,
           children: `${match.line_number}: ${match.line}`,
-        })),
+        }))),
       ],
     })),
   });
 }
 
 function GitActivityList(props: { activity: GitForgeActivityEntry[] }) {
+  const slot = useGitRepositorySlots();
   if (!props.activity.length) {
     return h(GitEmptyState, { message: "There is no recorded activity yet." });
   }
   return h("ul", {
-    className: "git-browser-list",
+    ...slot("list", {}),
     children: props.activity.map((entry) => h("li", {
-      className: "git-browser-list-item",
+      ...slot("list-item", {}),
       key: entry.id,
       children: [
         h("strong", { key: "summary", children: entry.summary }),
-        h("div", { className: "git-browser-note", key: "meta", children: `${entry.kind} · actor ${entry.actor_id} · ${formatDate(entry.created_at)}` }),
+        h("div", slot("note", { key: "meta", children: `${entry.kind} · actor ${entry.actor_id} · ${formatDate(entry.created_at)}` })),
       ],
     })),
   });
@@ -710,24 +772,25 @@ function GitActivityList(props: { activity: GitForgeActivityEntry[] }) {
 
 function GitBranchList(props: { branches: GitBranchSummary[]; repositoryKey: string }) {
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   const routes = useGitRepositoryRouteAdapter();
   if (!props.branches.length) {
     return h(GitEmptyState, { message: "No branches are available." });
   }
   return h("ul", {
-    className: "git-browser-list",
+    ...slot("list", {}),
     children: props.branches.map((branch) => h("li", {
-      className: "git-browser-list-item",
+      ...slot("list-item", {}),
       key: branch.name,
       children: [
         h("button", {
-          className: "git-browser-list-link",
+          ...slot("list-link", {}),
           key: "branch",
           onClick: () => ui.navigate(routes.code(props.repositoryKey, "", branch.name)),
           type: "button",
           children: branch.current ? `${branch.name} (current)` : branch.name,
         }),
-        h("div", { className: "git-browser-note", key: "meta", children: `${branch.head_commit.slice(0, 7)}${branch.upstream ? ` · ${branch.upstream}` : ""}` }),
+        h("div", slot("note", { key: "meta", children: `${branch.head_commit.slice(0, 7)}${branch.upstream ? ` · ${branch.upstream}` : ""}` })),
       ],
     })),
   });
@@ -735,24 +798,25 @@ function GitBranchList(props: { branches: GitBranchSummary[]; repositoryKey: str
 
 function GitTagList(props: { repositoryKey: string; tags: GitTagSummary[] }) {
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   const routes = useGitRepositoryRouteAdapter();
   if (!props.tags.length) {
     return h(GitEmptyState, { message: "No tags exist yet." });
   }
   return h("ul", {
-    className: "git-browser-list",
+    ...slot("list", {}),
     children: props.tags.map((tag) => h("li", {
-      className: "git-browser-list-item",
+      ...slot("list-item", {}),
       key: tag.name,
       children: [
         h("button", {
-          className: "git-browser-list-link",
+          ...slot("list-link", {}),
           key: "tag",
           onClick: () => ui.navigate(routes.code(props.repositoryKey, "", tag.name)),
           type: "button",
           children: tag.name,
         }),
-        h("div", { className: "git-browser-note", key: "meta", children: `${tag.short_hash} · ${tag.subject || "No subject"}` }),
+        h("div", slot("note", { key: "meta", children: `${tag.short_hash} · ${tag.subject || "No subject"}` })),
       ],
     })),
   });
@@ -761,43 +825,42 @@ function GitTagList(props: { repositoryKey: string; tags: GitTagSummary[] }) {
 function GitBlameView(props: { blame: GitBlame | null; repositoryKey: string; refName?: string }) {
   const routes = useGitRepositoryRouteAdapter();
   const ui = useGitRepositoryUi();
+  const slot = useGitRepositorySlots();
   if (!props.blame || !props.blame.lines.length) {
     return h(GitEmptyState, { message: "No blame lines were available for this file." });
   }
   return h("div", {
-    className: "git-browser-blame",
+    ...slot("blame", {}),
     children: props.blame.lines.map((line) => h("div", {
-      className: "git-browser-blame-row",
+      ...slot("blame-row", {}),
       key: `${line.line_number}:${line.commit_hash}`,
       children: [
         h("button", {
-          className: "git-browser-blame-commit",
+          ...slot("blame-commit", {}),
           key: "commit",
           onClick: () => ui.navigate(routes.commit(props.repositoryKey, line.commit_hash)),
           type: "button",
           children: line.commit_short_hash,
         }),
-        h("div", { className: "git-browser-note", key: "meta", children: `${line.author_name} · ${formatDate(line.authored_at)}` }),
-        h("pre", { className: "git-browser-code-inline", key: "content", children: line.content }),
+        h("div", slot("note", { key: "meta", children: `${line.author_name} · ${formatDate(line.authored_at)}` })),
+        h("pre", slot("code-inline", { key: "content", children: line.content })),
       ],
     })),
   });
 }
 
 function GitDiffView(props: { diff: GitCompareSummary | null }) {
+  const slot = useGitRepositorySlots();
   if (!props.diff) {
     return h(GitEmptyState, { message: "No comparison data is available." });
   }
-  return h("div", {
-    className: "git-browser-grid",
+  return h("div", slot("grid", {
     children: [
-      h("section", {
-        className: "git-browser-card",
+      h("section", slot("card", {
         key: "summary",
         children: [
-          h("div", { className: "git-browser-card-header", key: "header", children: h("h2", { className: "git-browser-card-title", children: "Compare Summary" }) }),
-          h("dl", {
-            className: "git-browser-definition-grid",
+          h("div", slot("card-header", { key: "header", children: h("h2", slot("card-title", { children: "Compare Summary" })) })),
+          h("dl", slot("definition-grid", {
             key: "body",
             children: [
               h("dt", { key: "base:label", children: "Base" }),
@@ -809,19 +872,19 @@ function GitDiffView(props: { diff: GitCompareSummary | null }) {
               h("dt", { key: "files:label", children: "Files" }),
               h("dd", { key: "files:value", children: String(props.diff.file_count) }),
             ],
-          }),
+          })),
         ],
-      }),
-      h("section", {
-        className: "git-browser-card git-browser-span-2",
+      })),
+      h("section", slot("card", {
+        className: "git-browser-span-2",
         key: "diff",
         children: [
-          h("div", { className: "git-browser-card-header", key: "header", children: h("h2", { className: "git-browser-card-title", children: "Diff" }) }),
-          h("pre", { className: "git-browser-code-block", key: "body", children: props.diff.diff }),
+          h("div", slot("card-header", { key: "header", children: h("h2", slot("card-title", { children: "Diff" })) })),
+          h("pre", slot("code-block", { key: "body", children: props.diff.diff })),
         ],
-      }),
+      })),
     ],
-  });
+  }));
 }
 
 export {

@@ -333,6 +333,11 @@ Host apps mostly provide:
 - theme tokens
 - optional policy and diagnostics hooks
 
+Default styling is optional.
+
+- If you want the package look, import `@trebired/git-host/browser/styles.css`.
+- If you want package-owned structure with your own design system, skip that stylesheet and pass theme slots/classes.
+
 ```ts
 import {
   GitRepositoryOverviewPage,
@@ -354,7 +359,24 @@ function RepositoryScreen() {
           return `https://git.example.com/${repositoryKey}.git`;
         },
       }}
+      unstyled
       theme={{
+        classNames: {
+          page: "repo-page",
+          header: "repo-header",
+          title: "repo-title",
+          tabs: "repo-tabs",
+          "tab-link": "repo-tab",
+          card: "repo-card",
+          button: "repo-button",
+        },
+        slots: {
+          page: {
+            attributes: {
+              "data-repository-surface": "git-host",
+            },
+          },
+        },
         variables: {
           "--git-browser-accent": "#0a7f5a",
         },
@@ -411,7 +433,18 @@ function RepositoryCommitsSection({ repositoryKey }: { repositoryKey: string }) 
 function App() {
   return (
     <GitApiClientProvider client={client}>
-      <GitRepositoryUiProvider routeAdapter={routes}>
+      <GitRepositoryUiProvider
+        routeAdapter={routes}
+        theme={{
+          unstyled: true,
+          classNames: {
+            page: "repo-surface",
+            header: "repo-shell-header",
+            card: "repo-panel",
+            button: "repo-action",
+          },
+        }}
+      >
         <RepositoryCommitsSection repositoryKey="demo" />
       </GitRepositoryUiProvider>
     </GitApiClientProvider>
@@ -488,6 +521,60 @@ function CustomRepositorySearch({ repositoryKey }: { repositoryKey: string }) {
 - `GitEmptyState`
 - `GitErrorState`
 - `GitLoadingState`
+
+### Styling And Skinning
+
+The package is designed around three frontend ownership levels:
+
+- full package UI: import `@trebired/git-host/browser/styles.css` and use the browser pages directly
+- package structure + app styling: skip the stylesheet and pass `theme.unstyled`, `theme.classNames`, and `theme.slots`
+- package logic + app rendering: use the typed hooks, mutations, diagnostics, and route adapter with fully custom host rendering
+
+The package now treats styling as optional rather than required:
+
+- no browser page requires `@trebired/git-host/browser/styles.css` to function
+- structural components expose stable `data-slot` markers for host CSS targeting
+- `GitRepositoryUiProvider` accepts `theme.classNames` and `theme.slots` for slot-level class and attribute overrides
+- `GitBrowserProvider` and browser pages accept `unstyled` as a shortcut for `theme.unstyled: true`
+- render-state components can be replaced through `components.LoadingState`, `components.ErrorState`, and `components.EmptyState`
+
+```ts
+import {
+  GitRepositoryUiProvider,
+  GitRepositoryShell,
+  GitCommitList,
+} from "@trebired/git-host/react";
+
+<GitRepositoryUiProvider
+  theme={{
+    unstyled: true,
+    classNames: {
+      page: "nativeRepoPage",
+      header: "nativeRepoHeader",
+      card: "nativeCard",
+      list: "nativeList",
+      "list-item": "nativeListItem",
+      button: "nativeButton",
+    },
+    slots: {
+      page: {
+        attributes: {
+          "data-app-surface": "repository",
+        },
+      },
+    },
+  }}
+  components={{
+    EmptyState({ title, message }) {
+      return <section className="nativeEmpty">{title}: {message}</section>;
+    },
+  }}
+>
+  <GitRepositoryShell page="commits" repositoryKey="demo">
+    <GitCommitList commits={commits} repositoryKey="demo" />
+  </GitRepositoryShell>
+</GitRepositoryUiProvider>;
+```
 
 ### Route Adapter
 
