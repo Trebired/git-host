@@ -4,6 +4,13 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 1.8.0
+
+- Added host-owned archive ergonomics so callers can customize source archive filenames, outer root-directory naming, and generated archive URLs without changing repository identity or cache behavior.
+- Added exported HTTP helpers for archive and uploaded release-asset downloads, including consistent content headers, redirect handling, and `HEAD` support for host-owned routes.
+- Extended forge release asset transport support with typed asset links/downloads, optional host URL builders and openers, client helpers, browser links, and a reusable forge asset download route.
+- Updated the README with default archive behavior, customization examples, and host-owned route patterns, and added coverage for filename customization, URL generation, response headers, and release asset downloads.
+
 ## 1.7.0
 
 - Added first-class host-managed source archives for branches, tags, commits, and forge releases through SHA-resolved `zipball` and `tarball` download routes backed by `git archive`.
