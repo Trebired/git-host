@@ -657,7 +657,9 @@ function GitRepositoryReleasePageInner(props: GitRepositoryReleasePageProps) {
                 children: release.data.assets.map((asset) => h("li", {
                   className: "git-browser-list-item",
                   key: asset.id,
-                  children: `${asset.name}${asset.size ? ` · ${asset.size} bytes` : ""}`,
+                  children: asset.download_url
+                    ? h("a", { className: "git-browser-link", href: asset.download_url, children: `${asset.name}${asset.size ? ` · ${asset.size} bytes` : ""}` })
+                    : `${asset.name}${asset.size ? ` · ${asset.size} bytes` : ""}`,
                 })),
               })
               : h("p", { className: "git-browser-note", key: "empty", children: "No uploaded release assets." }),

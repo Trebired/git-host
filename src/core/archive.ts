@@ -12,15 +12,19 @@ import type {
   GitArchiveCacheBackend,
   GitArchiveCacheEntry,
   GitArchiveDownload,
+  GitArchiveFileNameContext,
   GitArchiveFormat,
   GitArchiveMetadata,
   GitHostArchiveOptions,
+  GitArchiveRootDirectoryContext,
+  GitArchiveUrlContext,
   GitRepositoryHandle,
   GitSourceArchiveFormat,
   GitSourceArchiveLinks,
   NormalizedGitHostLogger,
   OpenArchiveOptions,
   ReadArchiveOptions,
+  ResolveArchiveLinksInput,
   ResolveArchiveOptions,
 } from "../types.js";
 import { text } from "../utils/text.js";
@@ -39,15 +43,13 @@ type GitArchiveService = {
   open(repository: GitRepositoryHandle, options?: OpenArchiveOptions): Promise<GitArchiveDownload>;
   read(repository: GitRepositoryHandle, options?: ReadArchiveOptions): Promise<GitArchive>;
   resolve(repository: GitRepositoryHandle, options?: ResolveArchiveOptions): Promise<GitArchiveMetadata>;
-  resolveLinks(repositoryKey: string, input?: {
-    basePath?: string;
-    ref?: string;
-  }): GitSourceArchiveLinks;
+  resolveLinks(repositoryKey: string, input?: ResolveArchiveLinksInput): GitSourceArchiveLinks;
 };
 
 type ResolvedArchiveRequest = {
   cache_entry: GitArchiveCacheEntry | null;
   content_type: string;
+  file_name: string;
   format: GitSourceArchiveFormat;
   ref: string;
   requested_format: GitArchiveFormat;
@@ -91,6 +93,18 @@ function buildArchiveFileName(repositoryId: string, ref: string, format: GitSour
   return `${sanitizeArchiveComponent(repositoryId)}-${sanitizeArchiveComponent(ref || "HEAD")}.${archiveExtension(format)}`;
 }
 
+function ensureArchiveFileNameExtension(fileName: string, format: GitSourceArchiveFormat): string {
+  const trimmed = text(fileName).replace(/^\/+|\/+$/g, "");
+  if (!trimmed) return "";
+  const extension = `.${archiveExtension(format)}`;
+  return trimmed.endsWith(extension) ? trimmed : `${trimmed}${extension}`;
+}
+
+function ensureRootDirectorySuffix(value: string): string {
+  const trimmed = text(value).replace(/^\/+/g, "").replace(/\/+$/g, "");
+  return trimmed ? `${trimmed}/` : "";
+}
+
 function normalizeBasePath(value: unknown): string {
   const next = text(value).replace(/\/+$/g, "");
   if (!next || next === "/") return "";
@@ -105,6 +119,92 @@ function buildArchivePath(repositoryKey: string, format: GitSourceArchiveFormat,
   const normalizedBasePath = normalizeBasePath(basePath);
   const route = format === "zip" ? "zipball" : "tarball";
   return `${normalizedBasePath}/repositories/${encodePathSegment(repositoryKey)}/${route}/${encodePathSegment(ref || "HEAD")}`;
+}
+
+function resolveArchiveFileName(
+  repository: GitRepositoryHandle,
+  archiveOptions: GitHostArchiveOptions,
+  input: {
+    fileName?: string;
+    format: GitSourceArchiveFormat;
+    ref: string;
+    repositoryKey?: string;
+    resolvedCommit?: string;
+    rootDirectory: string;
+  },
+): string {
+  const defaultFileName = buildArchiveFileName(repository.id, input.ref, input.format);
+  const hookInput: GitArchiveFileNameContext = {
+    defaultFileName,
+    extension: archiveExtension(input.format),
+    format: input.format,
+    ref: input.ref,
+    repository,
+    repositoryId: repository.id,
+    repositoryKey: input.repositoryKey,
+    resolvedCommit: input.resolvedCommit,
+    rootDirectory: input.rootDirectory,
+  };
+  const candidate = text(input.fileName) || text(archiveOptions.resolveFileName?.(hookInput)) || defaultFileName;
+  return ensureArchiveFileNameExtension(candidate, input.format) || defaultFileName;
+}
+
+function resolveArchiveRootDirectory(
+  repository: GitRepositoryHandle,
+  archiveOptions: GitHostArchiveOptions,
+  input: {
+    fileName: string;
+    format: GitSourceArchiveFormat;
+    ref: string;
+    repositoryKey?: string;
+    resolvedCommit?: string;
+    rootDirectory?: string;
+  },
+): string {
+  const defaultRootDirectory = buildArchiveRootDirectory(repository.id, text(input.resolvedCommit));
+  const hookInput: GitArchiveRootDirectoryContext = {
+    defaultRootDirectory,
+    fileName: input.fileName,
+    format: input.format,
+    ref: input.ref,
+    repository,
+    repositoryId: repository.id,
+    repositoryKey: input.repositoryKey,
+    resolvedCommit: input.resolvedCommit,
+  };
+  const candidate = ensureRootDirectorySuffix(
+    text(input.rootDirectory)
+    || text(archiveOptions.resolveRootDirectory?.(hookInput))
+    || defaultRootDirectory,
+  );
+  return candidate || defaultRootDirectory;
+}
+
+function resolveArchiveHref(
+  archiveOptions: GitHostArchiveOptions,
+  repositoryKey: string,
+  input: {
+    basePath?: string;
+    fileName?: string;
+    format: GitSourceArchiveFormat;
+    ref: string;
+    repositoryId?: string;
+    rootDirectory?: string;
+  },
+): string {
+  const normalizedBasePath = normalizeBasePath(input.basePath);
+  const defaultPath = buildArchivePath(repositoryKey, input.format, input.ref, normalizedBasePath);
+  const hookInput: GitArchiveUrlContext = {
+    basePath: normalizedBasePath,
+    defaultPath,
+    fileName: input.fileName,
+    format: input.format,
+    ref: input.ref,
+    repositoryId: input.repositoryId,
+    repositoryKey,
+    rootDirectory: input.rootDirectory,
+  };
+  return text(archiveOptions.buildUrl?.(hookInput), defaultPath);
 }
 
 async function resolveArchiveCommit(repository: GitRepositoryHandle, ref: string, format: GitSourceArchiveFormat): Promise<string> {
@@ -273,7 +373,23 @@ function createGitArchiveService(options: CreateGitArchiveServiceOptions): GitAr
     const { format, requested } = normalizeArchiveFormat(optionsInput.format);
     const ref = text(optionsInput.ref, "HEAD");
     const resolvedCommit = await resolveArchiveCommit(repository, ref, format);
-    const rootDirectory = buildArchiveRootDirectory(repository.id, resolvedCommit);
+    const defaultRootDirectory = buildArchiveRootDirectory(repository.id, resolvedCommit);
+    const fileName = resolveArchiveFileName(repository, archiveOptions, {
+      fileName: optionsInput.fileName,
+      format,
+      ref,
+      repositoryKey: optionsInput.repositoryKey,
+      resolvedCommit,
+      rootDirectory: defaultRootDirectory,
+    });
+    const rootDirectory = resolveArchiveRootDirectory(repository, archiveOptions, {
+      fileName,
+      format,
+      ref,
+      repositoryKey: optionsInput.repositoryKey,
+      resolvedCommit,
+      rootDirectory: optionsInput.rootDirectory,
+    });
     const cacheKey = buildArchiveCacheKey(repository.id, resolvedCommit, format, cacheKeyVersion);
     const cacheEntry = cache.readEntry ? await cache.readEntry(cacheKey) : null;
 
@@ -289,6 +405,7 @@ function createGitArchiveService(options: CreateGitArchiveServiceOptions): GitAr
     return {
       cache_entry: cacheEntry,
       content_type: archiveContentType(format),
+      file_name: fileName,
       format,
       ref,
       requested_format: requested,
@@ -302,7 +419,7 @@ function createGitArchiveService(options: CreateGitArchiveServiceOptions): GitAr
       cache_key: buildArchiveCacheKey(repository.id, resolved.resolved_commit, resolved.format, cacheKeyVersion),
       cache_status: cacheStatus,
       content_type: resolved.content_type,
-      file_name: buildArchiveFileName(repository.id, resolved.ref, resolved.format),
+      file_name: resolved.file_name,
       format: resolved.format,
       ref: resolved.ref,
       resolved_commit: resolved.resolved_commit,
@@ -467,10 +584,19 @@ function createGitArchiveService(options: CreateGitArchiveServiceOptions): GitAr
         const { format } = normalizeArchiveFormat(optionsInput.format);
         await assertRepositoryReady(repository);
         const resolvedCommit = await resolveArchiveCommit(repository, requestedRef, format);
+        const rootDirectory = ensureRootDirectorySuffix(text(optionsInput.prefix));
+        const fileName = resolveArchiveFileName(repository, archiveOptions, {
+          fileName: optionsInput.fileName,
+          format,
+          ref: requestedRef,
+          repositoryKey: optionsInput.repositoryKey,
+          resolvedCommit,
+          rootDirectory,
+        });
         const generation = spawnArchiveStream(repository, {
           format,
           ref: resolvedCommit,
-          rootDirectory: text(optionsInput.prefix),
+          rootDirectory,
         });
         const buffer = await collectStream(generation.stream);
         await generation.completed;
@@ -480,18 +606,21 @@ function createGitArchiveService(options: CreateGitArchiveServiceOptions): GitAr
           content: buffer.toString("base64"),
           content_type: archiveContentType(format),
           encoding: "base64",
-          file_name: buildArchiveFileName(repository.id, requestedRef, format),
+          file_name: fileName,
           format,
           ref: requestedRef,
           resolved_commit: resolvedCommit,
-          root_directory: text(optionsInput.prefix),
+          root_directory: rootDirectory,
           size: buffer.byteLength,
         };
       }
 
       const archive = await service.open(repository, {
+        fileName: optionsInput.fileName,
         format: optionsInput.format,
         ref: requestedRef,
+        repositoryKey: optionsInput.repositoryKey,
+        rootDirectory: optionsInput.rootDirectory,
       });
       const buffer = await collectStream(archive.stream);
       const metadata = await archive.completed;
@@ -504,14 +633,73 @@ function createGitArchiveService(options: CreateGitArchiveServiceOptions): GitAr
 
     resolveLinks(repositoryKey, input = {}) {
       const ref = text(input.ref, "HEAD");
+      const repository = {
+        id: text(input.repositoryId, repositoryKey),
+        path: "",
+      };
+
+      const zipDefaultRoot = buildArchiveRootDirectory(repository.id, ref);
+      const zipFileName = resolveArchiveFileName(repository, archiveOptions, {
+        fileName: input.fileName,
+        format: "zip",
+        ref,
+        repositoryKey,
+        rootDirectory: zipDefaultRoot,
+      });
+      const zipRootDirectory = ensureRootDirectorySuffix(text(input.rootDirectory))
+        || resolveArchiveRootDirectory(repository, archiveOptions, {
+          fileName: zipFileName,
+          format: "zip",
+          ref,
+          repositoryKey,
+          rootDirectory: input.rootDirectory,
+        });
+
+      const tarDefaultRoot = buildArchiveRootDirectory(repository.id, ref);
+      const tarFileName = resolveArchiveFileName(repository, archiveOptions, {
+        fileName: input.fileName,
+        format: "tar.gz",
+        ref,
+        repositoryKey,
+        rootDirectory: tarDefaultRoot,
+      });
+      const tarRootDirectory = ensureRootDirectorySuffix(text(input.rootDirectory))
+        || resolveArchiveRootDirectory(repository, archiveOptions, {
+          fileName: tarFileName,
+          format: "tar.gz",
+          ref,
+          repositoryKey,
+          rootDirectory: input.rootDirectory,
+        });
+
       return {
         tar_gz: {
+          file_name: tarFileName,
           format: "tar.gz",
-          href: buildArchivePath(repositoryKey, "tar.gz", ref, input.basePath),
+          href: resolveArchiveHref(archiveOptions, repositoryKey, {
+            basePath: input.basePath,
+            fileName: tarFileName,
+            format: "tar.gz",
+            ref,
+            repositoryId: input.repositoryId,
+            rootDirectory: tarRootDirectory,
+          }),
+          ref,
+          root_directory: tarRootDirectory,
         },
         zip: {
+          file_name: zipFileName,
           format: "zip",
-          href: buildArchivePath(repositoryKey, "zip", ref, input.basePath),
+          href: resolveArchiveHref(archiveOptions, repositoryKey, {
+            basePath: input.basePath,
+            fileName: zipFileName,
+            format: "zip",
+            ref,
+            repositoryId: input.repositoryId,
+            rootDirectory: zipRootDirectory,
+          }),
+          ref,
+          root_directory: zipRootDirectory,
         },
       };
     },

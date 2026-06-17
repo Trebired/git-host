@@ -249,6 +249,53 @@ describe("@trebired/git-host", () => {
     expect(rows.some((entry) => entry.message === "archive cache hit")).toBe(true);
   });
 
+  test("supports custom archive filenames, root directories, and link URLs", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const host = createGitHost({
+      archive: {
+        buildUrl({ defaultPath, fileName, format, ref, repositoryKey }) {
+          return `/downloads/${encodeURIComponent(repositoryKey)}/${format === "zip" ? "z" : "t"}/${encodeURIComponent(ref)}?name=${encodeURIComponent(String(fileName || ""))}&fallback=${encodeURIComponent(defaultPath)}`;
+        },
+        resolveFileName({ format, ref }) {
+          return format === "zip" ? `package-${ref}` : `snapshot-${ref}`;
+        },
+        resolveRootDirectory({ format, ref }) {
+          return format === "zip" ? `zip-root-${ref}` : `tar-root-${ref}`;
+        },
+      },
+      resolveRepository(repositoryId) {
+        return {
+          id: repositoryId,
+          path: resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: `${repositoryId}/workspace` }),
+        };
+      },
+    });
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeFile(workspace, "README.md", "# Naming\n");
+    await host.ensureRepository("demo");
+
+    const zip = await host.readArchive("demo", { format: "zip", ref: "main", repositoryKey: "owner/demo" });
+    const tar = await host.resolveArchive("demo", { format: "tar.gz", ref: "main", repositoryKey: "owner/demo" });
+    const links = host.resolveArchiveLinks("owner/demo", {
+      basePath: "/api/git",
+      ref: "main",
+      repositoryId: "demo",
+    });
+
+    expect(zip.file_name).toBe("package-main.zip");
+    expect(zip.root_directory).toBe("zip-root-main/");
+    expect(Buffer.from(zip.content, "base64").includes(Buffer.from("zip-root-main/"))).toBe(true);
+    expect(tar.file_name).toBe("snapshot-main.tar.gz");
+    expect(tar.root_directory).toBe("tar-root-main/");
+    expect(links.zip.file_name).toBe("package-main.zip");
+    expect(links.tar_gz.file_name).toBe("snapshot-main.tar.gz");
+    expect(links.zip.href).toContain("/downloads/owner%2Fdemo/z/main");
+    expect(links.tar_gz.href).toContain("/downloads/owner%2Fdemo/t/main");
+  });
+
   test("reads linguist results at a ref and enriches tree entries with languages and icons", async () => {
     const root = tempDir();
     const host = createHost(path.join(root, "repos"));

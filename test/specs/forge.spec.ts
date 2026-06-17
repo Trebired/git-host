@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
+import { Readable } from "node:stream";
 import { createElement } from "react";
 import { act, create as createRenderer } from "react-test-renderer";
 
@@ -289,6 +290,165 @@ describe("@trebired/git-host forge", () => {
       const response = await fetchJson(`http://127.0.0.1:${port}/api/git/repositories/demo/releases/broken-release`);
       expect(response.response.status).toBe(404);
       expect(response.json.error.code).toBe("release_tag_not_found");
+    } finally {
+      await closeServer(server);
+      server.unref();
+    }
+  });
+
+  test("adds host-owned release asset download links and client helpers", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const host = createHost(repositoriesRoot);
+    const storage = createInMemoryGitForgeStorageAdapter();
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeFile(workspace, "README.md", "# Assets\n");
+    await host.ensureRepository("demo", {
+      actor: { name: "Alice", email: "alice@example.com", id: "alice" },
+    });
+    await host.createTag("demo", {
+      actor: { name: "Alice", email: "alice@example.com", id: "alice" },
+      message: "Version 1",
+      name: "v1",
+      ref: "main",
+    });
+
+    const forge = createGitForge({
+      createForkRepository({ upstreamRepositoryId }) {
+        return {
+          id: `${upstreamRepositoryId}-fork`,
+          path: resolveRepositoryPath({
+            rootDir: repositoriesRoot,
+            repositoryPath: `${upstreamRepositoryId}-fork/workspace`,
+          }),
+        };
+      },
+      gitHost: host,
+      releaseAssetStore: {
+        buildAssetDownloadUrl({ asset, repositoryKey, release }) {
+          return `https://downloads.example.test/${encodeURIComponent(String(repositoryKey || "demo"))}/${encodeURIComponent(release.id)}/${encodeURIComponent(asset.id)}`;
+        },
+      },
+      storage,
+    });
+
+    const server = createServer(createGitForgeApiHandler({
+      basePath: "/api/git",
+      forge,
+      gitHost: host,
+      resolveActor() {
+        return { id: "alice", name: "Alice", email: "alice@example.com" };
+      },
+    }));
+    const port = await listen(server);
+    const client = createGitApiClient({ baseUrl: `http://127.0.0.1:${port}/api/git`, headers: actorHeaders() });
+
+    try {
+      const release = await client.createRelease("demo", {
+        assets: [{
+          content_type: "application/gzip",
+          id: "asset-1",
+          name: "bundle.tgz",
+          size: 123,
+        }],
+        existingTagName: "v1",
+        notes: "Asset test",
+        title: "Release with assets",
+      });
+
+      expect(release.assets[0]?.download?.href).toBe(`https://downloads.example.test/demo/${encodeURIComponent(release.id)}/asset-1`);
+      expect(release.assets[0]?.download_url).toBe(`https://downloads.example.test/demo/${encodeURIComponent(release.id)}/asset-1`);
+
+      const helper = client.getReleaseAssetLink("demo", release.id, release.assets[0]!);
+      expect(helper.href).toBe(`https://downloads.example.test/demo/${encodeURIComponent(release.id)}/asset-1`);
+      expect(helper.file_name).toBe("bundle.tgz");
+    } finally {
+      await closeServer(server);
+      server.unref();
+    }
+  });
+
+  test("serves uploaded release assets over the forge asset route", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const host = createHost(repositoriesRoot);
+    const storage = createInMemoryGitForgeStorageAdapter();
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeFile(workspace, "README.md", "# Asset Route\n");
+    await host.ensureRepository("demo", {
+      actor: { name: "Alice", email: "alice@example.com", id: "alice" },
+    });
+    await host.createTag("demo", {
+      actor: { name: "Alice", email: "alice@example.com", id: "alice" },
+      message: "Version 1",
+      name: "v1",
+      ref: "main",
+    });
+
+    const forge = createGitForge({
+      createForkRepository({ upstreamRepositoryId }) {
+        return {
+          id: `${upstreamRepositoryId}-fork`,
+          path: resolveRepositoryPath({
+            rootDir: repositoriesRoot,
+            repositoryPath: `${upstreamRepositoryId}-fork/workspace`,
+          }),
+        };
+      },
+      gitHost: host,
+      releaseAssetStore: {
+        async openAssetDownload({ asset }) {
+          return {
+            asset,
+            content_type: "text/plain; charset=utf-8",
+            file_name: asset.name,
+            size: 12,
+            stream: Readable.from(["hello asset\n"]),
+          };
+        },
+      },
+      storage,
+    });
+
+    const server = createServer(createGitForgeApiHandler({
+      basePath: "/api/git",
+      forge,
+      gitHost: host,
+      resolveActor() {
+        return { id: "alice", name: "Alice", email: "alice@example.com" };
+      },
+    }));
+    const port = await listen(server);
+    const client = createGitApiClient({ baseUrl: `http://127.0.0.1:${port}/api/git`, headers: actorHeaders() });
+
+    try {
+      const release = await client.createRelease("demo", {
+        assets: [{
+          content_type: "text/plain; charset=utf-8",
+          id: "asset-1",
+          name: "notes.txt",
+          size: 12,
+        }],
+        existingTagName: "v1",
+        notes: "Asset stream",
+        title: "Release stream",
+      });
+
+      const response = await fetch(`http://127.0.0.1:${port}/api/git/repositories/demo/releases/${encodeURIComponent(release.id)}/assets/asset-1`);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toContain("text/plain");
+      expect(response.headers.get("content-disposition")).toContain("notes.txt");
+      expect(await response.text()).toBe("hello asset\n");
+
+      const head = await fetch(`http://127.0.0.1:${port}/api/git/repositories/demo/releases/${encodeURIComponent(release.id)}/assets/asset-1`, {
+        method: "HEAD",
+      });
+      expect(head.status).toBe(200);
+      expect(head.headers.get("content-disposition")).toContain("notes.txt");
     } finally {
       await closeServer(server);
       server.unref();

@@ -17,6 +17,9 @@ import type {
   GitForgeFork,
   GitForgeForkStatus,
   GitForgeRelease,
+  GitForgeReleaseAsset,
+  GitForgeReleaseAssetDownload,
+  GitForgeReleaseAssetLink,
   GitForgeRepositoryOverview,
   GitForgeSocialState,
   GitRepositoryHandle,
@@ -225,6 +228,42 @@ function createGitForge(options: CreateGitForgeOptions): GitForge {
     return release;
   }
 
+  function readRequiredReleaseAsset(release: GitForgeRelease, assetId: string): GitForgeReleaseAsset {
+    const asset = release.assets.find((entry) => text(entry.id) === text(assetId));
+    if (!asset) {
+      throw new GitHostError("forge_resource_not_found", `Release asset "${assetId}" was not found in release "${release.id}".`, {
+        assetId,
+        releaseId: release.id,
+        repositoryId: release.repository_id,
+      });
+    }
+    return asset;
+  }
+
+  async function resolveReleaseAssetLinkInternal(
+    repositoryId: string,
+    release: GitForgeRelease,
+    asset: GitForgeReleaseAsset,
+    repositoryKey?: string,
+  ): Promise<GitForgeReleaseAssetLink> {
+    const href = text(
+      options.releaseAssetStore?.buildAssetDownloadUrl?.({
+        asset,
+        release,
+        repositoryId,
+        repositoryKey,
+      }),
+      text(asset.download_url, `/repositories/${encodeURIComponent(text(repositoryKey, repositoryId))}/releases/${encodeURIComponent(release.id)}/assets/${encodeURIComponent(asset.id)}`),
+    );
+    return {
+      asset_id: asset.id,
+      content_type: asset.content_type,
+      file_name: text(asset.name, `asset-${asset.id}`),
+      href,
+      size: asset.size == null ? null : Number(asset.size) || 0,
+    };
+  }
+
   async function readRequiredFork(forkRepositoryId: string) {
     const fork = await options.storage.forks.readFork(forkRepositoryId);
     if (!fork) {
@@ -279,6 +318,47 @@ function createGitForge(options: CreateGitForgeOptions): GitForge {
 
     async readRelease(repositoryId: string, releaseId: string) {
       return await readRequiredRelease(repositoryId, releaseId);
+    },
+
+    async resolveReleaseAssetLink(repositoryId: string, releaseId: string, assetId: string, input = {}) {
+      const release = await readRequiredRelease(repositoryId, releaseId);
+      const asset = readRequiredReleaseAsset(release, assetId);
+      return await resolveReleaseAssetLinkInternal(repositoryId, release, asset, text(input.repositoryKey));
+    },
+
+    async openReleaseAsset(repositoryId: string, releaseId: string, assetId: string, input = {}): Promise<GitForgeReleaseAssetDownload> {
+      const release = await readRequiredRelease(repositoryId, releaseId);
+      const asset = readRequiredReleaseAsset(release, assetId);
+      const repositoryKey = text(input.repositoryKey);
+      const download = options.releaseAssetStore?.openAssetDownload
+        ? await options.releaseAssetStore.openAssetDownload({
+          asset,
+          release,
+          repositoryId,
+          repositoryKey,
+        })
+        : null;
+      if (download) {
+        return {
+          ...download,
+          asset: {
+            ...asset,
+            download_url: text(download.redirect_url, asset.download_url),
+          },
+          content_type: text(download.content_type, text(asset.content_type, "application/octet-stream")),
+          file_name: text(download.file_name, text(asset.name, `asset-${asset.id}`)),
+          size: download.size == null ? (asset.size == null ? null : Number(asset.size) || 0) : download.size,
+        };
+      }
+
+      const link = await resolveReleaseAssetLinkInternal(repositoryId, release, asset, repositoryKey);
+      return {
+        asset,
+        content_type: text(asset.content_type, "application/octet-stream"),
+        file_name: link.file_name,
+        redirect_url: link.href,
+        size: link.size,
+      };
     },
 
     async createRelease(repositoryId: string, input: CreateGitForgeReleaseInput) {

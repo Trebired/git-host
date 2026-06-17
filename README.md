@@ -333,6 +333,137 @@ Archives are always generated from Git objects with `git archive`, never from th
 - The extracted root directory is commit-based, so the inner folder stays stable for a fixed commit even if the request came from a branch or tag name.
 - The outer archive bytes are streamed and cached, but git-host does not promise byte-for-byte identical compression output forever unless you choose to enforce that at the cache/backend layer.
 
+Default behavior:
+
+```ts
+const archive = await gitHost.readArchive("demo", {
+  format: "zip",
+  ref: "main",
+});
+
+console.log(archive.file_name);
+// demo-main.zip
+
+const links = gitHost.resolveArchiveLinks("demo", {
+  basePath: "/api/git",
+  ref: "main",
+});
+
+console.log(links.zip.href);
+// /api/git/repositories/demo/zipball/main
+```
+
+Custom archive filename and root directory behavior:
+
+```ts
+const gitHost = createGitHost({
+  archive: {
+    resolveFileName({ format, ref, repository, resolvedCommit }) {
+      const label = repository.id === "demo" ? "customer-demo" : repository.id;
+      const shortSha = resolvedCommit.slice(0, 8);
+      return format === "zip"
+        ? `${label}-${ref}-${shortSha}.zip`
+        : `${label}-${ref}-${shortSha}.tar.gz`;
+    },
+    resolveRootDirectory({ repository, resolvedCommit }) {
+      return `${repository.id}-src-${resolvedCommit.slice(0, 12)}/`;
+    },
+  },
+  resolveRepository(repositoryId) {
+    return {
+      id: repositoryId,
+      path: `/srv/git-workspaces/${repositoryId}/workspace`,
+    };
+  },
+});
+
+const preview = await gitHost.resolveArchive("demo", {
+  format: "tar.gz",
+  ref: "v1",
+});
+
+console.log(preview.file_name);
+console.log(preview.root_directory);
+```
+
+You can also override the outer filename or root directory per call without changing host defaults:
+
+```ts
+const releaseZip = await gitHost.openArchive("demo", {
+  fileName: "demo-release.zip",
+  format: "zip",
+  ref: "v1",
+  rootDirectory: "demo-release/",
+});
+```
+
+Custom archive URL generation for host-owned routes:
+
+```ts
+const gitHost = createGitHost({
+  archive: {
+    buildUrl({ format, ref, repositoryKey }) {
+      const route = format === "zip" ? "source.zip" : "source.tar.gz";
+      return `/projects/${encodeURIComponent(repositoryKey)}/refs/${encodeURIComponent(ref)}/${route}`;
+    },
+  },
+  resolveRepository(repositoryId) {
+    return {
+      id: repositoryId,
+      path: `/srv/git-workspaces/${repositoryId}/workspace`,
+    };
+  },
+});
+
+const links = gitHost.resolveArchiveLinks("acme/demo", {
+  ref: "release/v1",
+});
+
+console.log(links.tar_gz.href);
+// /projects/acme%2Fdemo/refs/release%2Fv1/source.tar.gz
+```
+
+Host-owned download route with the exported response helper:
+
+```ts
+import express from "express";
+import { writeGitArchiveResponse } from "@trebired/git-host";
+
+const app = express();
+
+app.get("/projects/:owner/:repo/archive/:ref.zip", async (req, res, next) => {
+  try {
+    const repositoryId = `${req.params.owner}/${req.params.repo}`;
+    const archive = await gitHost.openArchive(repositoryId, {
+      fileName: `${req.params.repo}-${req.params.ref}.zip`,
+      format: "zip",
+      ref: req.params.ref,
+      repositoryKey: repositoryId,
+    });
+    await writeGitArchiveResponse(req, res, { archive });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.head("/projects/:owner/:repo/archive/:ref.zip", async (req, res, next) => {
+  try {
+    const repositoryId = `${req.params.owner}/${req.params.repo}`;
+    const archive = await gitHost.openArchive(repositoryId, {
+      fileName: `${req.params.repo}-${req.params.ref}.zip`,
+      format: "zip",
+      ref: req.params.ref,
+      repositoryKey: repositoryId,
+    });
+    await writeGitArchiveResponse(req, res, { archive });
+  } catch (error) {
+    next(error);
+  }
+});
+```
+
+`writeGitArchiveResponse()` applies the correct `content-type`, `content-disposition`, `content-length` when known, redirect handling, and `HEAD` semantics for either `readArchive()` or `openArchive()` results.
+
 ### Releases, Tags, and Assets
 
 A forge release is metadata attached to a Git tag. Its automatic source archives are not uploaded assets.
@@ -341,6 +472,24 @@ A forge release is metadata attached to a Git tag. Its automatic source archives
 - `release.source_archives.zip` and `release.source_archives.tar_gz` point at the automatic downloads for the tagged source.
 - Tag list/detail responses also expose `source_archives`.
 - If a release points at a missing tag, the forge API returns `release_tag_not_found`.
+
+Uploaded release assets have matching host ergonomics:
+
+- `forge.resolveReleaseAssetLink()` returns typed host-owned metadata for an asset download URL.
+- `forge.openReleaseAsset()` returns a stream or redirect download shape without assuming a storage backend.
+- `writeGitReleaseAssetResponse()` applies headers and `HEAD` behavior for custom host routes.
+
+```ts
+const assetLink = await forge.resolveReleaseAssetLink("demo", release.id, asset.id, {
+  repositoryKey: "acme/demo",
+});
+
+console.log(assetLink.href);
+
+const assetDownload = await forge.openReleaseAsset("demo", release.id, asset.id, {
+  repositoryKey: "acme/demo",
+});
+```
 
 ### Cache Behavior
 

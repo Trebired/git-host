@@ -4,7 +4,13 @@ import path from "node:path";
 import { createElement } from "react";
 import { act, create as createRenderer } from "react-test-renderer";
 
-import { createFileSystemGitArchiveCache, createGitApiHandler, createGitApiSocketServer, createGitHost } from "../../src/index.js";
+import {
+  createFileSystemGitArchiveCache,
+  createGitApiHandler,
+  createGitApiSocketServer,
+  createGitHost,
+  writeGitArchiveResponse,
+} from "../../src/index.js";
 import {
   createGitApiClient,
   GitApiClientProvider,
@@ -329,6 +335,58 @@ describe("@trebired/git-host", () => {
       expect(rows.some((entry) => entry.message === "archive cache hit")).toBe(true);
     } finally {
       socketServer.disconnectSockets(true);
+      server.closeIdleConnections?.();
+      server.closeAllConnections?.();
+      try {
+        server.close();
+      } catch {}
+      server.unref();
+    }
+  });
+
+  test("writes archive responses with custom filenames and HEAD support", async () => {
+    const root = tempDir();
+    const host = createHost(path.join(root, "repos"));
+    const workspace = resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeFile(workspace, "README.md", "# Archive Response\n");
+    await host.ensureRepository("demo");
+
+    const server = createServer(async (req, res) => {
+      if (String(req.url || "") === "/archive-helper") {
+        const archive = await host.readArchive("demo", {
+          fileName: "helper-download",
+          format: "zip",
+          ref: "main",
+        });
+        await writeGitArchiveResponse(req, res, {
+          archive,
+          fileName: "manual-name.zip",
+        });
+        return;
+      }
+      res.statusCode = 404;
+      res.end();
+    });
+    const port = await listen(server);
+
+    try {
+      const getResponse = await fetch(`http://127.0.0.1:${port}/archive-helper`);
+      const getBody = Buffer.from(await getResponse.arrayBuffer());
+      expect(getResponse.status).toBe(200);
+      expect(getResponse.headers.get("content-type")).toBe("application/zip");
+      expect(getResponse.headers.get("content-disposition")).toContain('manual-name.zip');
+      expect(getResponse.headers.get("content-length")).toBeTruthy();
+      expect(getBody.subarray(0, 2).toString("utf8")).toBe("PK");
+
+      const headResponse = await fetch(`http://127.0.0.1:${port}/archive-helper`, {
+        method: "HEAD",
+      });
+      expect(headResponse.status).toBe(200);
+      expect(headResponse.headers.get("content-disposition")).toContain('manual-name.zip');
+      expect((await headResponse.text())).toBe("");
+    } finally {
       server.closeIdleConnections?.();
       server.closeAllConnections?.();
       try {

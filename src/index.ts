@@ -12,6 +12,12 @@ export { createFileSystemGitArchiveCache } from "./core/archive_cache_filesystem
 export { createGitHost } from "./core/create_git_host.js";
 export { createGitApiHandler, parseGitApiRoute } from "./api/handler.js";
 export { createGitForgeApiHandler, parseGitForgeApiRoute } from "./api/forge/handler.js";
+export {
+  applyArchiveHeaders,
+  applyReleaseAssetHeaders,
+  writeGitArchiveResponse,
+  writeGitReleaseAssetResponse,
+} from "./api/handler/archive.js";
 export { createGitApiSocketServer } from "./api/socket_server.js";
 export { createGitForge } from "./core/create_git_forge.js";
 export { createInMemoryGitForgeStorageAdapter } from "./core/git_forge/storage_memory.js";
@@ -102,8 +108,11 @@ export type {
   GitActor,
   GitArchiveCacheBackend,
   GitArchiveCacheEntry,
+  GitArchiveFileNameContext,
   GitArchiveCacheReadResult,
   GitArchiveCacheStatus,
+  GitArchiveRootDirectoryContext,
+  GitArchiveUrlContext,
   GitArchiveCacheWriter,
   GitArchiveDownload,
   GitArchive,
@@ -143,6 +152,8 @@ export type {
   GitForgeOperation,
   GitForgeRelease,
   GitForgeReleaseAsset,
+  GitForgeReleaseAssetDownload,
+  GitForgeReleaseAssetLink,
   GitForgeReleaseAssetStore,
   GitForgeReleaseStorage,
   GitForgeRepositoryOverview,
@@ -203,6 +214,7 @@ export type {
   ReadWorkingTreeFileOptions,
   RebaseInput,
   ResolveArchiveOptions,
+  ResolveArchiveLinksInput,
   ResolveRepositoryPathOptions,
   SyncGitForgeForkInput,
   SearchRepositoryOptions,

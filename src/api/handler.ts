@@ -119,13 +119,17 @@ async function handleGitApiRequest(req: IncomingMessage, res: ServerResponse, op
       await writeArchiveDownload(req, res, options.gitHost, {
         ref: "refName" in route ? route.refName : "HEAD",
         repositoryId,
+        repositoryKey,
         routeAction: route.action,
       });
       return;
     }
 
     const rawData = await runGitApiAction(options, route, repositoryId, url.searchParams);
-    const data = await enrichRepositoryDataWithArchives(options, route, rawData);
+    const data = await enrichRepositoryDataWithArchives(options, {
+      ...route,
+      repositoryId,
+    } as any, rawData);
     if (verbose) logger.info(logGroup, "api action completed", { action: route.action, method, pathname: url.pathname, repositoryId, repositoryKey });
     writeJson(req, res, 200, {
       ok: true,

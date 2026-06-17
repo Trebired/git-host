@@ -7,6 +7,7 @@ import type { GitRepositoryHandle } from "./repository.js";
 
 type GitApiResource =
   | "activity"
+  | "asset"
   | "archive"
   | "blame"
   | "blob"

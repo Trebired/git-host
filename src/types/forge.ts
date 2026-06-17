@@ -12,11 +12,32 @@ type GitForgeActor = {
 
 type GitForgeReleaseAsset = {
   content_type?: string;
+  download?: GitForgeReleaseAssetLink;
   download_url?: string;
   id: string;
   name: string;
   size?: number;
   storage_pointer?: string;
+};
+
+type GitForgeReleaseAssetLink = {
+  asset_id: string;
+  content_type?: string;
+  file_name: string;
+  href: string;
+  size: number | null;
+};
+
+type GitForgeReleaseAssetDownload = {
+  asset: GitForgeReleaseAsset;
+  completed?: Promise<GitForgeReleaseAssetLink>;
+  content?: string;
+  content_type: string;
+  encoding?: "base64";
+  file_name: string;
+  redirect_url?: string;
+  size: number | null;
+  stream?: NodeJS.ReadableStream;
 };
 
 type GitForgeRelease = {
@@ -132,10 +153,22 @@ type GitForgeRepositoryOverview = {
 };
 
 type GitForgeReleaseAssetStore = {
+  buildAssetDownloadUrl?: (input: {
+    asset: GitForgeReleaseAsset;
+    release: GitForgeRelease;
+    repositoryId: string;
+    repositoryKey?: string;
+  }) => string | null | undefined;
   normalizeAssets?: (
     repositoryId: string,
     assets: GitForgeReleaseAsset[],
   ) => MaybePromise<GitForgeReleaseAsset[]>;
+  openAssetDownload?: (input: {
+    asset: GitForgeReleaseAsset;
+    release: GitForgeRelease;
+    repositoryId: string;
+    repositoryKey?: string;
+  }) => MaybePromise<GitForgeReleaseAssetDownload | null>;
 };
 
 type GitForgeReleaseStorage = {
@@ -210,8 +243,14 @@ type GitForge = {
   listForks(repositoryId: string): Promise<GitForgeFork[]>;
   listReleases(repositoryId: string): Promise<GitForgeRelease[]>;
   readOverview(repositoryId: string, input?: ReadGitForgeRepositoryInput): Promise<GitForgeRepositoryOverview>;
+  openReleaseAsset(repositoryId: string, releaseId: string, assetId: string, input?: {
+    repositoryKey?: string;
+  }): Promise<GitForgeReleaseAssetDownload>;
   readRelease(repositoryId: string, releaseId: string): Promise<GitForgeRelease>;
   readSocialState(repositoryId: string, input?: ReadGitForgeRepositoryInput): Promise<GitForgeSocialState>;
+  resolveReleaseAssetLink(repositoryId: string, releaseId: string, assetId: string, input?: {
+    repositoryKey?: string;
+  }): Promise<GitForgeReleaseAssetLink>;
   syncFork(forkRepositoryId: string, input: SyncGitForgeForkInput): Promise<GitForgeFork>;
   unstarRepository(repositoryId: string, input: { actor: GitForgeActor }): Promise<GitForgeSocialState>;
   unwatchRepository(repositoryId: string, input: { actor: GitForgeActor }): Promise<GitForgeSocialState>;
@@ -229,6 +268,7 @@ type GitForgeApiAuthorizationResult = boolean | {
 
 type GitForgeResource =
   | "activity"
+  | "asset"
   | "fork"
   | "release"
   | "repository"
@@ -246,6 +286,7 @@ type CreateGitForgeApiHandlerOptions = {
   authorize?: (input: {
     action: string;
     actor: GitForgeActor | null;
+    assetId?: string;
     method: string;
     operation: GitForgeOperation;
     pathname: string;
@@ -289,6 +330,8 @@ export type {
   GitForgeOperation,
   GitForgeRelease,
   GitForgeReleaseAsset,
+  GitForgeReleaseAssetDownload,
+  GitForgeReleaseAssetLink,
   GitForgeReleaseAssetStore,
   GitForgeReleaseStorage,
   GitForgeRepositoryOverview,

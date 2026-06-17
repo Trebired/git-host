@@ -33,6 +33,13 @@ type GitForgeApiRoute =
       resource: "fork";
     }
   | {
+      action: "asset";
+      assetId: string;
+      releaseId: string;
+      repositoryKey: string;
+      resource: "asset";
+    }
+  | {
       action: "release";
       releaseId: string;
       repositoryKey: string;
@@ -115,6 +122,19 @@ function parseGitForgeApiRoute(pathnameInput: unknown, basePathInput: unknown): 
       releaseId,
       repositoryKey,
       resource: "release",
+    };
+  }
+
+  if (action === "releases" && segments.length === 6 && segments[4] === "assets") {
+    const releaseId = decodeRouteSegment(segments[3] || "");
+    const assetId = decodeRouteSegment(segments[5] || "");
+    if (!releaseId || !assetId) return null;
+    return {
+      action: "asset",
+      assetId,
+      releaseId,
+      repositoryKey,
+      resource: "asset",
     };
   }
 

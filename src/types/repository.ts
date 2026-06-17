@@ -217,8 +217,11 @@ type GitSourceArchiveFormat = "tar.gz" | "zip";
 type GitArchiveCacheStatus = "hit" | "miss";
 
 type GitSourceArchiveLink = {
+  file_name?: string;
   format: GitSourceArchiveFormat;
   href: string;
+  ref?: string;
+  root_directory?: string;
 };
 
 type GitSourceArchiveLinks = {

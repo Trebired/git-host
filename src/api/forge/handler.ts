@@ -1,11 +1,17 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { logPackageInitialized } from "@trebired/logger-adapter";
 
-import { resolveLogger } from "../../logging.js";
 import { GitHostError } from "../../errors.js";
+import { resolveLogger } from "../../logging.js";
 import type { CreateGitForgeApiHandlerOptions, GitForgeActor, GitForgeOperation, GitForgeRelease, GitForgeRepositoryOverview } from "../../types.js";
 import { text } from "../../utils/text.js";
-import { enrichRepositoryDataWithArchives, isArchiveDownloadAction, writeArchiveDownload } from "../handler/archive.js";
+import {
+  attachReleaseSourceArchives,
+  enrichRepositoryDataWithArchives,
+  isArchiveDownloadAction,
+  writeArchiveDownload,
+  writeReleaseAssetDownload,
+} from "../handler/archive.js";
 import { runGitApiAction } from "../handler/action.js";
 import {
   applyAuthorizationHeaders,
@@ -19,6 +25,8 @@ import { parseGitForgeApiRoute, type GitForgeApiRoute } from "./route.js";
 function routeOperation(route: GitForgeApiRoute, method: string): GitForgeOperation {
   if ("resource" in route && route.resource === "repository" && !("releaseId" in route) && !("forkId" in route)) return "read";
   switch (route.action) {
+    case "asset":
+      return "read";
     case "stars":
       return method === "DELETE" ? "delete" : "create";
     case "watch":
@@ -46,6 +54,8 @@ function allowedMethodsForRoute(route: GitForgeApiRoute): string[] {
     case "releases":
     case "forks":
       return ["GET", "HEAD", "POST"];
+    case "asset":
+      return ["GET", "HEAD"];
     case "release":
       return ["DELETE", "GET", "HEAD", "PATCH"];
     case "fork_sync":
@@ -53,6 +63,14 @@ function allowedMethodsForRoute(route: GitForgeApiRoute): string[] {
     default:
       return ["GET", "HEAD"];
   }
+}
+
+function isForgeReleasePayload(value: unknown): value is GitForgeRelease {
+  if (!value || typeof value !== "object") return false;
+  const release = value as Partial<GitForgeRelease>;
+  return typeof release.id === "string"
+    && typeof release.tag_name === "string"
+    && Array.isArray(release.assets);
 }
 
 async function readJsonBody(req: IncomingMessage): Promise<Record<string, unknown>> {
@@ -149,62 +167,56 @@ async function runForgeAction(
   }
 }
 
-async function attachReleaseSourceArchives(
-  options: Pick<CreateGitForgeApiHandlerOptions, "basePath" | "gitHost">,
-  repositoryId: string,
-  repositoryKey: string,
-  release: GitForgeRelease,
-): Promise<GitForgeRelease> {
-  try {
-    await options.gitHost.resolveArchive(repositoryId, {
-      format: "zip",
-      ref: release.tag_name,
-    });
-  } catch (error) {
-    if (error instanceof GitHostError && error.code === "archive_ref_not_found") {
-      throw new GitHostError(
-        "release_tag_not_found",
-        `Release "${release.id}" points at missing tag "${release.tag_name}" in repository "${repositoryId}".`,
-        {
-          releaseId: release.id,
-          repositoryId,
-          tag: release.tag_name,
-        },
-      );
-    }
-    throw error;
-  }
-
-  return {
-    ...release,
-    source_archives: options.gitHost.resolveArchiveLinks(repositoryKey, {
-      basePath: options.basePath,
-      ref: release.tag_name,
-    }),
-  };
-}
-
 async function enrichForgeDataWithArchives(
-  options: Pick<CreateGitForgeApiHandlerOptions, "basePath" | "gitHost">,
+  options: Pick<CreateGitForgeApiHandlerOptions, "basePath" | "forge" | "gitHost">,
   route: GitForgeApiRoute,
   repositoryId: string,
   data: unknown,
 ) {
   if (route.resource === "repository") {
-    return await enrichRepositoryDataWithArchives(options as any, route as any, data);
+    return await enrichRepositoryDataWithArchives({
+      basePath: options.basePath,
+      gitHost: options.gitHost,
+    }, {
+      ...route,
+      repositoryId,
+    } as any, data);
   }
 
-  if (route.action === "release" && data && typeof data === "object") {
-    return await attachReleaseSourceArchives(options, repositoryId, route.repositoryKey, data as GitForgeRelease);
+  if (route.action === "release" && isForgeReleasePayload(data)) {
+    try {
+      return await attachReleaseSourceArchives(options, repositoryId, route.repositoryKey, data as GitForgeRelease);
+    } catch (error) {
+      if (error instanceof GitHostError && error.code === "archive_ref_not_found") {
+        const release = data as GitForgeRelease;
+        throw new GitHostError("release_tag_not_found", `Release "${release.id}" points at missing tag "${release.tag_name}" in repository "${repositoryId}".`, {
+          releaseId: release.id,
+          repositoryId,
+          tag: release.tag_name,
+        });
+      }
+      throw error;
+    }
   }
 
   if (route.action === "releases" && Array.isArray(data)) {
     return await Promise.all(data.map(async (release) => {
-      return await attachReleaseSourceArchives(options, repositoryId, route.repositoryKey, release as GitForgeRelease);
+      return await enrichForgeDataWithArchives(options, {
+        action: "release",
+        releaseId: text((release as GitForgeRelease).id),
+        repositoryKey: route.repositoryKey,
+        resource: "release",
+      }, repositoryId, release);
     }));
   }
-  if (route.action === "releases" && data && typeof data === "object") {
-    return await attachReleaseSourceArchives(options, repositoryId, route.repositoryKey, data as GitForgeRelease);
+
+  if (route.action === "releases" && isForgeReleasePayload(data)) {
+    return await enrichForgeDataWithArchives(options, {
+      action: "release",
+      releaseId: text((data as GitForgeRelease).id),
+      repositoryKey: route.repositoryKey,
+      resource: "release",
+    }, repositoryId, data);
   }
 
   if (route.action === "overview" && data && typeof data === "object") {
@@ -212,7 +224,12 @@ async function enrichForgeDataWithArchives(
     return {
       ...overview,
       latest_release: overview.latest_release
-        ? await attachReleaseSourceArchives(options, repositoryId, route.repositoryKey, overview.latest_release)
+        ? await enrichForgeDataWithArchives(options, {
+          action: "release",
+          releaseId: overview.latest_release.id,
+          repositoryKey: route.repositoryKey,
+          resource: "release",
+        }, repositoryId, overview.latest_release) as GitForgeRelease
         : null,
     };
   }
@@ -270,6 +287,7 @@ async function handleGitForgeApiRequest(req: IncomingMessage, res: ServerRespons
     ? await options.authorize({
       action: route.action,
       actor,
+      assetId: "assetId" in route ? route.assetId : undefined,
       method,
       operation: routeOperation(route, method),
       pathname: url.pathname,
@@ -324,7 +342,18 @@ async function handleGitForgeApiRequest(req: IncomingMessage, res: ServerRespons
       await writeArchiveDownload(req, res, options.gitHost, {
         ref: "refName" in route ? route.refName : "HEAD",
         repositoryId,
+        repositoryKey,
         routeAction: route.action,
+      });
+      return;
+    }
+
+    if (route.action === "asset") {
+      await writeReleaseAssetDownload(req, res, options.forge, {
+        assetId: route.assetId,
+        releaseId: route.releaseId,
+        repositoryId,
+        repositoryKey,
       });
       return;
     }

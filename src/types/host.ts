@@ -27,6 +27,7 @@ import type {
   GitRepositoryLinguist,
   GitRepositorySummary,
   GitSearchResult,
+  GitSourceArchiveFormat,
   GitSourceArchiveLinks,
   GitTreeEntry,
   GitTreeSnapshot,
@@ -228,18 +229,66 @@ type SearchRepositoryOptions = {
 };
 
 type ReadArchiveOptions = {
+  fileName?: string;
   format?: GitArchiveFormat;
   prefix?: string;
   ref?: string;
+  repositoryKey?: string;
+  rootDirectory?: string;
 };
 
 type ResolveArchiveOptions = {
+  fileName?: string;
   format?: GitArchiveFormat;
   ref?: string;
+  repositoryKey?: string;
+  rootDirectory?: string;
 };
 
 type OpenArchiveOptions = ResolveArchiveOptions & {
   preferRedirect?: boolean;
+};
+
+type ResolveArchiveLinksInput = {
+  basePath?: string;
+  fileName?: string;
+  ref?: string;
+  repositoryId?: string;
+  rootDirectory?: string;
+};
+
+type GitArchiveFileNameContext = {
+  defaultFileName: string;
+  extension: string;
+  format: GitSourceArchiveFormat;
+  ref: string;
+  repository: GitRepositoryHandle;
+  repositoryId: string;
+  repositoryKey?: string;
+  resolvedCommit?: string;
+  rootDirectory: string;
+};
+
+type GitArchiveRootDirectoryContext = {
+  defaultRootDirectory: string;
+  fileName: string;
+  format: GitSourceArchiveFormat;
+  ref: string;
+  repository: GitRepositoryHandle;
+  repositoryId: string;
+  repositoryKey?: string;
+  resolvedCommit?: string;
+};
+
+type GitArchiveUrlContext = {
+  basePath: string;
+  defaultPath: string;
+  fileName?: string;
+  format: GitSourceArchiveFormat;
+  ref: string;
+  repositoryId?: string;
+  repositoryKey: string;
+  rootDirectory?: string;
 };
 
 type GitArchiveCacheEntry = {
@@ -278,9 +327,12 @@ type GitArchiveCacheBackend = {
 };
 
 type GitHostArchiveOptions = {
+  buildUrl?: (input: GitArchiveUrlContext) => string | null | undefined;
   cache?: GitArchiveCacheBackend;
   cacheKeyVersion?: string;
   cleanupIntervalMs?: number;
+  resolveFileName?: (input: GitArchiveFileNameContext) => string | null | undefined;
+  resolveRootDirectory?: (input: GitArchiveRootDirectoryContext) => string | null | undefined;
   redirectExpiresInMs?: number;
   ttlMs?: number;
 };
@@ -358,10 +410,7 @@ type GitHost = {
   readTag(repositoryId: string, tagName: string): Promise<GitTagDetail>;
   readTree(repositoryId: string, options?: ReadTreeOptions): Promise<GitTreeSnapshot>;
   resolveArchive(repositoryId: string, options?: ResolveArchiveOptions): Promise<GitArchiveMetadata>;
-  resolveArchiveLinks(repositoryKey: string, input?: {
-    basePath?: string;
-    ref?: string;
-  }): GitSourceArchiveLinks;
+  resolveArchiveLinks(repositoryKey: string, input?: ResolveArchiveLinksInput): GitSourceArchiveLinks;
   readStagedFile(repositoryId: string, options: ReadWorkingTreeFileOptions): Promise<GitFileContent>;
   readSummary(repositoryId: string, options?: ReadSummaryOptions): Promise<GitRepositorySummary>;
   readUnstagedFile(repositoryId: string, options: ReadWorkingTreeFileOptions): Promise<GitFileContent>;
@@ -402,7 +451,10 @@ export type {
   GitRemoteTransportOptions,
   GitArchiveCacheBackend,
   GitArchiveCacheEntry,
+  GitArchiveFileNameContext,
   GitArchiveCacheReadResult,
+  GitArchiveRootDirectoryContext,
+  GitArchiveUrlContext,
   GitArchiveCacheWriter,
   ListCommitsOptions,
   ListTreeOptions,
@@ -422,6 +474,7 @@ export type {
   ReadWorkingTreeFileOptions,
   RebaseInput,
   ResolveArchiveOptions,
+  ResolveArchiveLinksInput,
   ResolveInspectionTargetOptions,
   ResolveRepositoryPathOptions,
   SearchRepositoryOptions,

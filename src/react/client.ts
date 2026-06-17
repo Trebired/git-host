@@ -127,15 +127,51 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
     getArchiveLinks(repositoryKey, input = {}) {
       const ref = input.ref || "HEAD";
       const repositoryBasePath = `${baseUrl}/repositories/${encodePathSegment(repositoryKey)}`;
+      const zipDefaultHref = `${repositoryBasePath}/zipball/${encodePathSegment(ref)}`;
+      const tarDefaultHref = `${repositoryBasePath}/tarball/${encodePathSegment(ref)}`;
       return {
         tar_gz: {
+          file_name: input.fileName,
           format: "tar.gz",
-          href: `${repositoryBasePath}/tarball/${encodePathSegment(ref)}`,
+          href: String(options.buildArchiveUrl?.({
+            baseUrl,
+            defaultHref: tarDefaultHref,
+            format: "tar.gz",
+            ref,
+            repositoryKey,
+          }) || tarDefaultHref),
+          ref,
+          root_directory: input.rootDirectory,
         },
         zip: {
+          file_name: input.fileName,
           format: "zip",
-          href: `${repositoryBasePath}/zipball/${encodePathSegment(ref)}`,
+          href: String(options.buildArchiveUrl?.({
+            baseUrl,
+            defaultHref: zipDefaultHref,
+            format: "zip",
+            ref,
+            repositoryKey,
+          }) || zipDefaultHref),
+          ref,
+          root_directory: input.rootDirectory,
         },
+      };
+    },
+    getReleaseAssetLink(repositoryKey, releaseId, asset) {
+      const defaultHref = String(asset.download_url || `${baseUrl}/repositories/${encodePathSegment(repositoryKey)}/releases/${encodePathSegment(releaseId)}/assets/${encodePathSegment(asset.id)}`);
+      return {
+        asset_id: asset.id,
+        content_type: asset.content_type,
+        file_name: asset.name,
+        href: String(options.buildReleaseAssetUrl?.({
+          assetId: asset.id,
+          baseUrl,
+          defaultHref,
+          releaseId,
+          repositoryKey,
+        }) || defaultHref),
+        size: asset.size == null ? null : Number(asset.size) || 0,
       };
     },
     async diff(repositoryKey, input) {

@@ -9,6 +9,7 @@ import type {
   GitForgeFork,
   GitForgeRelease,
   GitForgeReleaseAsset,
+  GitForgeReleaseAssetLink,
   GitForgeRepositoryOverview,
   GitForgeSocialState,
   GitLinguistProgressEvent,
@@ -37,6 +38,20 @@ type GitApiHeaderResolver = GitApiClientHeaders | ((
 ) => MaybePromise<GitApiClientHeaders | undefined>);
 
 type CreateGitApiClientOptions = {
+  buildArchiveUrl?: (input: {
+    baseUrl: string;
+    defaultHref: string;
+    format: "tar.gz" | "zip";
+    ref: string;
+    repositoryKey: string;
+  }) => string | null | undefined;
+  buildReleaseAssetUrl?: (input: {
+    assetId: string;
+    baseUrl: string;
+    defaultHref: string;
+    releaseId: string;
+    repositoryKey: string;
+  }) => string | null | undefined;
   baseUrl: string;
   fetch?: GitApiClientFetch;
   headers?: GitApiHeaderResolver;
@@ -165,9 +180,16 @@ type GitApiClient = {
   getArchiveLinks(
     repositoryKey: string,
     input?: {
+      fileName?: string;
       ref?: string;
+      rootDirectory?: string;
     },
   ): GitSourceArchiveLinks;
+  getReleaseAssetLink(
+    repositoryKey: string,
+    releaseId: string,
+    asset: GitForgeReleaseAsset,
+  ): GitForgeReleaseAssetLink;
   readBlame(
     repositoryKey: string,
     options: GitApiClientRequestOptions & {
