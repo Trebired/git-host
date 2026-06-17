@@ -12,6 +12,7 @@ import type { CreateGitHostOptions, EnsureRepositoryOptions, GitHost, GitReposit
 import { assertAbsoluteRepositoryPath } from "../utils/paths.js";
 import { text } from "../utils/text.js";
 import { RepositoryLockManager } from "./locks.js";
+import { createGitArchiveService } from "./archive.js";
 import { buildRemoteGitArgs, buildRemoteGitEnv } from "./remote.js";
 import { buildRepositorySummary } from "./repository.js";
 import {
@@ -46,6 +47,11 @@ function createGitHost(options: CreateGitHostOptions): GitHost {
   });
   const verbose = options.verbose === true;
   const lockManager = new RepositoryLockManager();
+  const archiveService = createGitArchiveService({
+    archiveOptions: options.archive,
+    logger,
+    verbose,
+  });
   const managedExcludeHeader = text(options.managedExcludeHeader, DEFAULT_MANAGED_EXCLUDE_HEADER);
   const managedExcludePatterns = normalizeManagedExcludePatterns(options.managedExcludePatterns);
 
@@ -173,6 +179,7 @@ function createGitHost(options: CreateGitHostOptions): GitHost {
   }
 
   const methodContext = {
+    archiveService,
     ensureRepositoryInner,
     lockManager,
     logGroup,

@@ -40,12 +40,20 @@ function parsePositiveInt(value: string | null, name: string): number | undefine
 function statusForError(error: unknown): number {
   if (isGitHostError(error)) {
     switch (error.code) {
+      case "archive_format_not_supported":
       case "invalid_branch_name":
       case "invalid_repository_path":
         return 400;
+      case "archive_access_denied":
+        return 403;
+      case "archive_generation_failed":
+        return 500;
+      case "archive_ref_not_found":
+      case "release_tag_not_found":
       case "repository_not_found":
       case "forge_resource_not_found":
         return 404;
+      case "repository_empty":
       case "repository_not_initialized":
       case "repository_clone_target_not_empty":
       case "forge_sync_conflict":

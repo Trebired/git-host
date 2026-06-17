@@ -9,6 +9,7 @@ import type {
 } from "../../types.js";
 import { text } from "../../utils/text.js";
 import { RepositoryLockManager } from "../locks.js";
+import type { GitArchiveService } from "../archive.js";
 
 function normalizeManagedExcludePatterns(value: unknown): string[] {
   const patterns = Array.isArray(value) ? value.map((entry) => text(entry)).filter(Boolean) : [];
@@ -28,6 +29,7 @@ type EnsureRepositoryInnerFn = (repositoryId: string, ensureOptions?: EnsureRepo
 type ReadSummaryForRepositoryFn = (repository: GitRepositoryHandle, commitLimit?: number) => Promise<GitRepositorySummary>;
 
 type GitHostMethodContext = {
+  archiveService: GitArchiveService;
   ensureRepositoryInner: EnsureRepositoryInnerFn;
   lockManager: RepositoryLockManager;
   logGroup: string;

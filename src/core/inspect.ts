@@ -1,5 +1,6 @@
 import analyseRawContent from "linguist-js/dist/entry/analyseRaw.js";
 
+import { createGitArchiveService } from "./archive.js";
 import { GitHostError, isGitHostError } from "../errors.js";
 import type {
   GitArchive,
@@ -32,6 +33,16 @@ import {
   withFileStats,
 } from "./inspect/helpers.js";
 
+const silentArchiveLogger = {
+  error() {},
+  fail() {},
+  info() {},
+  warn() {},
+} as any;
+const repositoryArchiveService = createGitArchiveService({
+  logger: silentArchiveLogger,
+});
+
 type LinguistAnalysisResult = Awaited<ReturnType<typeof analyseRawContent>>;
 
 function normalizeOptionalPath(value: unknown): string {
@@ -58,10 +69,6 @@ function formatGitTimestamp(epochSecondsInput: unknown, timezoneInput: unknown):
   const minute = String(shifted.getUTCMinutes()).padStart(2, "0");
   const second = String(shifted.getUTCSeconds()).padStart(2, "0");
   return `${year}-${month}-${day}T${hour}:${minute}:${second}${timezone.slice(0, 3)}:${timezone.slice(3, 5)}`;
-}
-
-function sanitizeFileComponent(value: string): string {
-  return text(value).replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "snapshot";
 }
 
 async function readRepositoryTreeEntries(
@@ -676,35 +683,12 @@ async function searchRepository(
 async function readRepositoryArchive(
   repository: GitRepositoryHandle,
   options: {
-    format?: "tar" | "zip";
+    format?: "tar" | "tar.gz" | "zip";
     prefix?: string;
     ref?: string;
   } = {},
 ): Promise<GitArchive> {
-  await assertRepositoryReady(repository);
-  const target = await resolveCommitForRef(repository.path, text(options.ref, "HEAD"), "Archive ref does not exist.");
-  const format = text(options.format, "tar") === "zip" ? "zip" : "tar";
-  const prefix = text(options.prefix, `${sanitizeFileComponent(repository.id)}-${sanitizeFileComponent(target.ref)}/`);
-  const archiveRes = await runGitBuffer(["archive", `--format=${format}`, `--prefix=${prefix}`, target.ref], {
-    cwd: repository.path,
-  });
-  if (!archiveRes.ok) {
-    throw new GitHostError("git_command_failed", text(archiveRes.stderr, "Failed to create repository archive."), {
-      format,
-      ref: target.ref,
-      repositoryId: repository.id,
-    });
-  }
-
-  return {
-    content: archiveRes.stdout.toString("base64"),
-    content_type: format === "zip" ? "application/zip" : "application/x-tar",
-    encoding: "base64",
-    file_name: `${sanitizeFileComponent(repository.id)}-${sanitizeFileComponent(target.ref)}.${format}`,
-    format,
-    ref: target.ref,
-    size: archiveRes.stdout.byteLength,
-  };
+  return await repositoryArchiveService.read(repository, options);
 }
 
 export {

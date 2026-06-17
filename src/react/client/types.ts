@@ -2,6 +2,7 @@ import type {
   GitArchive,
   GitBlame,
   GitApiResource,
+  GitSourceArchiveLinks,
   GitBlob,
   GitBranchSummary,
   GitForgeActivityEntry,
@@ -156,11 +157,17 @@ type GitApiClient = {
   readArchive(
     repositoryKey: string,
     options?: GitApiClientRequestOptions & {
-      format?: "tar" | "zip";
+      format?: "tar" | "tar.gz" | "zip";
       prefix?: string;
       ref?: string;
     },
   ): Promise<GitArchive>;
+  getArchiveLinks(
+    repositoryKey: string,
+    input?: {
+      ref?: string;
+    },
+  ): GitSourceArchiveLinks;
   readBlame(
     repositoryKey: string,
     options: GitApiClientRequestOptions & {

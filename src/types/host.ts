@@ -1,7 +1,11 @@
+import type { Writable } from "node:stream";
+
 import type { GitActor, GitHostLogger, GitHostLoggerAdapter, MaybePromise } from "./common.js";
 import type {
   GitArchive,
+  GitArchiveDownload,
   GitArchiveFormat,
+  GitArchiveMetadata,
   GitBlame,
   GitDirectorySnapshot,
   GitBlob,
@@ -23,6 +27,7 @@ import type {
   GitRepositoryLinguist,
   GitRepositorySummary,
   GitSearchResult,
+  GitSourceArchiveLinks,
   GitTreeEntry,
   GitTreeSnapshot,
   GitWorkingTree,
@@ -46,6 +51,7 @@ type GitRemoteTransportOptions = {
 };
 
 type CreateGitHostOptions = {
+  archive?: GitHostArchiveOptions;
   defaultActor?: GitActor;
   logger?: GitHostLogger;
   loggerAdapter?: GitHostLoggerAdapter;
@@ -227,6 +233,58 @@ type ReadArchiveOptions = {
   ref?: string;
 };
 
+type ResolveArchiveOptions = {
+  format?: GitArchiveFormat;
+  ref?: string;
+};
+
+type OpenArchiveOptions = ResolveArchiveOptions & {
+  preferRedirect?: boolean;
+};
+
+type GitArchiveCacheEntry = {
+  content_type: string;
+  created_at: string;
+  expires_at: string;
+  format: "tar.gz" | "zip";
+  root_directory: string;
+  size: number;
+};
+
+type GitArchiveCacheReadResult = {
+  entry: GitArchiveCacheEntry;
+  stream: NodeJS.ReadableStream;
+};
+
+type GitArchiveCacheWriter = {
+  abort(): MaybePromise<void>;
+  complete(entry: GitArchiveCacheEntry): MaybePromise<void>;
+  stream: Writable;
+};
+
+type GitArchiveCacheBackend = {
+  cleanupExpired?(now?: Date): MaybePromise<number>;
+  createRedirectUrl?(
+    cacheKey: string,
+    entry: GitArchiveCacheEntry,
+    input?: {
+      expiresInMs?: number;
+      metadata?: GitArchiveMetadata;
+    },
+  ): MaybePromise<string | null>;
+  readEntry?(cacheKey: string): MaybePromise<GitArchiveCacheEntry | null>;
+  openReadStream(cacheKey: string): MaybePromise<GitArchiveCacheReadResult | null>;
+  prepareWrite(cacheKey: string): MaybePromise<GitArchiveCacheWriter | null>;
+};
+
+type GitHostArchiveOptions = {
+  cache?: GitArchiveCacheBackend;
+  cacheKeyVersion?: string;
+  cleanupIntervalMs?: number;
+  redirectExpiresInMs?: number;
+  ttlMs?: number;
+};
+
 type ReadBlobOptions = {
   path?: string;
   ref?: string;
@@ -288,6 +346,7 @@ type GitHost = {
   merge(repositoryId: string, input: MergeInput): Promise<GitRepositorySummary>;
   pull(repositoryId: string, options?: PullOptions): Promise<GitRepositorySummary>;
   push(repositoryId: string, options?: PushOptions): Promise<GitRepositorySummary>;
+  openArchive(repositoryId: string, options?: OpenArchiveOptions): Promise<GitArchiveDownload>;
   readArchive(repositoryId: string, options?: ReadArchiveOptions): Promise<GitArchive>;
   readBlame(repositoryId: string, options: ReadBlameOptions): Promise<GitBlame>;
   readBlob(repositoryId: string, options: ReadBlobOptions): Promise<GitBlob>;
@@ -298,6 +357,11 @@ type GitHost = {
   readLinguist(repositoryId: string, options?: ReadLinguistOptions): Promise<GitRepositoryLinguist>;
   readTag(repositoryId: string, tagName: string): Promise<GitTagDetail>;
   readTree(repositoryId: string, options?: ReadTreeOptions): Promise<GitTreeSnapshot>;
+  resolveArchive(repositoryId: string, options?: ResolveArchiveOptions): Promise<GitArchiveMetadata>;
+  resolveArchiveLinks(repositoryKey: string, input?: {
+    basePath?: string;
+    ref?: string;
+  }): GitSourceArchiveLinks;
   readStagedFile(repositoryId: string, options: ReadWorkingTreeFileOptions): Promise<GitFileContent>;
   readSummary(repositoryId: string, options?: ReadSummaryOptions): Promise<GitRepositorySummary>;
   readUnstagedFile(repositoryId: string, options: ReadWorkingTreeFileOptions): Promise<GitFileContent>;
@@ -332,12 +396,18 @@ export type {
   EnsureRepositoryOptions,
   FetchOptions,
   GitHost,
+  GitHostArchiveOptions,
   GitInspectionRefOptions,
   GitRemoteCredentials,
   GitRemoteTransportOptions,
+  GitArchiveCacheBackend,
+  GitArchiveCacheEntry,
+  GitArchiveCacheReadResult,
+  GitArchiveCacheWriter,
   ListCommitsOptions,
   ListTreeOptions,
   MergeInput,
+  OpenArchiveOptions,
   PullOptions,
   PushOptions,
   ReadArchiveOptions,
@@ -351,6 +421,7 @@ export type {
   ReadTreeOptions,
   ReadWorkingTreeFileOptions,
   RebaseInput,
+  ResolveArchiveOptions,
   ResolveInspectionTargetOptions,
   ResolveRepositoryPathOptions,
   SearchRepositoryOptions,

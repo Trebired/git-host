@@ -311,7 +311,7 @@ function useGitArchive(
   return useGitApiQuery({
     ...options,
     enabled,
-    key: ["archive", repositoryKey, options?.ref ?? "", options?.format ?? "tar", options?.prefix ?? ""],
+    key: ["archive", repositoryKey, options?.ref ?? "", options?.format ?? "tar.gz", options?.prefix ?? ""],
     load(client, signal) {
       return client.readArchive(repositoryKey, {
         format: options?.format,

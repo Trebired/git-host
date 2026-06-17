@@ -4,6 +4,7 @@ import { logPackageInitialized } from "@trebired/logger-adapter";
 import { resolveLogger } from "../logging.js";
 import type { CreateGitApiHandlerOptions } from "../types.js";
 import { text } from "../utils/text.js";
+import { enrichRepositoryDataWithArchives, isArchiveDownloadAction, writeArchiveDownload } from "./handler/archive.js";
 import { runGitApiAction } from "./handler/action.js";
 import {
   applyAuthorizationHeaders,
@@ -70,6 +71,7 @@ async function handleGitApiRequest(req: IncomingMessage, res: ServerResponse, op
       remoteAddress: text(req.socket && req.socket.remoteAddress),
       repositoryId,
       repositoryKey,
+      refName: "refName" in route ? route.refName : undefined,
       request: req,
       searchParams: url.searchParams,
     })
@@ -85,6 +87,16 @@ async function handleGitApiRequest(req: IncomingMessage, res: ServerResponse, op
       repositoryKey,
       status: auth.status || 403,
     });
+    if (isArchiveDownloadAction(route.action)) {
+      logger.warn(logGroup, "archive download denied", {
+        action: route.action,
+        method,
+        pathname: url.pathname,
+        repositoryId,
+        repositoryKey,
+        status: auth.status || 403,
+      });
+    }
     writeJson(req, res, auth.status || 403, {
       ok: false,
       error: {
@@ -96,7 +108,24 @@ async function handleGitApiRequest(req: IncomingMessage, res: ServerResponse, op
   }
 
   try {
-    const data = await runGitApiAction(options, route, repositoryId, url.searchParams);
+    if (isArchiveDownloadAction(route.action)) {
+      logger.info(logGroup, "archive download authorized", {
+        action: route.action,
+        method,
+        pathname: url.pathname,
+        repositoryId,
+        repositoryKey,
+      });
+      await writeArchiveDownload(req, res, options.gitHost, {
+        ref: "refName" in route ? route.refName : "HEAD",
+        repositoryId,
+        routeAction: route.action,
+      });
+      return;
+    }
+
+    const rawData = await runGitApiAction(options, route, repositoryId, url.searchParams);
+    const data = await enrichRepositoryDataWithArchives(options, route, rawData);
     if (verbose) logger.info(logGroup, "api action completed", { action: route.action, method, pathname: url.pathname, repositoryId, repositoryKey });
     writeJson(req, res, 200, {
       ok: true,

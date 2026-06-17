@@ -104,9 +104,13 @@ const search = await gitHost.search("demo", {
 });
 const archive = await gitHost.readArchive("demo", {
   ref: "main",
-  format: "zip",
+  format: "tar.gz",
 });
-console.log(tags.length, blame.lines[0]?.author_name, search.match_count, archive.file_name);
+const archiveLinks = gitHost.resolveArchiveLinks("demo", {
+  basePath: "/api/git",
+  ref: "main",
+});
+console.log(tags.length, blame.lines[0]?.author_name, search.match_count, archive.file_name, archiveLinks.zip.href);
 
 const inspectionTarget = await gitHost.resolveInspectionTarget("demo", {
   ref: "auto",
@@ -306,9 +310,54 @@ GET /api/git/repositories/demo/linguist?ref=HEAD
 GET /api/git/repositories/demo/blame?ref=HEAD&path=src/app.ts
 GET /api/git/repositories/demo/search?ref=HEAD&path=src&query=value
 GET /api/git/repositories/demo/archive?ref=HEAD&format=zip
+GET /api/git/repositories/demo/archive?ref=HEAD&format=tar.gz
+GET /api/git/repositories/demo/zipball/main
+GET /api/git/repositories/demo/tarball/v1
 GET /api/git/repositories/demo/blob?ref=HEAD&path=README.md
 GET /api/git/repositories/demo/diff?baseRef=main&headRef=feature%2Fx&path=src
 ```
+
+## Source Archives
+
+git-host now exposes GitHub-style source archive downloads for branches, tags, commit SHAs, and forge releases.
+
+- `zipball/:ref` streams a `zip` archive.
+- `tarball/:ref` streams a `tar.gz` archive.
+- `readArchive()` still returns a base64 payload for JSON-first consumers.
+- `resolveArchiveLinks()` builds typed download URLs for branches, tags, releases, and commit SHAs.
+
+Archives are always generated from Git objects with `git archive`, never from the checked-out working tree.
+
+- Branch and tag downloads resolve to the current target commit first, then use a SHA-based cache key.
+- Commit SHA downloads are the stable choice when you need predictable contents.
+- The extracted root directory is commit-based, so the inner folder stays stable for a fixed commit even if the request came from a branch or tag name.
+- The outer archive bytes are streamed and cached, but git-host does not promise byte-for-byte identical compression output forever unless you choose to enforce that at the cache/backend layer.
+
+### Releases, Tags, and Assets
+
+A forge release is metadata attached to a Git tag. Its automatic source archives are not uploaded assets.
+
+- `release.assets` remains your uploaded files.
+- `release.source_archives.zip` and `release.source_archives.tar_gz` point at the automatic downloads for the tagged source.
+- Tag list/detail responses also expose `source_archives`.
+- If a release points at a missing tag, the forge API returns `release_tag_not_found`.
+
+### Cache Behavior
+
+The built-in archive service prefers on-demand generation plus cache.
+
+- Cache keys include repository id, resolved commit SHA, archive format, and the configured archive cache key version.
+- Moving a tag or branch to a different commit produces a new cache key automatically.
+- The default cache backend is filesystem-backed under the system temp directory.
+- You can inject your own `archive.cache` backend, including future object-storage implementations.
+- Cached entries carry TTL metadata and the filesystem backend performs periodic expired-entry cleanup.
+
+### Security Notes
+
+- Public repositories can expose `zipball` and `tarball` routes without auth.
+- Private repositories should authorize before archive generation just like any other read route.
+- The API handlers authorize archive downloads before they resolve refs or touch the cache.
+- Cache backends can optionally mint redirect URLs for object storage, but the default filesystem backend streams directly from git-host.
 
 ## Frontend Integration
 

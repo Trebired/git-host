@@ -4,7 +4,7 @@ import path from "node:path";
 import { createElement } from "react";
 import { act, create as createRenderer } from "react-test-renderer";
 
-import { createGitApiHandler, createGitApiSocketServer } from "../../src/index.js";
+import { createFileSystemGitArchiveCache, createGitApiHandler, createGitApiSocketServer, createGitHost } from "../../src/index.js";
 import {
   createGitApiClient,
   GitApiClientProvider,
@@ -17,6 +17,7 @@ import {
   useGitTree,
 } from "../../src/react/index.js";
 import { createHost, createServer, fetchJson, listen, resolveRepositoryPath, sleep, tempDir, writeFile } from "./helpers.js";
+import { captureLogger } from "./helpers.js";
 
 describe("@trebired/git-host", () => {
   test("serves summary, branches, commits, tree, blob, and diff over the JSON API", async () => {
@@ -241,6 +242,91 @@ describe("@trebired/git-host", () => {
       } finally {
         console.error = originalConsoleError;
       }
+    } finally {
+      socketServer.disconnectSockets(true);
+      server.closeIdleConnections?.();
+      server.closeAllConnections?.();
+      try {
+        server.close();
+      } catch {}
+      server.unref();
+    }
+  });
+
+  test("streams zipball and tarball downloads with auth, headers, and cache reuse", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const cacheRoot = path.join(root, "archive-cache");
+    const { logger, rows } = captureLogger();
+    const host = createGitHost({
+      archive: {
+        cache: createFileSystemGitArchiveCache({ rootDir: cacheRoot }),
+      },
+      logger,
+      resolveRepository(repositoryId) {
+        return {
+          id: repositoryId,
+          path: resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: `${repositoryId}/workspace` }),
+        };
+      },
+      verbose: true,
+    });
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "private/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeFile(workspace, "README.md", "# Private Archive\n");
+    await host.ensureRepository("private", {
+      actor: { name: "Alice", email: "alice@example.com" },
+    });
+
+    const server = createServer(createGitApiHandler({
+      authorize({ action, request }) {
+        if (action === "tarball" || action === "zipball") {
+          return request.headers["x-auth"] === "allowed";
+        }
+        return true;
+      },
+      basePath: "/api/git",
+      gitHost: host,
+      logger,
+    }));
+    const socketServer = createGitApiSocketServer({ basePath: "/api/git", gitHost: host, httpServer: server });
+    const port = await listen(server);
+    const baseUrl = `http://127.0.0.1:${port}/api/git/repositories/private`;
+
+    try {
+      const denied = await fetchJson(`${baseUrl}/zipball/main`);
+      expect(denied.response.status).toBe(403);
+      expect(denied.json.error.code).toBe("permission_denied");
+
+      const firstZip = await fetch(`${baseUrl}/zipball/main`, {
+        headers: { "x-auth": "allowed" },
+      });
+      const firstZipBody = Buffer.from(await firstZip.arrayBuffer());
+      expect(firstZip.status).toBe(200);
+      expect(firstZip.headers.get("content-type")).toBe("application/zip");
+      expect(firstZip.headers.get("x-git-host-archive-cache")).toBe("miss");
+      expect(firstZip.headers.get("x-git-host-archive-commit")).toBeTruthy();
+      expect(firstZipBody.subarray(0, 2).toString("utf8")).toBe("PK");
+
+      const secondZip = await fetch(`${baseUrl}/zipball/main`, {
+        headers: { "x-auth": "allowed" },
+      });
+      const secondZipBody = Buffer.from(await secondZip.arrayBuffer());
+      expect(secondZip.status).toBe(200);
+      expect(secondZip.headers.get("x-git-host-archive-cache")).toBe("hit");
+      expect(secondZipBody.equals(firstZipBody)).toBe(true);
+
+      const tarball = await fetch(`${baseUrl}/tarball/main`, {
+        headers: { "x-auth": "allowed" },
+      });
+      expect(tarball.status).toBe(200);
+      expect(tarball.headers.get("content-type")).toBe("application/gzip");
+      expect(tarball.headers.get("content-disposition")?.includes(".tar.gz")).toBe(true);
+
+      expect(rows.some((entry) => entry.message === "archive download denied")).toBe(true);
+      expect(rows.some((entry) => entry.message === "archive download authorized")).toBe(true);
+      expect(rows.some((entry) => entry.message === "archive cache hit")).toBe(true);
     } finally {
       socketServer.disconnectSockets(true);
       server.closeIdleConnections?.();

@@ -124,6 +124,20 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
 
   return {
     baseUrl,
+    getArchiveLinks(repositoryKey, input = {}) {
+      const ref = input.ref || "HEAD";
+      const repositoryBasePath = `${baseUrl}/repositories/${encodePathSegment(repositoryKey)}`;
+      return {
+        tar_gz: {
+          format: "tar.gz",
+          href: `${repositoryBasePath}/tarball/${encodePathSegment(ref)}`,
+        },
+        zip: {
+          format: "zip",
+          href: `${repositoryBasePath}/zipball/${encodePathSegment(ref)}`,
+        },
+      };
+    },
     async diff(repositoryKey, input) {
       const response = await request<"diff", ReturnType<GitApiClient["diff"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "diff", {
         headers: input.headers,

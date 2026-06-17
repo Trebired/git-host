@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
+import { gunzipSync } from "node:zlib";
 
-import { createGitHost, formatTreeAscii, nestTreeEntries } from "../../src/index.js";
+import { createFileSystemGitArchiveCache, createGitHost, formatTreeAscii, nestTreeEntries } from "../../src/index.js";
 import {
   captureEventSink,
   captureLogger,
@@ -159,6 +160,93 @@ describe("@trebired/git-host", () => {
     expect(compare.commit_count).toBe(1);
     expect(compare.files.some((entry) => entry.path === "src/app.ts")).toBe(true);
     expect(compare.files.some((entry) => entry.path === "src/new.ts")).toBe(true);
+  });
+
+  test("generates branch, tag, and commit source archives with commit-resolved metadata", async () => {
+    const root = tempDir();
+    const host = createHost(path.join(root, "repos"));
+    const workspace = resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeFile(workspace, "README.md", "# Archive\n");
+    writeFile(workspace, "src/app.ts", "export const value = 1;\n");
+
+    const summary = await host.ensureRepository("demo", {
+      actor: { name: "Alice", email: "alice@example.com" },
+    });
+    await host.createTag("demo", {
+      actor: { name: "Alice", email: "alice@example.com" },
+      message: "Version 1",
+      name: "v1",
+      ref: "main",
+    });
+
+    const branchArchive = await host.readArchive("demo", { format: "tar.gz", ref: "main" });
+    const tagArchive = await host.readArchive("demo", { format: "zip", ref: "v1" });
+    const commitArchive = await host.readArchive("demo", { format: "tar.gz", ref: summary.repository.head_commit });
+
+    const branchTar = gunzipSync(Buffer.from(branchArchive.content, "base64")).toString("utf8");
+    const commitTar = gunzipSync(Buffer.from(commitArchive.content, "base64")).toString("utf8");
+    const zipBuffer = Buffer.from(tagArchive.content, "base64");
+
+    expect(branchArchive.resolved_commit).toBe(summary.repository.head_commit);
+    expect(branchArchive.root_directory).toBe(`demo-${summary.repository.head_commit.slice(0, 12)}/`);
+    expect(branchTar.includes(`${branchArchive.root_directory}README.md`)).toBe(true);
+    expect(commitArchive.resolved_commit).toBe(summary.repository.head_commit);
+    expect(commitTar.includes(`${commitArchive.root_directory}src/app.ts`)).toBe(true);
+    expect(tagArchive.resolved_commit).toBe(summary.repository.head_commit);
+    expect(tagArchive.file_name.endsWith(".zip")).toBe(true);
+    expect(zipBuffer.subarray(0, 2).toString("utf8")).toBe("PK");
+    expect(zipBuffer.includes(Buffer.from(tagArchive.root_directory))).toBe(true);
+  });
+
+  test("reuses SHA-based archive cache entries and invalidates moved tag resolutions", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const cacheRoot = path.join(root, "archive-cache");
+    const { logger, rows } = captureLogger();
+    const host = createGitHost({
+      archive: {
+        cache: createFileSystemGitArchiveCache({ rootDir: cacheRoot }),
+      },
+      logger,
+      resolveRepository(repositoryId) {
+        return {
+          id: repositoryId,
+          path: resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: `${repositoryId}/workspace` }),
+        };
+      },
+      verbose: true,
+    });
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeFile(workspace, "README.md", "# Cache\n");
+    await host.ensureRepository("demo", {
+      actor: { name: "Alice", email: "alice@example.com" },
+    });
+    await host.createTag("demo", {
+      actor: { name: "Alice", email: "alice@example.com" },
+      message: "Version 1",
+      name: "v1",
+      ref: "main",
+    });
+
+    const first = await host.readArchive("demo", { format: "zip", ref: "v1" });
+    const second = await host.readArchive("demo", { format: "zip", ref: "v1" });
+
+    writeFile(workspace, "CHANGELOG.md", "moved\n");
+    gitCommit(workspace, "Move tag target");
+    git(["tag", "-f", "v1", "HEAD"], workspace);
+
+    const moved = await host.readArchive("demo", { format: "zip", ref: "v1" });
+
+    expect(first.cache_status).toBe("miss");
+    expect(second.cache_status).toBe("hit");
+    expect(moved.resolved_commit).not.toBe(first.resolved_commit);
+    expect(Buffer.from(moved.content, "base64").equals(Buffer.from(first.content, "base64"))).toBe(false);
+    expect(rows.some((entry) => entry.message === "archive cache miss")).toBe(true);
+    expect(rows.some((entry) => entry.message === "archive cache hit")).toBe(true);
   });
 
   test("reads linguist results at a ref and enriches tree entries with languages and icons", async () => {

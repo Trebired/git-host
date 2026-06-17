@@ -197,7 +197,8 @@ function defaultActionBar(repositoryKey: string, headers?: GitApiClientHeaders) 
       h(GitRepositorySocialButtons, { headers, key: "social", repositoryKey }),
       h(GitForkButton, { headers, key: "fork", repositoryKey }),
       h(GitCopyCloneUrlButton, { key: "clone", repositoryKey }),
-      h(GitDownloadArchiveButton, { key: "archive", repositoryKey }),
+      h(GitDownloadArchiveButton, { format: "zip", key: "archive-zip", repositoryKey }),
+      h(GitDownloadArchiveButton, { format: "tar.gz", key: "archive-tar", repositoryKey }),
     ],
   });
 }
@@ -630,18 +631,36 @@ function GitRepositoryReleasePageInner(props: GitRepositoryReleasePageProps) {
         }),
         h("section", {
           className: "git-browser-card",
+          key: "source-archives",
+          children: [
+            h("div", { className: "git-browser-card-header", key: "header", children: h("h2", { className: "git-browser-card-title", children: "Source Code" }) }),
+            release.data.source_archives
+              ? h(GitRepositoryActionBar, {
+                key: "links",
+                children: [
+                  h("a", { className: "git-browser-button", href: release.data.source_archives.zip.href, key: "zip", children: "Source code (zip)" }),
+                  h("a", { className: "git-browser-button", href: release.data.source_archives.tar_gz.href, key: "tar", children: "Source code (tar.gz)" }),
+                ],
+              })
+              : h("p", { className: "git-browser-note", key: "empty", children: "Source archives are unavailable for this release tag." }),
+          ],
+        }),
+        h("section", {
+          className: "git-browser-card",
           key: "assets",
           children: [
             h("div", { className: "git-browser-card-header", key: "header", children: h("h2", { className: "git-browser-card-title", children: "Assets" }) }),
-            h("ul", {
-              className: "git-browser-list",
-              key: "list",
-              children: release.data.assets.map((asset) => h("li", {
-                className: "git-browser-list-item",
-                key: asset.id,
-                children: `${asset.name}${asset.size ? ` · ${asset.size} bytes` : ""}`,
-              })),
-            }),
+            release.data.assets.length
+              ? h("ul", {
+                className: "git-browser-list",
+                key: "list",
+                children: release.data.assets.map((asset) => h("li", {
+                  className: "git-browser-list-item",
+                  key: asset.id,
+                  children: `${asset.name}${asset.size ? ` · ${asset.size} bytes` : ""}`,
+                })),
+              })
+              : h("p", { className: "git-browser-note", key: "empty", children: "No uploaded release assets." }),
           ],
         }),
         h(GitReleaseEditorCard, {

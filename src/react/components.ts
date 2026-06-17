@@ -46,6 +46,7 @@ import type {
   GitForgeRelease,
   GitForgeSocialState,
   GitSearchResult,
+  GitSourceArchiveLinks,
   GitTagSummary,
   GitTreeEntry,
 } from "../types.js";
@@ -434,16 +435,39 @@ function GitTagSelector(props: {
   });
 }
 
-function GitDownloadArchiveButton(props: { format?: "tar" | "zip"; refName?: string; repositoryKey: string }) {
+function GitDownloadArchiveButton(props: { format?: "tar.gz" | "zip"; label?: string; refName?: string; repositoryKey: string }) {
   const ui = useGitRepositoryUi();
   const slot = useGitRepositorySlots();
-  const href = ui.client
-    ? `${ui.client.baseUrl}/repositories/${encodeURIComponent(props.repositoryKey)}/archive?format=${encodeURIComponent(props.format || "zip")}${props.refName ? `&ref=${encodeURIComponent(props.refName)}` : ""}`
-    : undefined;
+  const links = ui.client?.getArchiveLinks(props.repositoryKey, {
+    ref: props.refName,
+  });
+  const href = (props.format || "zip") === "zip" ? links?.zip.href : links?.tar_gz.href;
   return h("a", {
     ...slot("button", {}),
     href,
-    children: "Download Archive",
+    children: props.label || ((props.format || "zip") === "zip" ? "Download ZIP" : "Download TAR.GZ"),
+  });
+}
+
+function GitSourceArchiveLinksRow(props: { links?: GitSourceArchiveLinks | null }) {
+  const slot = useGitRepositorySlots();
+  if (!props.links) return null;
+  return h("div", {
+    ...slot("action-bar", {}),
+    children: [
+      h("a", {
+        ...slot("button", {}),
+        href: props.links.zip.href,
+        key: "zip",
+        children: "Source code (zip)",
+      }),
+      h("a", {
+        ...slot("button", {}),
+        href: props.links.tar_gz.href,
+        key: "tar_gz",
+        children: "Source code (tar.gz)",
+      }),
+    ],
   });
 }
 
@@ -658,6 +682,7 @@ function GitReleaseList(props: { releases: GitForgeRelease[]; repositoryKey: str
         }),
         h("div", slot("note", { key: "meta", children: `${release.prerelease ? "Prerelease" : "Release"} · ${formatDate(release.published_at || release.created_at)}` })),
         h("p", slot("note", { key: "notes", children: release.notes || "No release notes." })),
+        h(GitSourceArchiveLinksRow, { key: "archives", links: release.source_archives }),
       ],
     })),
   });
@@ -817,6 +842,7 @@ function GitTagList(props: { repositoryKey: string; tags: GitTagSummary[] }) {
           children: tag.name,
         }),
         h("div", slot("note", { key: "meta", children: `${tag.short_hash} · ${tag.subject || "No subject"}` })),
+        h(GitSourceArchiveLinksRow, { key: "archives", links: tag.source_archives }),
       ],
     })),
   });

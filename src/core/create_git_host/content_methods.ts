@@ -2,6 +2,7 @@ import type {
   DiffOptions,
   GitHost,
   ListTreeOptions,
+  OpenArchiveOptions,
   ReadDirectoryOptions,
   ReadFileOptions,
   ReadRepositoryAnalysisOptions,
@@ -12,10 +13,10 @@ import type {
   ReadTreeOptions,
   ResolveInspectionTargetOptions,
   SearchRepositoryOptions,
+  ResolveArchiveOptions,
 } from "../../types.js";
 import {
   listRepositoryTree,
-  readRepositoryArchive,
   readRepositoryBlame,
   readRepositoryBlob,
   readRepositoryCommit,
@@ -36,6 +37,7 @@ function createContentMethods(context: GitHostMethodContext): Pick<
   GitHost,
   | "diff"
   | "listTree"
+  | "openArchive"
   | "readArchive"
   | "readBlame"
   | "readBlob"
@@ -45,10 +47,12 @@ function createContentMethods(context: GitHostMethodContext): Pick<
   | "readLinguist"
   | "readRepositoryAnalysis"
   | "readTree"
+  | "resolveArchive"
+  | "resolveArchiveLinks"
   | "resolveInspectionTarget"
   | "search"
 > {
-  const { resolveRepository } = context;
+  const { archiveService, resolveRepository } = context;
 
   return {
     async listTree(repositoryId: string, treeOptions: ListTreeOptions = {}) {
@@ -71,9 +75,23 @@ function createContentMethods(context: GitHostMethodContext): Pick<
       return await readRepositoryBlame(repository, blameOptions);
     },
 
+    async openArchive(repositoryId: string, archiveOptions: OpenArchiveOptions = {}) {
+      const repository = await resolveRepository(repositoryId);
+      return await archiveService.open(repository, archiveOptions);
+    },
+
     async readArchive(repositoryId: string, archiveOptions: ReadArchiveOptions = {}) {
       const repository = await resolveRepository(repositoryId);
-      return await readRepositoryArchive(repository, archiveOptions);
+      return await archiveService.read(repository, archiveOptions);
+    },
+
+    async resolveArchive(repositoryId: string, archiveOptions: ResolveArchiveOptions = {}) {
+      const repository = await resolveRepository(repositoryId);
+      return await archiveService.resolve(repository, archiveOptions);
+    },
+
+    resolveArchiveLinks(repositoryKey: string, input = {}) {
+      return archiveService.resolveLinks(repositoryKey, input);
     },
 
     async readLinguist(repositoryId: string, linguistOptions: ReadLinguistOptions = {}) {

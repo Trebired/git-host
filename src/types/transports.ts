@@ -26,9 +26,11 @@ type GitApiResource =
   | "stars"
   | "summary"
   | "tag"
+  | "tarball"
   | "tags"
   | "tree"
-  | "watch";
+  | "watch"
+  | "zipball";
 
 type GitApiAuthorizationResult = boolean | {
   allowed: boolean;
@@ -46,6 +48,7 @@ type CreateGitApiHandlerOptions = {
     remoteAddress: string;
     repositoryId: string;
     repositoryKey: string;
+    refName?: string;
     request: IncomingMessage;
     searchParams: URLSearchParams;
   }) => MaybePromise<GitApiAuthorizationResult>;

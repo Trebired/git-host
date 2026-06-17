@@ -47,6 +47,16 @@ function parseGitApiRoute(pathnameInput: unknown, basePathInput: unknown) {
     return { action, repositoryKey };
   }
 
+  if ((action === "tarball" || action === "zipball") && segments.length === 4) {
+    const refName = decodeRouteSegment(segments[3] || "");
+    if (!refName) return null;
+    return {
+      action: action as "tarball" | "zipball",
+      refName,
+      repositoryKey,
+    };
+  }
+
   if (action === "commits") {
     if (segments.length === 3) return { action, repositoryKey };
     if (segments.length === 4) {

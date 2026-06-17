@@ -2,7 +2,7 @@ import type { IncomingMessage } from "node:http";
 
 import type { MaybePromise, GitHostLogger, GitHostLoggerAdapter } from "./common.js";
 import type { GitHost } from "./host.js";
-import type { GitRepositoryHandle, GitRepositorySummary } from "./repository.js";
+import type { GitRepositoryHandle, GitRepositorySummary, GitSourceArchiveLinks } from "./repository.js";
 
 type GitForgeActor = {
   email?: string;
@@ -29,6 +29,7 @@ type GitForgeRelease = {
   prerelease: boolean;
   published_at: string | null;
   repository_id: string;
+  source_archives?: GitSourceArchiveLinks;
   tag_name: string;
   target_ref: string;
   title: string;

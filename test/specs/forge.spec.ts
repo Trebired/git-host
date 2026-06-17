@@ -129,6 +129,8 @@ describe("@trebired/git-host forge", () => {
         method: "POST",
       });
       expect(releaseOne.json.data.tag_name).toBe("v1");
+      expect(releaseOne.json.data.source_archives.zip.href.endsWith("/zipball/v1")).toBe(true);
+      expect(releaseOne.json.data.source_archives.tar_gz.href.endsWith("/tarball/v1")).toBe(true);
 
       const releaseTwo = await client.createRelease("demo", {
         createTag: {
@@ -140,7 +142,18 @@ describe("@trebired/git-host forge", () => {
         title: "Version 2",
       });
       expect(releaseTwo.tag_name).toBe("v2");
+      expect(releaseTwo.source_archives?.zip.href.endsWith("/zipball/v2")).toBe(true);
       expect((await host.listTags("demo")).some((tag) => tag.name === "v2")).toBe(true);
+
+      const releases = await client.listReleases("demo");
+      expect(releases.every((release) => Boolean(release.source_archives?.zip.href && release.source_archives?.tar_gz.href))).toBe(true);
+
+      const releaseZip = await fetch(`http://127.0.0.1:${port}${releaseOne.json.data.source_archives.zip.href}`);
+      expect(releaseZip.status).toBe(200);
+      expect(releaseZip.headers.get("content-type")).toBe("application/zip");
+
+      const tags = await fetchJson(`${baseUrl}/tags`);
+      expect(tags.json.data.find((entry: any) => entry.name === "v1").source_archives.zip.href.endsWith("/zipball/v1")).toBe(true);
 
       await client.deleteRelease("demo", releaseOne.json.data.id, { deleteTag: false });
       expect((await host.listTags("demo")).some((tag) => tag.name === "v1")).toBe(true);
@@ -220,6 +233,66 @@ describe("@trebired/git-host forge", () => {
     })).rejects.toMatchObject({
       code: "forge_sync_conflict",
     });
+  });
+
+  test("returns release_tag_not_found when a release points at a missing tag", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const host = createHost(repositoriesRoot);
+    const storage = createInMemoryGitForgeStorageAdapter();
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeFile(workspace, "README.md", "# Missing Tag\n");
+    await host.ensureRepository("demo", {
+      actor: { name: "Alice", email: "alice@example.com", id: "alice" },
+    });
+
+    await storage.releases.createRelease({
+      assets: [],
+      author_id: "alice",
+      created_at: new Date().toISOString(),
+      draft: false,
+      id: "broken-release",
+      notes: "Broken tag pointer",
+      prerelease: false,
+      published_at: new Date().toISOString(),
+      repository_id: "demo",
+      tag_name: "missing-tag",
+      target_ref: "missing-tag",
+      title: "Broken Release",
+      updated_at: new Date().toISOString(),
+    });
+
+    const forge = createGitForge({
+      createForkRepository({ upstreamRepositoryId }) {
+        return {
+          id: `${upstreamRepositoryId}-fork`,
+          path: resolveRepositoryPath({
+            rootDir: repositoriesRoot,
+            repositoryPath: `${upstreamRepositoryId}-fork/workspace`,
+          }),
+        };
+      },
+      gitHost: host,
+      storage,
+    });
+
+    const server = createServer(createGitForgeApiHandler({
+      basePath: "/api/git",
+      forge,
+      gitHost: host,
+    }));
+    const port = await listen(server);
+
+    try {
+      const response = await fetchJson(`http://127.0.0.1:${port}/api/git/repositories/demo/releases/broken-release`);
+      expect(response.response.status).toBe(404);
+      expect(response.json.error.code).toBe("release_tag_not_found");
+    } finally {
+      await closeServer(server);
+      server.unref();
+    }
   });
 
   test("renders browser pages and updates visible state through forge mutations", async () => {
@@ -323,6 +396,7 @@ describe("@trebired/git-host forge", () => {
 
         await waitFor(() => JSON.stringify(releasesRenderer?.toJSON()).includes("Browser Release"));
         expect(JSON.stringify(releasesRenderer?.toJSON())).toContain("Browser Release");
+        expect(JSON.stringify(releasesRenderer?.toJSON())).toContain("Source code (zip)");
 
         let forksRenderer: ReturnType<typeof createRenderer> | null = null;
         await act(async () => {
@@ -438,6 +512,7 @@ describe("@trebired/git-host forge", () => {
         });
         await waitFor(() => JSON.stringify(tagsRenderer?.toJSON()).includes("v1"));
         expect(JSON.stringify(tagsRenderer?.toJSON())).toContain("v1");
+        expect(JSON.stringify(tagsRenderer?.toJSON())).toContain("Source code (zip)");
 
         let searchRenderer: ReturnType<typeof createRenderer> | null = null;
         await act(async () => {

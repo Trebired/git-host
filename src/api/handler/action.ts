@@ -61,7 +61,7 @@ async function runGitApiAction(
     }
     case "archive":
       return await options.gitHost.readArchive(repositoryId, {
-        format: text(searchParams.get("format")) === "zip" ? "zip" : undefined,
+        format: text(searchParams.get("format")) as any,
         prefix: text(searchParams.get("prefix")),
         ref: text(searchParams.get("ref")),
       });

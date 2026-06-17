@@ -4,6 +4,12 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## Unreleased
+
+- Added first-class host-managed source archives for branches, tags, commits, and forge releases through SHA-resolved `zipball` and `tarball` download routes backed by `git archive`.
+- Added streamed archive generation with deterministic commit-root folders, pluggable archive cache backends, filesystem cache support, TTL cleanup, structured archive error codes, and archive request/cache/generation audit logs.
+- Extended release and tag API/browser models with automatic source archive links that stay distinct from uploaded release assets.
+
 ## 1.6.0
 
 - Made package styling optional instead of required for frontend integration by adding `unstyled` support across the shared repository UI provider and browser pages.

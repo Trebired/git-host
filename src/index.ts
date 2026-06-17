@@ -8,6 +8,7 @@ export {
 } from "./constants.js";
 export { RepositoryLockManager } from "./core/locks.js";
 export { readRepositoryOperationState } from "./core/operation_state.js";
+export { createFileSystemGitArchiveCache } from "./core/archive_cache_filesystem.js";
 export { createGitHost } from "./core/create_git_host.js";
 export { createGitApiHandler, parseGitApiRoute } from "./api/handler.js";
 export { createGitForgeApiHandler, parseGitForgeApiRoute } from "./api/forge/handler.js";
@@ -99,8 +100,15 @@ export type {
   CreateGitHttpHandlerOptions,
   CreateGitSshServerOptions,
   GitActor,
+  GitArchiveCacheBackend,
+  GitArchiveCacheEntry,
+  GitArchiveCacheReadResult,
+  GitArchiveCacheStatus,
+  GitArchiveCacheWriter,
+  GitArchiveDownload,
   GitArchive,
   GitArchiveFormat,
+  GitArchiveMetadata,
   GitBlame,
   GitBlameLine,
   GitBlob,
@@ -143,6 +151,7 @@ export type {
   GitForgeSocialStorage,
   GitForgeStorageAdapter,
   GitHost,
+  GitHostArchiveOptions,
   GitHostGenericLogMethod,
   GitHostLogEvent,
   GitHostLogMethod,
@@ -162,6 +171,9 @@ export type {
   GitSearchFileResult,
   GitSearchMatch,
   GitSearchResult,
+  GitSourceArchiveFormat,
+  GitSourceArchiveLink,
+  GitSourceArchiveLinks,
   GitSshAuditEvent,
   GitSshAuditOutcome,
   GitSshAuthenticationResult,
@@ -180,6 +192,7 @@ export type {
   MergeInput,
   MaybePromise,
   NormalizedGitHostLogger,
+  OpenArchiveOptions,
   PullOptions,
   PushOptions,
   ReadArchiveOptions,
@@ -189,6 +202,7 @@ export type {
   ReadSummaryOptions,
   ReadWorkingTreeFileOptions,
   RebaseInput,
+  ResolveArchiveOptions,
   ResolveRepositoryPathOptions,
   SyncGitForgeForkInput,
   SearchRepositoryOptions,

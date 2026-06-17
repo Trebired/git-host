@@ -2,8 +2,10 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { logPackageInitialized } from "@trebired/logger-adapter";
 
 import { resolveLogger } from "../../logging.js";
-import type { CreateGitForgeApiHandlerOptions, GitForgeActor, GitForgeOperation } from "../../types.js";
+import { GitHostError } from "../../errors.js";
+import type { CreateGitForgeApiHandlerOptions, GitForgeActor, GitForgeOperation, GitForgeRelease, GitForgeRepositoryOverview } from "../../types.js";
 import { text } from "../../utils/text.js";
+import { enrichRepositoryDataWithArchives, isArchiveDownloadAction, writeArchiveDownload } from "../handler/archive.js";
 import { runGitApiAction } from "../handler/action.js";
 import {
   applyAuthorizationHeaders,
@@ -147,6 +149,77 @@ async function runForgeAction(
   }
 }
 
+async function attachReleaseSourceArchives(
+  options: Pick<CreateGitForgeApiHandlerOptions, "basePath" | "gitHost">,
+  repositoryId: string,
+  repositoryKey: string,
+  release: GitForgeRelease,
+): Promise<GitForgeRelease> {
+  try {
+    await options.gitHost.resolveArchive(repositoryId, {
+      format: "zip",
+      ref: release.tag_name,
+    });
+  } catch (error) {
+    if (error instanceof GitHostError && error.code === "archive_ref_not_found") {
+      throw new GitHostError(
+        "release_tag_not_found",
+        `Release "${release.id}" points at missing tag "${release.tag_name}" in repository "${repositoryId}".`,
+        {
+          releaseId: release.id,
+          repositoryId,
+          tag: release.tag_name,
+        },
+      );
+    }
+    throw error;
+  }
+
+  return {
+    ...release,
+    source_archives: options.gitHost.resolveArchiveLinks(repositoryKey, {
+      basePath: options.basePath,
+      ref: release.tag_name,
+    }),
+  };
+}
+
+async function enrichForgeDataWithArchives(
+  options: Pick<CreateGitForgeApiHandlerOptions, "basePath" | "gitHost">,
+  route: GitForgeApiRoute,
+  repositoryId: string,
+  data: unknown,
+) {
+  if (route.resource === "repository") {
+    return await enrichRepositoryDataWithArchives(options as any, route as any, data);
+  }
+
+  if (route.action === "release" && data && typeof data === "object") {
+    return await attachReleaseSourceArchives(options, repositoryId, route.repositoryKey, data as GitForgeRelease);
+  }
+
+  if (route.action === "releases" && Array.isArray(data)) {
+    return await Promise.all(data.map(async (release) => {
+      return await attachReleaseSourceArchives(options, repositoryId, route.repositoryKey, release as GitForgeRelease);
+    }));
+  }
+  if (route.action === "releases" && data && typeof data === "object") {
+    return await attachReleaseSourceArchives(options, repositoryId, route.repositoryKey, data as GitForgeRelease);
+  }
+
+  if (route.action === "overview" && data && typeof data === "object") {
+    const overview = data as GitForgeRepositoryOverview;
+    return {
+      ...overview,
+      latest_release: overview.latest_release
+        ? await attachReleaseSourceArchives(options, repositoryId, route.repositoryKey, overview.latest_release)
+        : null,
+    };
+  }
+
+  return data;
+}
+
 async function handleGitForgeApiRequest(req: IncomingMessage, res: ServerResponse, options: CreateGitForgeApiHandlerOptions) {
   const logger = resolveLogger(options.logger, options.loggerAdapter);
   const verbose = options.verbose === true;
@@ -212,6 +285,16 @@ async function handleGitForgeApiRequest(req: IncomingMessage, res: ServerRespons
 
   applyAuthorizationHeaders(res, auth.headers);
   if (!auth.allowed) {
+    if (isArchiveDownloadAction(route.action)) {
+      logger.warn(logGroup, "archive download denied", {
+        action: route.action,
+        method,
+        pathname: url.pathname,
+        repositoryId,
+        repositoryKey,
+        status: auth.status || 403,
+      });
+    }
     writeJson(req, res, auth.status || 403, {
       ok: false,
       error: {
@@ -230,11 +313,28 @@ async function handleGitForgeApiRequest(req: IncomingMessage, res: ServerRespons
   }
 
   try {
-    const data = route.resource === "repository" && route.action !== "overview" && route.action !== "social" && route.action !== "activity"
+    if (isArchiveDownloadAction(route.action)) {
+      logger.info(logGroup, "archive download authorized", {
+        action: route.action,
+        method,
+        pathname: url.pathname,
+        repositoryId,
+        repositoryKey,
+      });
+      await writeArchiveDownload(req, res, options.gitHost, {
+        ref: "refName" in route ? route.refName : "HEAD",
+        repositoryId,
+        routeAction: route.action,
+      });
+      return;
+    }
+
+    const rawData = route.resource === "repository" && route.action !== "overview" && route.action !== "social" && route.action !== "activity"
       ? await runGitApiAction({
         gitHost: options.gitHost,
       } as any, route as any, repositoryId, url.searchParams)
       : await runForgeAction(options, route, repositoryId, actor, body);
+    const data = await enrichForgeDataWithArchives(options, route, repositoryId, rawData);
     if (verbose) {
       logger.info(logGroup, "forge api action completed", {
         action: route.action,

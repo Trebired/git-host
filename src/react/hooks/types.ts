@@ -102,7 +102,7 @@ type UseGitSearchOptions = GitApiQueryOptions<GitSearchResult> & {
 };
 
 type UseGitArchiveOptions = GitApiQueryOptions<GitArchive> & {
-  format?: "tar" | "zip";
+  format?: "tar" | "tar.gz" | "zip";
   prefix?: string;
   ref?: string;
 };

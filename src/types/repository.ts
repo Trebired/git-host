@@ -116,6 +116,7 @@ type GitTagSummary = {
   hash: string;
   name: string;
   short_hash: string;
+  source_archives?: GitSourceArchiveLinks;
   subject: string;
   tagged_at: string;
   tagger_email: string;
@@ -209,16 +210,44 @@ type GitBlob = {
   size: number;
 };
 
-type GitArchiveFormat = "tar" | "zip";
+type GitArchiveFormat = "tar" | "tar.gz" | "zip";
 
-type GitArchive = {
-  content: string;
+type GitSourceArchiveFormat = "tar.gz" | "zip";
+
+type GitArchiveCacheStatus = "hit" | "miss";
+
+type GitSourceArchiveLink = {
+  format: GitSourceArchiveFormat;
+  href: string;
+};
+
+type GitSourceArchiveLinks = {
+  tar_gz: GitSourceArchiveLink;
+  zip: GitSourceArchiveLink;
+};
+
+type GitArchiveMetadata = {
+  cache_key: string;
+  cache_status: GitArchiveCacheStatus;
   content_type: string;
-  encoding: "base64";
   file_name: string;
-  format: GitArchiveFormat;
+  format: GitSourceArchiveFormat;
   ref: string;
-  size: number;
+  resolved_commit: string;
+  root_directory: string;
+  size: number | null;
+};
+
+type GitArchive = GitArchiveMetadata & {
+  content: string;
+  encoding: "base64";
+};
+
+type GitArchiveDownload = {
+  completed: Promise<GitArchiveMetadata>;
+  metadata: GitArchiveMetadata;
+  redirect_url?: string;
+  stream: NodeJS.ReadableStream;
 };
 
 type GitFileContentSource = "staged" | "unstaged";
@@ -440,8 +469,11 @@ type GitRepositoryAnalysis = {
 };
 
 export type {
+  GitArchiveCacheStatus,
+  GitArchiveDownload,
   GitArchive,
   GitArchiveFormat,
+  GitArchiveMetadata,
   GitBlame,
   GitBlameLine,
   GitDirectoryEntry,
@@ -480,6 +512,9 @@ export type {
   GitSearchFileResult,
   GitSearchMatch,
   GitSearchResult,
+  GitSourceArchiveFormat,
+  GitSourceArchiveLink,
+  GitSourceArchiveLinks,
   GitStatusEntry,
   GitTagDetail,
   GitTagSummary,
