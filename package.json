@@ -1,6 +1,6 @@
 {
   "name": "@trebired/git-host",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Embeddable Git forge for Node.js and Bun apps, built on the real Git CLI with HTTP, SSH, browser, and repository platform APIs.",
   "license": "MIT",
   "keywords": [
