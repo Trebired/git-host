@@ -1,8 +1,201 @@
 {
-  "name": "@trebired/git-host",
-  "version": "1.8.0",
+  "bugs": {
+    "url": "https://github.com/Trebired/git-host/issues"
+  },
+  "dependencies": {
+    "@trebired/logger-adapter": "^0.2.0",
+    "linguist-js": "^3.0.0",
+    "material-icon-theme": "^5.35.0",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
+    "ssh2": "^1.17.0"
+  },
   "description": "Embeddable Git forge for Node.js and Bun apps, built on the real Git CLI with HTTP, SSH, browser, and repository platform APIs.",
-  "license": "MIT",
+  "devDependencies": {
+    "@trebired/code-discipline": "^2.1.1",
+    "@types/bun": "^1.3.4",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.2",
+    "@types/react-test-renderer": "^19.1.0",
+    "@types/ssh2": "^1.15.5",
+    "react": "^19.2.0",
+    "react-test-renderer": "^19.2.0",
+    "typescript": "^6.0.2"
+  },
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": ">=18"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./browser": {
+      "import": "./dist/browser/index.js",
+      "types": "./dist/browser/index.d.ts"
+    },
+    "./browser/styles.css": "./dist/browser/styles.css",
+    "./react": {
+      "import": "./dist/react/index.js",
+      "types": "./dist/react/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "homepage": "https://github.com/Trebired/git-host#readme",
+  "imports": {
+    "#1051qntat2i5": "./src/core/archive.ts",
+    "#1bae0atkgje7": "./src/core/run_git/repository_setup.ts",
+    "#1c744kzhgb33": "./src/core/working_tree/mutate.ts",
+    "#1fu49obi0gq3": "./src/core/repository.ts",
+    "#1h18ogbosnwx": "./src/backend/utils/time.ts",
+    "#1mbdfxwwqqpa": "./src/types.ts",
+    "#1uaqd3hnpa5k": "./src/api/handler/archive.ts",
+    "#2cwf3dkfcm3w": "./src/types/transports.ts",
+    "#3toq76s0rt30": "./src/react/hooks/query.ts",
+    "#402c2u4czl3p": "./src/react/client.ts",
+    "#40nx1s0ag764": "./src/core/create_git_host/content_methods.ts",
+    "#54sqm2cb0m84": "./src/http/handler/helpers.ts",
+    "#5b9hlx9mpezy": "./src/api/handler/route.ts",
+    "#5kosg8v1zegb": "./src/core/create/git_host.ts",
+    "#6qp108ftbm6e": "./src/core/remote.ts",
+    "#71gcz975lbgv": "./src/ssh/keys.ts",
+    "#7maf6oi3wbka": "./src/core/working_tree/shared.ts",
+    "#8um0tm4l4cve": "./src/types/repository.ts",
+    "#92b2mrh7s066": "./src/core/create_git_host/shared.ts",
+    "#9wiq1v1nlp1y": "./src/core/run_git/process.ts",
+    "#a08ndk3v0tpm": "./src/core/locks.ts",
+    "#br1mxt8yho4v": "./src/core/create/git_forge.ts",
+    "#bv4sbh70kns7": "./src/frontend/js/utils/text.ts",
+    "#c471wkla2eun": "./src/ssh/server.ts",
+    "#cqgsder5zlmf": "./src/logging.ts",
+    "#d7cs7wdmybuf": "./src/core/operation_state.ts",
+    "#d8b5p2m18xp0": "./src/ssh/server/audit.ts",
+    "#dvi96619a1y9": "./src/react/hooks/types.ts",
+    "#e4nui7i44nqo": "./src/react/hooks.ts",
+    "#ebw9yuqcyi9w": "./src/errors.ts",
+    "#f8p17v0habtt": "./src/core/create/git/host.ts",
+    "#fdlygmvtu0no": "./src/react/components.ts",
+    "#gagsdioegzgz": "./src/core/inspect/linguist_progress.ts",
+    "#ghfksbdec10n": "./src/react/hooks/resources.ts",
+    "#h03o1plsdntl": "./src/core/inspection.ts",
+    "#h8rjz8k1zbdv": "./src/react/client/helpers.ts",
+    "#hl8dc1r0tmsl": "./src/types/forge.ts",
+    "#hp0eb3dl2y72": "./src/core/create_git_host/working_tree_methods.ts",
+    "#i4s1k51ofdv3": "./src/react/client/error.ts",
+    "#j29gfnt2cscg": "./src/backend/utils/object.ts",
+    "#j5v2l229yjdx": "./src/http/handler.ts",
+    "#jdf1x3hps0q6": "./src/ssh/server/shared.ts",
+    "#jezxo0dsbb92": "./src/core/run_git.ts",
+    "#jtzr4xu4q8bf": "./src/react/ui/context.ts",
+    "#k7bnrk9kvbou": "./src/core/create_git_host/remote_methods.ts",
+    "#k81h7irc7p0e": "./src/api/socket/events.ts",
+    "#lobn9mfldn9s": "./src/core/create_git_host/branch_methods.ts",
+    "#no8h9g0tsskh": "./src/api/forge/route.ts",
+    "#oul7o8qvkv5n": "./src/api/handler/response.ts",
+    "#p59wo2ccziqp": "./src/core/inspect/icon_theme.ts",
+    "#pl0z91xbe0br": "./src/core/git_forge/storage_memory.ts",
+    "#qrrrat6gjo0q": "./src/react/index.ts",
+    "#r89qhx6c8mkf": "./src/constants.ts",
+    "#rfvjfxzebkbs": "./src/index.ts",
+    "#s5xnfed966ax": "./src/core/archive_cache_filesystem.ts",
+    "#spcbfsrikbhn": "./src/core/repository/parsers.ts",
+    "#stucx8966x3k": "./src/api/socket/server.ts",
+    "#sy81xkgkmoa0": "./src/utils/text.ts",
+    "#t13y2bx0ygbf": "./src/api/handler/action.ts",
+    "#t3kj2pak2lnx": "./src/react/client/types.ts",
+    "#tb3z4kq3oxg0": "./src/types/host.ts",
+    "#tmq4zcm4k2dj": "./src/api/forge/handler.ts",
+    "#udv18x1zuger": "./src/browser/index.ts",
+    "#upm272dycvnm": "./src/types/common.ts",
+    "#uzarbapld5e4": "./src/core/working_tree/read.ts",
+    "#wb5qec2x6c0t": "./src/backend/utils/normalize.ts",
+    "#wy8z5vow2aix": "./src/types/index.ts",
+    "#x78lbcvwod9s": "./src/core/working_tree.ts",
+    "#xg7vpiql11ra": "./src/api/handler.ts",
+    "#xq931dajvvlo": "./src/core/inspect/helpers.ts",
+    "#xtrl4j08py78": "./src/core/run_git/env.ts",
+    "#yip4ahplpvfl": "./src/core/inspect.ts",
+    "#ynrrpw9yaztf": "./src/utils/paths.ts",
+    "#zwhym49orp46": "./src/core/create/git/forge.ts",
+    "#c4fd5905235f": "./internal/api/forge/handler.ts",
+    "#e8559447ec5f": "./internal/api/forge/route.ts",
+    "#53fe5bbf2789": "./internal/api/handler/action.ts",
+    "#ff0a1cf158cf": "./internal/api/handler/archive.ts",
+    "#4e7ff1c92ff1": "./internal/api/handler/response.ts",
+    "#b48819617d2f": "./internal/api/handler/route.ts",
+    "#5f2400e3636a": "./internal/api/handler.ts",
+    "#e1ead083c558": "./internal/api/socket/events.ts",
+    "#0393514b57bc": "./internal/api/socket/server.ts",
+    "#ebe51631bc41": "./internal/backend/utils/normalize.ts",
+    "#d66a914eb693": "./internal/backend/utils/object.ts",
+    "#87337d1a79d6": "./internal/backend/utils/time.ts",
+    "#8392d406df71": "./internal/browser/index.ts",
+    "#0bba403f3e43": "./internal/constants.ts",
+    "#07a96afa0a48": "./internal/core/archive.ts",
+    "#42965357d713": "./internal/core/archive_cache_filesystem.ts",
+    "#ea71f5c6858f": "./internal/core/create/git/forge.ts",
+    "#b8c8814b833e": "./internal/core/create/git/host.ts",
+    "#f88802286a5d": "./internal/core/create_git_host/branch_methods.ts",
+    "#4159667f1e87": "./internal/core/create_git_host/content_methods.ts",
+    "#a9f1d698c0aa": "./internal/core/create_git_host/remote_methods.ts",
+    "#b3a8e61c79e9": "./internal/core/create_git_host/shared.ts",
+    "#de031fc6c08f": "./internal/core/create_git_host/working_tree_methods.ts",
+    "#e65e172ffada": "./internal/core/git_forge/storage_memory.ts",
+    "#61bf255baf35": "./internal/core/inspect/helpers.ts",
+    "#2ebf9ed6336f": "./internal/core/inspect/icon_theme.ts",
+    "#5f5fe2262a26": "./internal/core/inspect/linguist_progress.ts",
+    "#632ac808a058": "./internal/core/inspect.ts",
+    "#a62e56e1fef5": "./internal/core/inspection.ts",
+    "#90040fe3e934": "./internal/core/locks.ts",
+    "#42f32dd5cd30": "./internal/core/operation_state.ts",
+    "#1a2e563ea829": "./internal/core/remote.ts",
+    "#115ffae16859": "./internal/core/repository/parsers.ts",
+    "#4bb83a619bd3": "./internal/core/repository.ts",
+    "#58f5a76a572c": "./internal/core/run_git/env.ts",
+    "#622bd171bea7": "./internal/core/run_git/process.ts",
+    "#3fbd2c4f854c": "./internal/core/run_git/repository_setup.ts",
+    "#96b00569f1f4": "./internal/core/run_git.ts",
+    "#66ac2545b926": "./internal/core/working_tree/mutate.ts",
+    "#9ed9deeef558": "./internal/core/working_tree/read.ts",
+    "#68c5a1845ad6": "./internal/core/working_tree/shared.ts",
+    "#8b0f4b678e79": "./internal/core/working_tree.ts",
+    "#8974ac53d713": "./internal/errors.ts",
+    "#9652e5354aa6": "./internal/frontend/js/utils/text.ts",
+    "#fb997ea04aaa": "./internal/http/handler/helpers.ts",
+    "#daa89828a013": "./internal/http/handler.ts",
+    "#fcd73bf294d5": "./internal/index.ts",
+    "#5a29135e56c1": "./internal/logging.ts",
+    "#17b925930e92": "./internal/react/client/error.ts",
+    "#f6968f8cf46f": "./internal/react/client/helpers.ts",
+    "#7852a9866044": "./internal/react/client/types.ts",
+    "#8c51a3b3b48b": "./internal/react/client.ts",
+    "#8aa7b293569e": "./internal/react/components.ts",
+    "#de066fa37e98": "./internal/react/hooks/query.ts",
+    "#94a1724e0014": "./internal/react/hooks/resources.ts",
+    "#4f3a1fa5de07": "./internal/react/hooks/types.ts",
+    "#cca837948b54": "./internal/react/hooks.ts",
+    "#c781974d726d": "./internal/react/index.ts",
+    "#999903aa9828": "./internal/react/ui/context.ts",
+    "#2161a5929bec": "./internal/ssh/keys.ts",
+    "#b2abc9887206": "./internal/ssh/server/audit.ts",
+    "#9eedb3d763ad": "./internal/ssh/server/shared.ts",
+    "#342cd29fa025": "./internal/ssh/server.ts",
+    "#5a0e75b6bdb8": "./internal/types/common.ts",
+    "#4c94c22378b2": "./internal/types/forge.ts",
+    "#59b3abcebf1a": "./internal/types/host.ts",
+    "#14021226ec9b": "./internal/types/index.ts",
+    "#666a84ce027e": "./internal/types/repository.ts",
+    "#2c9e26f53461": "./internal/types/transports.ts",
+    "#3c8d8166992a": "./internal/types.ts",
+    "#390741ebf5ab": "./internal/utils/paths.ts",
+    "#62f869522d1f": "./internal/utils/text.ts"
+  },
   "keywords": [
     "git",
     "git-host",
@@ -13,47 +206,26 @@
     "node",
     "bun"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Trebired/git-host"
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "name": "@trebired/git-host",
+  "packageManager": "bun@1.3.12",
+  "peerDependencies": {
+    "react": ">=18"
   },
-  "bugs": {
-    "url": "https://github.com/Trebired/git-host/issues"
-  },
-  "homepage": "https://github.com/Trebired/git-host#readme",
-  "type": "module",
-  "engines": {
-    "node": ">=18",
-    "bun": ">=1.0.0"
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
   },
   "private": false,
   "publishConfig": {
     "access": "public"
   },
-  "packageManager": "bun@1.3.12",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./react": {
-      "types": "./dist/react/index.d.ts",
-      "import": "./dist/react/index.js"
-    },
-    "./browser": {
-      "types": "./dist/browser/index.d.ts",
-      "import": "./dist/browser/index.js"
-    },
-    "./browser/styles.css": "./dist/browser/styles.css"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Trebired/git-host"
   },
-  "files": [
-    "dist",
-    "CHANGELOG.md",
-    "LICENSE",
-    "README.md"
-  ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json && mkdir -p dist/browser && cp src/browser/styles.css dist/browser/styles.css",
     "demo": "bun run examples/dummy.ts",
@@ -64,30 +236,7 @@
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
-  "dependencies": {
-    "@trebired/logger-adapter": "^0.2.0",
-    "linguist-js": "^3.0.0",
-    "material-icon-theme": "^5.35.0",
-    "socket.io": "^4.8.3",
-    "socket.io-client": "^4.8.3",
-    "ssh2": "^1.17.0"
-  },
-  "peerDependencies": {
-    "react": ">=18"
-  },
-  "peerDependenciesMeta": {
-    "react": {
-      "optional": true
-    }
-  },
-  "devDependencies": {
-    "@types/bun": "^1.3.4",
-    "@types/node": "^24.10.1",
-    "@types/react": "^19.2.2",
-    "@types/react-test-renderer": "^19.1.0",
-    "@types/ssh2": "^1.15.5",
-    "react": "^19.2.0",
-    "react-test-renderer": "^19.2.0",
-    "typescript": "^6.0.2"
-  }
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "version": "1.8.1"
 }

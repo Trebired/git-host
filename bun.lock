@@ -13,6 +13,7 @@
         "ssh2": "^1.17.0",
       },
       "devDependencies": {
+        "@trebired/code-discipline": "^2.1.1",
         "@types/bun": "^1.3.4",
         "@types/node": "^24.10.1",
         "@types/react": "^19.2.2",
@@ -32,6 +33,8 @@
   },
   "packages": {
     "@socket.io/component-emitter": ["@socket.io/component-emitter@3.1.2", "", {}, "sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA=="],
+
+    "@trebired/code-discipline": ["@trebired/code-discipline@2.1.1", "", { "dependencies": { "@trebired/code-discipline": ".", "@trebired/logger-adapter": "^0.2.0", "typescript": "^6.0.2" }, "bin": { "code-discipline": "dist/cli.js" } }, "sha512-hOO2E+vLflbayw8LjDSnnIAImkFEBVmxm9EpNnqtvjI1O9+QvtUIFYyYl5dgr4EdG7F4JEifyqmozGs5FILsYA=="],
 
     "@trebired/logger-adapter": ["@trebired/logger-adapter@0.2.0", "", {}, "sha512-nRHfOVEdYIVYn4qBc1sZbWKGttLiw9VWscmWMJ5/EUGlc8lKaEO+k3n7JeaxOgRvYsCISCDTaQ6Zy7xrB7a3fg=="],
 
@@ -360,6 +363,8 @@
     "xml-reader": ["xml-reader@2.4.3", "", { "dependencies": { "eventemitter3": "^2.0.0", "xml-lexer": "^0.2.2" } }, "sha512-xWldrIxjeAMAu6+HSf9t50ot1uL5M+BtOidRCWHXIeewvSeIpscWCsp4Zxjk8kHHhdqFBrfK8U0EJeCcnyQ/gA=="],
 
     "xmlhttprequest-ssl": ["xmlhttprequest-ssl@2.1.2", "", {}, "sha512-TEU+nJVUUnA4CYJFLvK5X9AOeH4KvDvhIfm0vV1GaQRtchnG0hgK5p8hw/xjv8cunWYCsiPCSDzObPyhEwq3KQ=="],
+
+    "@trebired/code-discipline/@trebired/code-discipline": ["@trebired/code-discipline@file:.", {}],
 
     "@types/ssh2/@types/node": ["@types/node@18.19.130", "", { "dependencies": { "undici-types": "~5.26.4" } }, "sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg=="],
 
