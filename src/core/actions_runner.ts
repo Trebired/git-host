@@ -115,6 +115,7 @@ const RUNNER_BINARY_NAMES = {
   "linux-arm64": "git-host-actions-runner-linux-arm64-gnu",
   "linux-x64": "git-host-actions-runner-linux-x64-gnu",
 } satisfies Record<string, string>;
+let sourceCheckoutGoRunnerPath: string | null | undefined;
 
 function findPackageRoot(startPath: string): string {
   let current = path.resolve(startPath);
@@ -145,18 +146,47 @@ function resolvePackagedRunnerPath(options: CreateGitForgeActionsOptions | undef
   return fs.existsSync(candidate) ? candidate : null;
 }
 
-function resolveGoFallbackCommand(): { args: string[]; command: string; cwd: string } | null {
+function resolveGoFallbackCommand(): { args: string[]; command: string; cwd?: string } | null {
+  if (sourceCheckoutGoRunnerPath !== undefined) {
+    return sourceCheckoutGoRunnerPath
+      ? {
+          args: [],
+          command: sourceCheckoutGoRunnerPath,
+        }
+      : null;
+  }
+
   const packageRoot = findPackageRoot(path.dirname(fileURLToPath(import.meta.url)));
   const sourcePath = path.join(packageRoot, "go", "cmd", "git-host-actions-runner");
-  if (!fs.existsSync(sourcePath)) return null;
+  if (!fs.existsSync(sourcePath)) {
+    sourceCheckoutGoRunnerPath = null;
+    return null;
+  }
+
   const probe = spawnSync("go", ["version"], {
     encoding: "utf8",
   });
-  if (probe.status !== 0) return null;
-  return {
-    args: ["run", "./go/cmd/git-host-actions-runner"],
-    command: "go",
+  if (probe.status !== 0) {
+    sourceCheckoutGoRunnerPath = null;
+    return null;
+  }
+
+  const binaryDirectory = path.join(os.tmpdir(), "@trebired-git-host-actions-runner", `${process.platform}-${process.arch}`);
+  const binaryPath = path.join(binaryDirectory, "git-host-actions-runner");
+  fs.mkdirSync(binaryDirectory, { recursive: true });
+  const build = spawnSync("go", ["build", "-o", binaryPath, "./go/cmd/git-host-actions-runner"], {
     cwd: packageRoot,
+    encoding: "utf8",
+  });
+  if (build.status !== 0 || !fs.existsSync(binaryPath)) {
+    sourceCheckoutGoRunnerPath = null;
+    return null;
+  }
+
+  sourceCheckoutGoRunnerPath = binaryPath;
+  return {
+    args: [],
+    command: binaryPath,
   };
 }
 
