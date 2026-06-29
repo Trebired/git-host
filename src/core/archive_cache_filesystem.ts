@@ -99,6 +99,50 @@ async function listMetadataFiles(rootDir: string): Promise<string[]> {
   return files;
 }
 
+async function cleanupMetadataFile(metadataPath: string, now: Date) {
+  const dataPath = metadataPath.replace(/\.json$/u, ".bin");
+  const entry = await readEntryFromDisk(metadataPath, dataPath);
+  if (entry) return 0;
+
+  try {
+    const stats = await fs.promises.stat(metadataPath);
+    if (stats.mtimeMs > now.getTime()) return 0;
+  } catch {}
+  return 1;
+}
+
+function createArchiveCacheWriter(
+  tempDataPath: string,
+  tempMetadataPath: string,
+  dataPath: string,
+  metadataPath: string,
+) {
+  const stream = fs.createWriteStream(tempDataPath);
+  return {
+    async abort() {
+      stream.destroy();
+      await Promise.all([
+        removeIfExists(tempDataPath),
+        removeIfExists(tempMetadataPath),
+      ]);
+    },
+
+    async complete(entry: GitArchiveCacheEntry) {
+      await fs.promises.writeFile(tempMetadataPath, JSON.stringify(entry, null, 2), "utf8");
+      await fs.promises.rename(tempDataPath, dataPath).catch(async () => {
+        await removeIfExists(dataPath);
+        await fs.promises.rename(tempDataPath, dataPath);
+      });
+      await fs.promises.rename(tempMetadataPath, metadataPath).catch(async () => {
+        await removeIfExists(metadataPath);
+        await fs.promises.rename(tempMetadataPath, metadataPath);
+      });
+    },
+
+    stream,
+  } satisfies GitArchiveCacheWriter;
+}
+
 function createFileSystemGitArchiveCache(options: CreateFileSystemGitArchiveCacheOptions): GitArchiveCacheBackend {
   const rootDir = path.resolve(String(options.rootDir || ""));
   const tempDir = path.join(rootDir, ".tmp");
@@ -109,15 +153,7 @@ function createFileSystemGitArchiveCache(options: CreateFileSystemGitArchiveCach
       let deleted = 0;
 
       await Promise.all(metadataFiles.map(async (metadataPath) => {
-        const dataPath = metadataPath.replace(/\.json$/u, ".bin");
-        const entry = await readEntryFromDisk(metadataPath, dataPath);
-        if (entry) return;
-
-        try {
-          const stats = await fs.promises.stat(metadataPath);
-          if (stats.mtimeMs > now.getTime()) return;
-        } catch {}
-        deleted += 1;
+        deleted += await cleanupMetadataFile(metadataPath, now);
       }));
 
       return deleted;
@@ -145,31 +181,7 @@ function createFileSystemGitArchiveCache(options: CreateFileSystemGitArchiveCach
 
       const tempDataPath = path.join(tempDir, `${randomUUID()}.bin`);
       const tempMetadataPath = path.join(tempDir, `${randomUUID()}.json`);
-      const stream = fs.createWriteStream(tempDataPath);
-
-      return {
-        async abort() {
-          stream.destroy();
-          await Promise.all([
-            removeIfExists(tempDataPath),
-            removeIfExists(tempMetadataPath),
-          ]);
-        },
-
-        async complete(entry: GitArchiveCacheEntry) {
-          await fs.promises.writeFile(tempMetadataPath, JSON.stringify(entry, null, 2), "utf8");
-          await fs.promises.rename(tempDataPath, dataPath).catch(async () => {
-            await removeIfExists(dataPath);
-            await fs.promises.rename(tempDataPath, dataPath);
-          });
-          await fs.promises.rename(tempMetadataPath, metadataPath).catch(async () => {
-            await removeIfExists(metadataPath);
-            await fs.promises.rename(tempMetadataPath, metadataPath);
-          });
-        },
-
-        stream,
-      };
+      return createArchiveCacheWriter(tempDataPath, tempMetadataPath, dataPath, metadataPath);
     },
   };
 }

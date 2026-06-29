@@ -167,13 +167,11 @@ function buildSshActivityMetadata(event: GitSshAuditEvent, repositoryContext: Re
   }) || {};
 }
 
-function createGitForgeActivityRecorder(options: {
-  now?: () => string;
-  storage: GitForgeActivityStorage;
-}): GitForgeTransportActivityRecorder {
-  const now = typeof options.now === "function" ? options.now : nowIso;
-
-  async function recordActivity(input: GitForgeActivityRecordInput): Promise<GitForgeActivityEntry> {
+function createRecordActivity(
+  now: () => string,
+  storage: GitForgeActivityStorage,
+) {
+  return async function recordActivity(input: GitForgeActivityRecordInput): Promise<GitForgeActivityEntry> {
     const metadata = normalizeActivityMetadata(input.metadata);
     const repositoryId = text(input.repository_id);
     const kind = text(input.kind) as GitForgeActivityKind;
@@ -188,45 +186,74 @@ function createGitForgeActivityRecorder(options: {
       ...(text(input.source) ? { source: text(input.source) as GitForgeActivityEntry["source"] } : {}),
       summary: text(input.summary, buildActivitySummary(kind, repositoryId, metadata || {})),
     };
-    return await options.storage.createActivity(entry);
-  }
+    return await storage.createActivity(entry);
+  };
+}
+
+function createListActivity(storage: GitForgeActivityStorage) {
+  return async function listActivity(repositoryId: string, filters: GitForgeActivityFilters = {}) {
+    const rows = await storage.listActivity(text(repositoryId), filters);
+    return sortActivityEntries(Array.from(rows).filter((entry) => matchesActivityFilters(entry, filters)));
+  };
+}
+
+function httpActivityKind(event: GitHttpAuditEvent) {
+  return event.service === "git-receive-pack" ? "repository.push" : "repository.fetch";
+}
+
+function sshActivityKind(event: GitSshAuditEvent) {
+  return event.service === "git-receive-pack" ? "repository.push" : "repository.fetch";
+}
+
+function createRecordHttpAuditEvent(
+  recordActivity: (input: GitForgeActivityRecordInput) => Promise<GitForgeActivityEntry>,
+) {
+  return async function recordHttpAuditEvent(event: GitHttpAuditEvent) {
+    if (event.outcome !== "completed" || !event.repository || !event.service) return null;
+    if (text(event.method).toUpperCase() !== "POST") return null;
+    const repositoryContext = await readRepositoryActivityContext(event.repository);
+    const actor = deriveTransportActor(event.identity, event.remoteUser);
+    return await recordActivity({
+      actor_id: actor.actor_id,
+      actor_label: actor.actor_label,
+      kind: httpActivityKind(event),
+      metadata: buildHttpActivityMetadata(event, repositoryContext),
+      repository_id: event.repository.id,
+      source: "http",
+    });
+  };
+}
+
+function createRecordSshAuditEvent(
+  recordActivity: (input: GitForgeActivityRecordInput) => Promise<GitForgeActivityEntry>,
+) {
+  return async function recordSshAuditEvent(event: GitSshAuditEvent) {
+    if (event.outcome !== "completed" || !event.repository || !event.service) return null;
+    const repositoryContext = await readRepositoryActivityContext(event.repository);
+    const actor = deriveTransportActor(event.identity, event.remoteUser || event.username);
+    return await recordActivity({
+      actor_id: actor.actor_id,
+      actor_label: actor.actor_label,
+      kind: sshActivityKind(event),
+      metadata: buildSshActivityMetadata(event, repositoryContext),
+      repository_id: event.repository.id,
+      source: "ssh",
+    });
+  };
+}
+
+function createGitForgeActivityRecorder(options: {
+  now?: () => string;
+  storage: GitForgeActivityStorage;
+}): GitForgeTransportActivityRecorder {
+  const now = typeof options.now === "function" ? options.now : nowIso;
+  const recordActivity = createRecordActivity(now, options.storage);
 
   return {
     recordActivity,
-
-    async listActivity(repositoryId: string, filters: GitForgeActivityFilters = {}) {
-      const rows = await options.storage.listActivity(text(repositoryId), filters);
-      return sortActivityEntries(Array.from(rows).filter((entry) => matchesActivityFilters(entry, filters)));
-    },
-
-    async recordHttpAuditEvent(event: GitHttpAuditEvent) {
-      if (event.outcome !== "completed" || !event.repository || !event.service) return null;
-      if (text(event.method).toUpperCase() !== "POST") return null;
-      const repositoryContext = await readRepositoryActivityContext(event.repository);
-      const actor = deriveTransportActor(event.identity, event.remoteUser);
-      return await recordActivity({
-        actor_id: actor.actor_id,
-        actor_label: actor.actor_label,
-        kind: event.service === "git-receive-pack" ? "repository.push" : "repository.fetch",
-        metadata: buildHttpActivityMetadata(event, repositoryContext),
-        repository_id: event.repository.id,
-        source: "http",
-      });
-    },
-
-    async recordSshAuditEvent(event: GitSshAuditEvent) {
-      if (event.outcome !== "completed" || !event.repository || !event.service) return null;
-      const repositoryContext = await readRepositoryActivityContext(event.repository);
-      const actor = deriveTransportActor(event.identity, event.remoteUser || event.username);
-      return await recordActivity({
-        actor_id: actor.actor_id,
-        actor_label: actor.actor_label,
-        kind: event.service === "git-receive-pack" ? "repository.push" : "repository.fetch",
-        metadata: buildSshActivityMetadata(event, repositoryContext),
-        repository_id: event.repository.id,
-        source: "ssh",
-      });
-    },
+    listActivity: createListActivity(options.storage),
+    recordHttpAuditEvent: createRecordHttpAuditEvent(recordActivity),
+    recordSshAuditEvent: createRecordSshAuditEvent(recordActivity),
   };
 }
 

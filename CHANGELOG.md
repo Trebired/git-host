@@ -4,6 +4,12 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.2.0
+
+- Added repo-local `code-discipline` enforcement config with `.gitignore`-driven directory exclusion and explicit TypeScript, JavaScript, MJS, and Go source coverage for the git-host codebase.
+- Refactored Actions runner internals into smaller `src/core/actions/*` modules plus focused Go runner helpers, and split live linguist and workflow-run socket subscription handling into dedicated API modules.
+- Moved build runner utilities under `scripts/build/`, refreshed package import metadata, and split shared type surfaces into smaller forge and React client modules while preserving the published backend/runtime package surface.
+
 ## 2.1.0
 
 - Switched Actions workflow definitions to repository files discovered from `<workflowRoot>/workflows/*.yml`, with `.git-host` as the default root and configurable per-platform or per-repository overrides such as `.platform/workflows`.

@@ -33,8 +33,8 @@ import type {
 } from "#3c8d8166992a";
 import { text } from "#62f869522d1f";
 import { fetchRepository } from "#1a2e563ea829";
-import { createGitForgeActivityRecorder } from "../../activity.js";
-import { createGitForgeActionsRuntime } from "../../forge_actions.js";
+import { createGitForgeActivityRecorder } from "#yotdvtav6ika";
+import { createGitForgeActionsRuntime } from "#1hvsns0vce55";
 import { buildGitEnv, cloneRepository, ensureHostedRepositoryConfig, repositoryExists, runGit } from "#96b00569f1f4";
 
 function repositoryHandleFromSummary(summary: GitForgeRepositoryOverview["repository"]): GitRepositoryHandle {

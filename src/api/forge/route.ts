@@ -1,6 +1,6 @@
 import { parseGitApiRoute } from "#xg7vpiql11ra";
 import { text } from "#sy81xkgkmoa0";
-import { decodeRouteSegment, parseRepositoryRoute } from "../routing.js";
+import { decodeRouteSegment, parseRepositoryRoute } from "#glky615nezhr";
 
 type GitForgeApiRoute =
   | {

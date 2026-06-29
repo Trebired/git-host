@@ -339,24 +339,4 @@ function buildCreateTagInput(value: unknown) {
   };
 }
 
-function normalizeEnvRecord(value: unknown): Record<string, string> | undefined {
-  if (!value || typeof value !== "object") return undefined;
-  const next = Object.fromEntries(
-    Object.entries(value as Record<string, unknown>)
-      .map(([key, entry]) => [text(key), text(entry)] as const)
-      .filter(([key, entry]) => key && entry),
-  );
-  return Object.keys(next).length ? next : undefined;
-}
-
-export {
-  allowedMethodsForRoute,
-  isForgeReleasePayload,
-  readJsonBody,
-  readActivityFilters,
-  readWorkflowFilters,
-  readWorkflowRunEventFilters,
-  readWorkflowRunFilters,
-  routeOperation,
-  runForgeAction,
-};
+export { allowedMethodsForRoute, isForgeReleasePayload, readActivityFilters, readJsonBody, readWorkflowFilters, readWorkflowRunEventFilters, readWorkflowRunFilters, routeOperation, runForgeAction };

@@ -20,17 +20,26 @@
       "#0bba403f3e43": [
         "./src/constants.ts"
       ],
-      "#1051qntat2i5": [
-        "./src/core/archive.ts"
+      "#0lkt7ob2zeph": [
+        "./src/api/forge/archives.ts"
+      ],
+      "#0oaw38rbda0b": [
+        "./test/specs/transports_misc.spec.ts"
       ],
       "#115ffae16859": [
         "./src/core/repository/parsers.ts"
+      ],
+      "#134up1wv9uhu": [
+        "./src/core/actions/workspace.ts"
       ],
       "#14021226ec9b": [
         "./src/types/index.ts"
       ],
       "#17b925930e92": [
         "./src/react/client/error.ts"
+      ],
+      "#18ua13h0c1vi": [
+        "./src/types/host/archive.ts"
       ],
       "#1a2e563ea829": [
         "./src/core/remote.ts"
@@ -47,35 +56,44 @@
       "#1h18ogbosnwx": [
         "./src/backend/utils/time.ts"
       ],
+      "#1hvsns0vce55": [
+        "./src/core/forge_actions.ts"
+      ],
       "#1mbdfxwwqqpa": [
         "./src/types.ts"
       ],
       "#1uaqd3hnpa5k": [
         "./src/api/handler/archive.ts"
       ],
+      "#20ls7ubpf6bn": [
+        "./src/core/actions/runner/protocol.ts"
+      ],
       "#2161a5929bec": [
         "./src/ssh/keys.ts"
       ],
-      "#2c9e26f53461": [
-        "./src/types/transports.ts"
+      "#291out94ajgp": [
+        "./test/specs/forge.spec.ts"
       ],
-      "#2cwf3dkfcm3w": [
+      "#2c9e26f53461": [
         "./src/types/transports.ts"
       ],
       "#2ebf9ed6336f": [
         "./src/core/inspect/icon_theme.ts"
       ],
+      "#2swjs9o20esx": [
+        "./src/api/forge/runtime.ts"
+      ],
+      "#321xny04tvcr": [
+        "./test/specs/actions.spec.ts"
+      ],
       "#342cd29fa025": [
         "./src/ssh/server.ts"
       ],
+      "#34ouqyet5j1y": [
+        "./scripts/verify-pack.mjs"
+      ],
       "#390741ebf5ab": [
         "./src/utils/paths.ts"
-      ],
-      "#3c8d8166992a": [
-        "./src/types.ts"
-      ],
-      "#3fbd2c4f854c": [
-        "./src/core/run_git/repository_setup.ts"
       ],
       "#3toq76s0rt30": [
         "./src/react/hooks/query.ts"
@@ -86,17 +104,11 @@
       "#40nx1s0ag764": [
         "./src/core/create_git_host/content_methods.ts"
       ],
-      "#4159667f1e87": [
-        "./src/core/create_git_host/content_methods.ts"
-      ],
       "#42965357d713": [
         "./src/core/archive_cache_filesystem.ts"
       ],
       "#42f32dd5cd30": [
         "./src/core/operation_state.ts"
-      ],
-      "#4bb83a619bd3": [
-        "./src/core/repository.ts"
       ],
       "#4c94c22378b2": [
         "./src/types/forge.ts"
@@ -106,6 +118,9 @@
       ],
       "#4f3a1fa5de07": [
         "./src/react/hooks/types.ts"
+      ],
+      "#4shewkcrh4gz": [
+        "./scripts/runner-targets.mjs"
       ],
       "#53fe5bbf2789": [
         "./src/api/handler/action.ts"
@@ -134,6 +149,9 @@
       "#5f5fe2262a26": [
         "./src/core/inspect/linguist_progress.ts"
       ],
+      "#5ubr402iaw9c": [
+        "./src/types/forge/workflows.ts"
+      ],
       "#61bf255baf35": [
         "./src/core/inspect/helpers.ts"
       ],
@@ -149,29 +167,17 @@
       "#666a84ce027e": [
         "./src/types/repository.ts"
       ],
-      "#66ac2545b926": [
-        "./src/core/working_tree/mutate.ts"
-      ],
       "#68c5a1845ad6": [
         "./src/core/working_tree/shared.ts"
-      ],
-      "#6qp108ftbm6e": [
-        "./src/core/remote.ts"
-      ],
-      "#71gcz975lbgv": [
-        "./src/ssh/keys.ts"
       ],
       "#7852a9866044": [
         "./src/react/client/types.ts"
       ],
-      "#7maf6oi3wbka": [
-        "./src/core/working_tree/shared.ts"
+      "#7x13jx7cadgo": [
+        "./examples/api_server.ts"
       ],
       "#8392d406df71": [
         "./src/browser/index.ts"
-      ],
-      "#87337d1a79d6": [
-        "./src/backend/utils/time.ts"
       ],
       "#8974ac53d713": [
         "./src/errors.ts"
@@ -182,11 +188,8 @@
       "#8b0f4b678e79": [
         "./src/core/working_tree.ts"
       ],
-      "#8c51a3b3b48b": [
-        "./src/react/client.ts"
-      ],
-      "#8um0tm4l4cve": [
-        "./src/types/repository.ts"
+      "#8v2pew0bulz2": [
+        "./test/specs/api_react.spec.ts"
       ],
       "#90040fe3e934": [
         "./src/core/locks.ts"
@@ -212,11 +215,8 @@
       "#9eedb3d763ad": [
         "./src/ssh/server/shared.ts"
       ],
-      "#9wiq1v1nlp1y": [
-        "./src/core/run_git/process.ts"
-      ],
-      "#a08ndk3v0tpm": [
-        "./src/core/locks.ts"
+      "#9u61u8i5q24v": [
+        "./src/core/actions/go_runner.ts"
       ],
       "#a62e56e1fef5": [
         "./src/core/inspection.ts"
@@ -227,20 +227,14 @@
       "#b2abc9887206": [
         "./src/ssh/server/audit.ts"
       ],
-      "#b3a8e61c79e9": [
-        "./src/core/create_git_host/shared.ts"
-      ],
-      "#b48819617d2f": [
-        "./src/api/handler/route.ts"
-      ],
       "#b8c8814b833e": [
         "./src/core/create/git/host.ts"
       ],
-      "#bv4sbh70kns7": [
-        "./src/frontend/js/utils/text.ts"
+      "#belh5us2dvyl": [
+        "./src/react/client/types/client.ts"
       ],
-      "#c471wkla2eun": [
-        "./src/ssh/server.ts"
+      "#bpzwkfv6xs0t": [
+        "./src/types/repository/inspection.ts"
       ],
       "#c4fd5905235f": [
         "./src/api/forge/handler.ts"
@@ -251,17 +245,11 @@
       "#cca837948b54": [
         "./src/react/hooks.ts"
       ],
-      "#cqgsder5zlmf": [
-        "./src/logging.ts"
+      "#cecx4kvnm1f7": [
+        "./src/api/socket/linguist_connection.ts"
       ],
       "#d66a914eb693": [
         "./src/backend/utils/object.ts"
-      ],
-      "#d7cs7wdmybuf": [
-        "./src/core/operation_state.ts"
-      ],
-      "#d8b5p2m18xp0": [
-        "./src/ssh/server/audit.ts"
       ],
       "#daa89828a013": [
         "./src/http/handler.ts"
@@ -269,17 +257,8 @@
       "#de031fc6c08f": [
         "./src/core/create_git_host/working_tree_methods.ts"
       ],
-      "#de066fa37e98": [
-        "./src/react/hooks/query.ts"
-      ],
-      "#dvi96619a1y9": [
-        "./src/react/hooks/types.ts"
-      ],
       "#e1ead083c558": [
         "./src/api/socket/events.ts"
-      ],
-      "#e4nui7i44nqo": [
-        "./src/react/hooks.ts"
       ],
       "#e65e172ffada": [
         "./src/core/git_forge/storage_memory.ts"
@@ -293,8 +272,11 @@
       "#ebe51631bc41": [
         "./src/backend/utils/normalize.ts"
       ],
-      "#ebw9yuqcyi9w": [
-        "./src/errors.ts"
+      "#eg5ivjfdofea": [
+        "./src/types/repository/archive.ts"
+      ],
+      "#em04rd6pxc0h": [
+        "./src/api/forge/socket_subscription.ts"
       ],
       "#f6968f8cf46f": [
         "./src/react/client/helpers.ts"
@@ -302,149 +284,98 @@
       "#f88802286a5d": [
         "./src/core/create_git_host/branch_methods.ts"
       ],
-      "#f8p17v0habtt": [
-        "./src/core/create/git/host.ts"
-      ],
-      "#fb997ea04aaa": [
-        "./src/http/handler/helpers.ts"
-      ],
       "#fcd73bf294d5": [
         "./src/index.ts"
       ],
-      "#fdlygmvtu0no": [
-        "./src/react/components.ts"
+      "#fny4b5azdymz": [
+        "./examples/http_server.ts"
       ],
-      "#ff0a1cf158cf": [
-        "./src/api/handler/archive.ts"
+      "#fznhyzk6jqlm": [
+        "./src/types/forge/social_forks.ts"
       ],
-      "#gagsdioegzgz": [
-        "./src/core/inspect/linguist_progress.ts"
+      "#g1a0yg27b4bk": [
+        "./src/react/client/types/socket.ts"
       ],
-      "#ghfksbdec10n": [
-        "./src/react/hooks/resources.ts"
+      "#g3n8cscehpt3": [
+        "./src/types/forge/releases.ts"
       ],
-      "#h03o1plsdntl": [
-        "./src/core/inspection.ts"
+      "#g72fdokcrr8g": [
+        "./examples/ssh_server.ts"
       ],
-      "#h8rjz8k1zbdv": [
-        "./src/react/client/helpers.ts"
+      "#glky615nezhr": [
+        "./src/api/routing.ts"
       ],
-      "#hl8dc1r0tmsl": [
-        "./src/types/forge.ts"
+      "#hzv9f3wx9ez9": [
+        "./src/core/actions/types.ts"
       ],
-      "#hp0eb3dl2y72": [
-        "./src/core/create_git_host/working_tree_methods.ts"
+      "#iqv5bm36ifxa": [
+        "./src/types/repository/core.ts"
       ],
-      "#i4s1k51ofdv3": [
-        "./src/react/client/error.ts"
+      "#nf2wlwbyt8go": [
+        "./scripts/prepare-dist.mjs"
       ],
-      "#j29gfnt2cscg": [
-        "./src/backend/utils/object.ts"
+      "#nj0t6f5vyy3x": [
+        "./src/core/actions/workflows.ts"
       ],
-      "#j5v2l229yjdx": [
-        "./src/http/handler.ts"
+      "#o538xjjiyf7m": [
+        "./src/core/actions/node_runner.ts"
       ],
-      "#jdf1x3hps0q6": [
-        "./src/ssh/server/shared.ts"
+      "#pj4g6du01gys": [
+        "./src/core/actions/runner.ts"
       ],
-      "#jezxo0dsbb92": [
-        "./src/core/run_git.ts"
+      "#pvpm4i6ibun0": [
+        "./src/api/forge/actions.ts"
       ],
-      "#jtzr4xu4q8bf": [
-        "./src/react/ui/context.ts"
+      "#qridc6nd1bk8": [
+        "./test/specs/remote_http.spec.ts"
       ],
-      "#k7bnrk9kvbou": [
-        "./src/core/create_git_host/remote_methods.ts"
+      "#rifbqbjmjgxy": [
+        "./src/types/forge/activity.ts"
       ],
-      "#k81h7irc7p0e": [
-        "./src/api/socket/events.ts"
+      "#sobhnglw5uqi": [
+        "./src/core/actions/runner/launch.ts"
       ],
-      "#lobn9mfldn9s": [
-        "./src/core/create_git_host/branch_methods.ts"
+      "#swop6c7l95hf": [
+        "./src/types/host/options.ts"
       ],
-      "#no8h9g0tsskh": [
-        "./src/api/forge/route.ts"
+      "#tn00pgmqt7n3": [
+        "./src/types/forge/api.ts"
       ],
-      "#oul7o8qvkv5n": [
-        "./src/api/handler/response.ts"
+      "#tn5snt1rp0hv": [
+        "./test/specs/core.spec.ts"
       ],
-      "#p59wo2ccziqp": [
-        "./src/core/inspect/icon_theme.ts"
-      ],
-      "#pl0z91xbe0br": [
-        "./src/core/git_forge/storage_memory.ts"
-      ],
-      "#qrrrat6gjo0q": [
-        "./src/react/index.ts"
-      ],
-      "#r89qhx6c8mkf": [
-        "./src/constants.ts"
-      ],
-      "#rfvjfxzebkbs": [
-        "./src/index.ts"
-      ],
-      "#s5xnfed966ax": [
-        "./src/core/archive_cache_filesystem.ts"
-      ],
-      "#spcbfsrikbhn": [
-        "./src/core/repository/parsers.ts"
-      ],
-      "#stucx8966x3k": [
-        "./src/api/socket/server.ts"
-      ],
-      "#sy81xkgkmoa0": [
-        "./src/utils/text.ts"
-      ],
-      "#t13y2bx0ygbf": [
-        "./src/api/handler/action.ts"
-      ],
-      "#t3kj2pak2lnx": [
-        "./src/react/client/types.ts"
-      ],
-      "#tb3z4kq3oxg0": [
-        "./src/types/host.ts"
-      ],
-      "#tmq4zcm4k2dj": [
-        "./src/api/forge/handler.ts"
-      ],
-      "#udv18x1zuger": [
-        "./src/browser/index.ts"
-      ],
-      "#upm272dycvnm": [
-        "./src/types/common.ts"
-      ],
-      "#uzarbapld5e4": [
-        "./src/core/working_tree/read.ts"
+      "#txvbmmadpffo": [
+        "./src/api/forge/socket.ts"
       ],
       "#v2gv78g55t1o": [
         "./tb.code-discipline.ts"
       ],
-      "#wb5qec2x6c0t": [
-        "./src/backend/utils/normalize.ts"
+      "#vdskjigdz808": [
+        "./test/specs/helpers.ts"
       ],
-      "#wy8z5vow2aix": [
-        "./src/types/index.ts"
+      "#w0uktb7l7q38": [
+        "./scripts/build/runner.mjs"
       ],
-      "#x78lbcvwod9s": [
-        "./src/core/working_tree.ts"
+      "#w41mbb2gyzu1": [
+        "./src/types/host/service.ts"
       ],
-      "#xg7vpiql11ra": [
-        "./src/api/handler.ts"
+      "#w6vp8thgngst": [
+        "./test/specs/activity.spec.ts"
       ],
-      "#xq931dajvvlo": [
-        "./src/core/inspect/helpers.ts"
+      "#x6b5p1ok5pxd": [
+        "./src/react/client/types/shared.ts"
       ],
-      "#xtrl4j08py78": [
-        "./src/core/run_git/env.ts"
+      "#yotdvtav6ika": [
+        "./src/core/activity.ts"
       ],
-      "#yip4ahplpvfl": [
-        "./src/core/inspect.ts"
+      "#yrm6s3ebj6x5": [
+        "./scripts/build/runner-matrix.mjs"
       ],
-      "#ynrrpw9yaztf": [
-        "./src/utils/paths.ts"
+      "#z00j1lfq4mcb": [
+        "./src/api/handler/runtime.ts"
       ],
-      "#zwhym49orp46": [
-        "./src/core/create/git/forge.ts"
+      "#z25ltjk9br5c": [
+        "./examples/dummy.ts"
       ]
     },
     "resolveJsonModule": true,

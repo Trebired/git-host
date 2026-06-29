@@ -21,8 +21,8 @@ import type {
   RunGitForgeWorkflowInput,
 } from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
-import { executeActionsRunner, resolveActionsWorkspaceRoot } from "./actions_runner.js";
-import { listRepositoryWorkflows, readRepositoryWorkflow, resolveRepositoryWorkflowRoot } from "./actions_workflows.js";
+import { executeActionsRunner, resolveActionsWorkspaceRoot } from "./actions/runner.js";
+import { listRepositoryWorkflows, readRepositoryWorkflow, resolveRepositoryWorkflowRoot } from "./actions/workflows.js";
 import { runGit } from "./run_git.js";
 
 const ACTIVITY_LISTENER_SYMBOL = Symbol.for("@trebired/git-host/actions-activity-listeners");

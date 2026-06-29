@@ -7,9 +7,9 @@ import {
   hostRunnerTarget,
   runnerBinaryNameForTarget,
   runnerBuildConfigForTarget,
-} from "./runner-targets.mjs";
+} from "#4shewkcrh4gz";
 
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const requestedTarget = readTarget() || hostRunnerTarget();
 const binaryName = runnerBinaryNameForTarget(requestedTarget);
 const buildConfig = runnerBuildConfigForTarget(requestedTarget);

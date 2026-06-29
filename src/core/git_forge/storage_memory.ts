@@ -14,7 +14,7 @@ import type {
   GitForgeWorkflowRunStep,
 } from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
-import { matchesActivityFilters, sortActivityEntries } from "../activity.js";
+import { matchesActivityFilters, sortActivityEntries } from "#yotdvtav6ika";
 
 function createInMemoryGitForgeStorageAdapter(): GitForgeStorageAdapter {
   const releases = new Map<string, Map<string, GitForgeRelease>>();

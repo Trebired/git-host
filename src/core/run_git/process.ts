@@ -3,6 +3,22 @@ import { spawn } from "node:child_process";
 import type { GitCommandBufferResult, GitCommandResult } from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
 
+function spawnGitProcess(args: string[], options: { cwd: string; env?: Record<string, string> }) {
+  return spawn("git", Array.isArray(args) ? args : [], {
+    cwd: text(options.cwd),
+    env: options.env,
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+}
+
+function resolveSpawnFailure(error: any) {
+  return error && error.message ? String(error.message) : "Failed to start git.";
+}
+
+function appendGitError(current: string, error: any) {
+  return `${current}${error && error.message ? String(error.message) : "Git command failed."}`;
+}
+
 async function runGit(
   args: string[],
   options: {
@@ -11,8 +27,6 @@ async function runGit(
     stdinText?: string;
   },
 ): Promise<GitCommandResult> {
-  const cwd = text(options.cwd);
-  const env = options.env;
   const stdinText = typeof options.stdinText === "string" ? options.stdinText : "";
 
   return await new Promise<GitCommandResult>((resolve) => {
@@ -21,16 +35,12 @@ async function runGit(
 
     let child: ReturnType<typeof spawn>;
     try {
-      child = spawn("git", Array.isArray(args) ? args : [], {
-        cwd,
-        env,
-        stdio: ["pipe", "pipe", "pipe"],
-      });
+      child = spawnGitProcess(args, options);
     } catch (error: any) {
       resolve({
         code: -1,
         ok: false,
-        stderr: error && error.message ? String(error.message) : "Failed to start git.",
+        stderr: resolveSpawnFailure(error),
         stdout: "",
       });
       return;
@@ -43,7 +53,7 @@ async function runGit(
       stderr += String(chunk);
     });
     child.on("error", (error: any) => {
-      stderr += error && error.message ? String(error.message) : "Git command failed.";
+      stderr = appendGitError(stderr, error);
     });
     child.on("close", (code) => {
       resolve({
@@ -67,8 +77,6 @@ async function runGitBuffer(
     stdin?: Buffer;
   },
 ): Promise<GitCommandBufferResult> {
-  const cwd = text(options.cwd);
-  const env = options.env;
   const stdin = Buffer.isBuffer(options.stdin) ? options.stdin : null;
 
   return await new Promise<GitCommandBufferResult>((resolve) => {
@@ -77,16 +85,12 @@ async function runGitBuffer(
 
     let child: ReturnType<typeof spawn>;
     try {
-      child = spawn("git", Array.isArray(args) ? args : [], {
-        cwd,
-        env,
-        stdio: ["pipe", "pipe", "pipe"],
-      });
+      child = spawnGitProcess(args, options);
     } catch (error: any) {
       resolve({
         code: -1,
         ok: false,
-        stderr: error && error.message ? String(error.message) : "Failed to start git.",
+        stderr: resolveSpawnFailure(error),
         stdout: Buffer.alloc(0),
       });
       return;
@@ -99,7 +103,7 @@ async function runGitBuffer(
       stderr += String(chunk);
     });
     child.on("error", (error: any) => {
-      stderr += error && error.message ? String(error.message) : "Git command failed.";
+      stderr = appendGitError(stderr, error);
     });
     child.on("close", (code) => {
       resolve({

@@ -32,17 +32,50 @@ function parseBranchLine(line: string) {
 
   out.current_branch = text(match[1]);
   out.upstream = text(match[2]);
-  const deltas = text(match[3]);
-  if (deltas) {
-    deltas.split(",").map((entry) => entry.trim()).forEach((entry) => {
-      const ahead = entry.match(/^ahead (\d+)$/);
-      if (ahead) out.ahead = Number(ahead[1]) || 0;
-      const behind = entry.match(/^behind (\d+)$/);
-      if (behind) out.behind = Number(behind[1]) || 0;
-    });
-  }
+  applyBranchDeltas(out, text(match[3]));
 
   return out;
+}
+
+function applyBranchDeltas(
+  branch: { ahead: number; behind: number },
+  deltas: string,
+) {
+  if (!deltas) return;
+  deltas.split(",").map((entry) => entry.trim()).forEach((entry) => {
+    const ahead = entry.match(/^ahead (\d+)$/);
+    if (ahead) branch.ahead = Number(ahead[1]) || 0;
+    const behind = entry.match(/^behind (\d+)$/);
+    if (behind) branch.behind = Number(behind[1]) || 0;
+  });
+}
+
+function parseStatusEntry(line: string) {
+  const code = line.slice(0, 2);
+  const rawPath = line.slice(3).trim();
+  const pathParts = rawPath.split(" -> ");
+  const finalPath = pathParts[pathParts.length - 1] || rawPath;
+  const stagedEntry = Boolean(code[0] && code[0] !== " " && code[0] !== "?");
+  const unstagedEntry = Boolean(code[1] && code[1] !== " ");
+  const untrackedEntry = code === "??";
+  const conflictedEntry = /U|A{2}|D{2}/.test(code);
+
+  return {
+    code,
+    conflictedEntry,
+    entry: {
+      code,
+      conflicted: conflictedEntry,
+      original_path: rawPath,
+      path: finalPath,
+      staged: stagedEntry,
+      unstaged: unstagedEntry,
+      untracked: untrackedEntry,
+    } satisfies GitStatusEntry,
+    stagedEntry,
+    unstagedEntry,
+    untrackedEntry,
+  };
 }
 
 function parseStatusOutput(stdout: string): GitRepositoryStatus {
@@ -55,29 +88,14 @@ function parseStatusOutput(stdout: string): GitRepositoryStatus {
   let conflicted = 0;
 
   for (const line of lines.slice(branch.current_branch ? 1 : 0)) {
-    const code = line.slice(0, 2);
-    const rawPath = line.slice(3).trim();
-    const pathParts = rawPath.split(" -> ");
-    const finalPath = pathParts[pathParts.length - 1] || rawPath;
-    const stagedEntry = Boolean(code[0] && code[0] !== " " && code[0] !== "?");
-    const unstagedEntry = Boolean(code[1] && code[1] !== " ");
-    const untrackedEntry = code === "??";
-    const conflictedEntry = /U|A{2}|D{2}/.test(code);
+    const parsed = parseStatusEntry(line);
 
-    if (stagedEntry) staged += 1;
-    if (unstagedEntry) unstaged += 1;
-    if (untrackedEntry) untracked += 1;
-    if (conflictedEntry) conflicted += 1;
+    if (parsed.stagedEntry) staged += 1;
+    if (parsed.unstagedEntry) unstaged += 1;
+    if (parsed.untrackedEntry) untracked += 1;
+    if (parsed.conflictedEntry) conflicted += 1;
 
-    entries.push({
-      code,
-      conflicted: conflictedEntry,
-      original_path: rawPath,
-      path: finalPath,
-      staged: stagedEntry,
-      unstaged: unstagedEntry,
-      untracked: untrackedEntry,
-    });
+    entries.push(parsed.entry);
   }
 
   return {

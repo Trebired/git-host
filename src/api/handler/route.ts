@@ -1,6 +1,6 @@
 import type { GitApiResource } from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
-import { decodeRouteSegment, parseRepositoryRoute } from "../routing.js";
+import { decodeRouteSegment, parseRepositoryRoute } from "#glky615nezhr";
 
 function parseGitApiRoute(pathnameInput: unknown, basePathInput: unknown) {
   const route = parseRepositoryRoute(pathnameInput, basePathInput);

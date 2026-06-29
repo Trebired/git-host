@@ -22,7 +22,7 @@ import type {
   GitTreeEntry,
   GitTreeSnapshot,
   GitWorkingTree,
-} from "../repository.js";
+} from "#666a84ce027e";
 import type {
   CherryPickInput,
   CheckoutBranchInput,

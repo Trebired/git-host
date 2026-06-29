@@ -185,13 +185,7 @@ function normalizePackagePath(packagePath) {
   return `package/${String(packagePath).replace(/^\.\//u, "")}`;
 }
 
-async function runConsumerSmokeTest(tarballPath) {
-  const consumerDir = path.join(tempRoot, "consumer");
-
-  await fs.mkdir(consumerDir, {
-    recursive: true,
-  });
-
+async function writeConsumerPackageJson(consumerDir, tarballPath) {
   await fs.writeFile(path.join(consumerDir, "package.json"), JSON.stringify({
     name: "git-host-pack-smoke",
     private: true,
@@ -203,7 +197,9 @@ async function runConsumerSmokeTest(tarballPath) {
       "@types/node": `file:${nodeTypesDir}`,
     },
   }, null, 2));
+}
 
+async function writeConsumerFixtures(consumerDir) {
   await fs.writeFile(path.join(consumerDir, "index.ts"), [
     'import { createGitForge, createGitHost, resolveRepositoryPath } from "@trebired/git-host";',
     "",
@@ -215,7 +211,6 @@ async function runConsumerSmokeTest(tarballPath) {
     "",
     "console.log(typeof mod.createGitHost, typeof mod.createGitForge, Object.keys(mod).length > 0);",
   ].join("\n"));
-
   await fs.writeFile(path.join(consumerDir, "tsconfig.json"), JSON.stringify({
     compilerOptions: {
       lib: [
@@ -233,21 +228,39 @@ async function runConsumerSmokeTest(tarballPath) {
       "./index.ts",
     ],
   }, null, 2));
+}
 
+function runConsumerInstall(consumerDir) {
   execFileSync("npm", ["install", "--ignore-scripts"], {
     ...createNpmOptions(consumerDir),
     stdio: "inherit",
   });
+}
 
+function runConsumerTypecheck(consumerDir) {
   execFileSync(process.execPath, [tscBin, "-p", "tsconfig.json"], {
     cwd: consumerDir,
     stdio: "inherit",
   });
+}
 
+function runConsumerRuntimeCheck(consumerDir) {
   execFileSync("bun", ["runtime.ts"], {
     cwd: consumerDir,
     stdio: "inherit",
   });
+}
+
+async function runConsumerSmokeTest(tarballPath) {
+  const consumerDir = path.join(tempRoot, "consumer");
+  await fs.mkdir(consumerDir, {
+    recursive: true,
+  });
+  await writeConsumerPackageJson(consumerDir, tarballPath);
+  await writeConsumerFixtures(consumerDir);
+  runConsumerInstall(consumerDir);
+  runConsumerTypecheck(consumerDir);
+  runConsumerRuntimeCheck(consumerDir);
 }
 
 function createNpmOptions(cwd) {

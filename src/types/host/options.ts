@@ -1,5 +1,5 @@
-import type { GitActor, GitHostLogger, GitHostLoggerAdapter, MaybePromise } from "../common.js";
-import type { GitForgeActivityRecorder } from "../forge.js";
+import type { GitActor, GitHostLogger, GitHostLoggerAdapter, MaybePromise } from "#5a0e75b6bdb8";
+import type { GitForgeActivityRecorder } from "#4c94c22378b2";
 import type {
   GitArchiveFormat,
   GitBlame,
@@ -27,7 +27,7 @@ import type {
   GitTreeEntry,
   GitTreeSnapshot,
   GitWorkingTree,
-} from "../repository.js";
+} from "#666a84ce027e";
 import type { GitHostArchiveOptions, OpenArchiveOptions, ReadArchiveOptions, ResolveArchiveLinksInput, ResolveArchiveOptions } from "./archive.js";
 
 type BuildGitEnvOptions = {

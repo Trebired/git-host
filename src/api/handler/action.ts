@@ -4,6 +4,33 @@ import { isTruthy, text } from "#sy81xkgkmoa0";
 import { parsePositiveInt } from "./response.js";
 import { parseGitApiRoute } from "./route.js";
 
+async function runParameterizedReadAction(
+  options: CreateGitApiHandlerOptions,
+  route: NonNullable<ReturnType<typeof parseGitApiRoute>>,
+  repositoryId: string,
+  searchParams: URLSearchParams,
+) {
+  if (route.action === "blame") {
+    return await options.gitHost.readBlame(repositoryId, {
+      path: requireSearchPath(searchParams, "blame"),
+      ref: text(searchParams.get("ref")),
+    });
+  }
+  if (route.action === "blob") {
+    return await options.gitHost.readBlob(repositoryId, {
+      path: requireSearchPath(searchParams, "blob"),
+      ref: text(searchParams.get("ref")),
+    });
+  }
+  if (route.action === "search") {
+    return await options.gitHost.search(repositoryId, buildSearchOptions(searchParams));
+  }
+  if (route.action === "diff") {
+    return await options.gitHost.diff(repositoryId, buildDiffOptions(searchParams));
+  }
+  return null;
+}
+
 async function runGitApiAction(
   options: CreateGitApiHandlerOptions,
   route: ReturnType<typeof parseGitApiRoute>,
@@ -11,6 +38,8 @@ async function runGitApiAction(
   searchParams: URLSearchParams,
 ) {
   if (!route) throw new GitHostError("git_command_failed", "API route is required.");
+  const handled = await runParameterizedReadAction(options, route, repositoryId, searchParams);
+  if (handled !== null) return handled;
 
   switch (route.action) {
     case "summary":
@@ -33,30 +62,12 @@ async function runGitApiAction(
       return await options.gitHost.readTag(repositoryId, route.tagName);
     case "tree":
       return await options.gitHost.listTree(repositoryId, buildTreeOptions(searchParams));
-    case "blame": {
-      return await options.gitHost.readBlame(repositoryId, {
-        path: requireSearchPath(searchParams, "blame"),
-        ref: text(searchParams.get("ref")),
-      });
-    }
-    case "search": {
-      return await options.gitHost.search(repositoryId, buildSearchOptions(searchParams));
-    }
     case "archive":
       return await options.gitHost.readArchive(repositoryId, buildArchiveOptions(searchParams));
     case "linguist":
       return await options.gitHost.readLinguist(repositoryId, {
         ref: text(searchParams.get("ref")),
       });
-    case "blob": {
-      return await options.gitHost.readBlob(repositoryId, {
-        path: requireSearchPath(searchParams, "blob"),
-        ref: text(searchParams.get("ref")),
-      });
-    }
-    case "diff": {
-      return await options.gitHost.diff(repositoryId, buildDiffOptions(searchParams));
-    }
     default:
       throw new GitHostError("git_command_failed", "Unsupported Git API action.");
   }

@@ -1,6 +1,6 @@
 import type { FetchOptions, GitHost, GitRepositoryHandle, PullOptions, PushOptions } from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
-import { readRepositoryActivityContext } from "../activity.js";
+import { readRepositoryActivityContext } from "#yotdvtav6ika";
 import { fetchRepository, pullRepository, pushRepository } from "#6qp108ftbm6e";
 import type { GitHostMethodContext } from "./shared.js";
 

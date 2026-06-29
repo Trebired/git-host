@@ -1,7 +1,9 @@
 export default {
   sourceRoot: ".",
-  sourceExtensions: [".ts", ".tsx", ".js", ".jsx"],
-  excludeDirs: ["node_modules", "dist", "tmp", ".vite", "test", "examples"],
+  sourceExtensions: [".ts", ".tsx", ".js", ".jsx", ".mjs", ".go"],
+  excludeDirs: {
+    gitignore: true,
+  },
   logging: {
     enabled: true,
     quiet: false,

@@ -12,42 +12,28 @@ import {
   withEntryStats,
 } from "./shared.js";
 
-async function readRepositoryWorkingTree(repository: GitRepositoryHandle): Promise<GitWorkingTree> {
-  await assertRepositoryReady(repository);
+function assertWorkingTreeResult(
+  result: { ok: boolean; stderr: string },
+  repositoryId: string,
+  message: string,
+) {
+  if (result.ok) return;
+  throw new GitHostError("git_command_failed", text(result.stderr, message), {
+    repositoryId,
+  });
+}
 
-  const [status, stagedNumstatRes, unstagedNumstatRes, stagedDiffRes, unstagedDiffRes] = await Promise.all([
-    readRepositoryStatus(repository.path),
-    runGit(["diff", "--cached", "--find-renames", "--numstat"], { cwd: repository.path }),
-    runGit(["diff", "--find-renames", "--numstat"], { cwd: repository.path }),
-    runGit(["diff", "--cached", "--find-renames"], { cwd: repository.path }),
-    runGit(["diff", "--find-renames"], { cwd: repository.path }),
-  ]);
-
-  if (!stagedNumstatRes.ok) {
-    throw new GitHostError("git_command_failed", text(stagedNumstatRes.stderr, "Failed to read staged repository changes."), {
-      repositoryId: repository.id,
-    });
-  }
-  if (!unstagedNumstatRes.ok) {
-    throw new GitHostError("git_command_failed", text(unstagedNumstatRes.stderr, "Failed to read unstaged repository changes."), {
-      repositoryId: repository.id,
-    });
-  }
-  if (!stagedDiffRes.ok) {
-    throw new GitHostError("git_command_failed", text(stagedDiffRes.stderr, "Failed to read staged repository diff."), {
-      repositoryId: repository.id,
-    });
-  }
-  if (!unstagedDiffRes.ok) {
-    throw new GitHostError("git_command_failed", text(unstagedDiffRes.stderr, "Failed to read unstaged repository diff."), {
-      repositoryId: repository.id,
-    });
-  }
-
+function summarizeWorkingTree(
+  status: Awaited<ReturnType<typeof readRepositoryStatus>>,
+  stagedNumstat: string,
+  unstagedNumstat: string,
+  stagedDiff: string,
+  unstagedDiff: string,
+): GitWorkingTree {
   const entries = withEntryStats(
     status.entries,
-    parseNumstatOutput(stagedNumstatRes.stdout),
-    parseNumstatOutput(unstagedNumstatRes.stdout),
+    parseNumstatOutput(stagedNumstat),
+    parseNumstatOutput(unstagedNumstat),
   );
   const stagedEntries = entries.filter((entry) => entry.staged);
   const unstagedEntries = entries.filter((entry) => entry.unstaged);
@@ -63,13 +49,38 @@ async function readRepositoryWorkingTree(repository: GitRepositoryHandle): Promi
     unstaged_entries: unstagedEntries,
     untracked_entries: untrackedEntries,
     conflicted_entries: conflictedEntries,
-    staged_diff: String(stagedDiffRes.stdout || ""),
-    unstaged_diff: String(unstagedDiffRes.stdout || ""),
+    staged_diff: stagedDiff,
+    unstaged_diff: unstagedDiff,
     staged_lines_added: stagedTotals.lines_added,
     staged_lines_removed: stagedTotals.lines_removed,
     unstaged_lines_added: unstagedTotals.lines_added,
     unstaged_lines_removed: unstagedTotals.lines_removed,
   };
+}
+
+async function readRepositoryWorkingTree(repository: GitRepositoryHandle): Promise<GitWorkingTree> {
+  await assertRepositoryReady(repository);
+
+  const [status, stagedNumstatRes, unstagedNumstatRes, stagedDiffRes, unstagedDiffRes] = await Promise.all([
+    readRepositoryStatus(repository.path),
+    runGit(["diff", "--cached", "--find-renames", "--numstat"], { cwd: repository.path }),
+    runGit(["diff", "--find-renames", "--numstat"], { cwd: repository.path }),
+    runGit(["diff", "--cached", "--find-renames"], { cwd: repository.path }),
+    runGit(["diff", "--find-renames"], { cwd: repository.path }),
+  ]);
+
+  assertWorkingTreeResult(stagedNumstatRes, repository.id, "Failed to read staged repository changes.");
+  assertWorkingTreeResult(unstagedNumstatRes, repository.id, "Failed to read unstaged repository changes.");
+  assertWorkingTreeResult(stagedDiffRes, repository.id, "Failed to read staged repository diff.");
+  assertWorkingTreeResult(unstagedDiffRes, repository.id, "Failed to read unstaged repository diff.");
+
+  return summarizeWorkingTree(
+    status,
+    stagedNumstatRes.stdout,
+    unstagedNumstatRes.stdout,
+    String(stagedDiffRes.stdout || ""),
+    String(unstagedDiffRes.stdout || ""),
+  );
 }
 
 async function readRepositoryStagedFile(
