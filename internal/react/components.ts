@@ -174,6 +174,7 @@ function GitRepositoryTabs(props: {
     { key: "tags", label: "Tags", to: routes.tags(props.repositoryKey) },
     { key: "releases", label: "Releases", to: routes.releases(props.repositoryKey) },
     { key: "forks", label: "Forks", to: routes.forks(props.repositoryKey) },
+    { key: "actions", label: "Actions", to: routes.actions(props.repositoryKey) },
     { key: "activity", label: "Activity", to: routes.activity(props.repositoryKey) },
     { key: "search", label: "Search", to: routes.search(props.repositoryKey) },
   ];

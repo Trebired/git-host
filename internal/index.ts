@@ -9,17 +9,20 @@ export {
 export { RepositoryLockManager } from "./core/locks.js";
 export { readRepositoryOperationState } from "./core/operation_state.js";
 export { createFileSystemGitArchiveCache } from "./core/archive_cache_filesystem.js";
-export { createGitHost } from "./core/create_git_host.js";
+export { createGitHost } from "./core/create/git/host.js";
 export { createGitApiHandler, parseGitApiRoute } from "./api/handler.js";
 export { createGitForgeApiHandler, parseGitForgeApiRoute } from "./api/forge/handler.js";
+export { createGitForgeSocketServer } from "./api/forge/socket.js";
 export {
   applyArchiveHeaders,
   applyReleaseAssetHeaders,
   writeGitArchiveResponse,
   writeGitReleaseAssetResponse,
 } from "./api/handler/archive.js";
-export { createGitApiSocketServer } from "./api/socket_server.js";
-export { createGitForge } from "./core/create_git_forge.js";
+export { createGitApiSocketServer } from "./api/socket/server.js";
+export { createGitForge } from "./core/create/git/forge.js";
+export { createGitForgeActivityRecorder } from "./core/activity.js";
+export { createGitForgeActionsRuntime, isTerminalRunStatus } from "./core/forge_actions.js";
 export { createInMemoryGitForgeStorageAdapter } from "./core/git_forge/storage_memory.js";
 export { fetchRepository, pullRepository, pushRepository } from "./core/remote.js";
 export { createGitHttpHandler, parseGitHttpRoute } from "./http/handler.js";
@@ -79,19 +82,23 @@ export { assertAbsoluteRepositoryPath, normalizeRepositoryRelativePath, resolveR
 export type { GitHostErrorCode } from "./errors.js";
 export type { GenerateGitSshKeyPairOptions, GitSshKeyAlgorithm, GitSshKeyPair } from "./ssh/keys.js";
 export type {
+  CancelGitForgeWorkflowRunInput,
   BuildGitEnvOptions,
   CherryPickInput,
   CheckoutBranchInput,
   CheckoutRefInput,
   CommitInput,
   ContinueOperationInput,
+  CreateGitForgeActionsOptions,
   CreateBranchInput,
   CreateGitApiHandlerOptions,
   CreateGitApiSocketServerOptions,
   CreateGitForgeApiHandlerOptions,
+  CreateGitForgeSocketServerOptions,
   CreateGitForgeForkInput,
   CreateGitForgeOptions,
   CreateGitForgeReleaseInput,
+  CreateGitForgeWorkflowInput,
   CreateGitHostOptions,
   CreateTagInput,
   DeleteBranchInput,
@@ -140,8 +147,15 @@ export type {
   GitCompareSummary,
   GitDiffFile,
   GitForge,
+  GitForgeActivityFilters,
   GitForgeActivityEntry,
   GitForgeActivityKind,
+  GitForgeActivityRecordInput,
+  GitForgeActivityRecorder,
+  GitForgeActivityStorage,
+  GitForgeActivitySource,
+  GitForgeActionsStorage,
+  GitForgeTransportActivityRecorder,
   GitForgeActor,
   GitForgeApiAuthorizationResult,
   GitForgeFork,
@@ -161,6 +175,21 @@ export type {
   GitForgeSocialState,
   GitForgeSocialStorage,
   GitForgeStorageAdapter,
+  GitForgeWorkflow,
+  GitForgeWorkflowFilters,
+  GitForgeWorkflowRun,
+  GitForgeWorkflowRunner,
+  GitForgeWorkflowRunEvent,
+  GitForgeWorkflowRunEventFilters,
+  GitForgeWorkflowRunEventType,
+  GitForgeWorkflowRunFilters,
+  GitForgeWorkflowRunSocketSubscription,
+  GitForgeWorkflowRunStatus,
+  GitForgeWorkflowRunStep,
+  GitForgeWorkflowRunStepStatus,
+  GitForgeWorkflowSource,
+  GitForgeWorkflowStep,
+  GitForgeWorkflowTriggerKind,
   GitHost,
   GitHostArchiveOptions,
   GitHostGenericLogMethod,
@@ -216,9 +245,11 @@ export type {
   ResolveArchiveOptions,
   ResolveArchiveLinksInput,
   ResolveRepositoryPathOptions,
+  RunGitForgeWorkflowInput,
   SyncGitForgeForkInput,
   SearchRepositoryOptions,
   StagePathsInput,
   UnstagePathsInput,
   UpdateGitForgeReleaseInput,
+  UpdateGitForgeWorkflowInput,
 } from "./types.js";

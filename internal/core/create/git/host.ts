@@ -5,16 +5,23 @@ import {
   DEFAULT_BRANCH,
   DEFAULT_COMMIT_MESSAGE,
   DEFAULT_MANAGED_EXCLUDE_HEADER,
-} from "../constants.js";
-import { GitHostError } from "../errors.js";
-import { resolveLogger } from "../logging.js";
-import type { CreateGitHostOptions, EnsureRepositoryOptions, GitHost, GitRepositoryHandle, GitRepositorySummary, ReadSummaryOptions } from "../types.js";
-import { assertAbsoluteRepositoryPath } from "../utils/paths.js";
-import { text } from "../utils/text.js";
-import { RepositoryLockManager } from "./locks.js";
-import { createGitArchiveService } from "./archive.js";
-import { buildRemoteGitArgs, buildRemoteGitEnv } from "./remote.js";
-import { buildRepositorySummary } from "./repository.js";
+} from "#0bba403f3e43";
+import { GitHostError } from "#8974ac53d713";
+import { resolveLogger } from "#5a29135e56c1";
+import type {
+  CreateGitHostOptions,
+  EnsureRepositoryOptions,
+  GitHost,
+  GitRepositoryHandle,
+  GitRepositorySummary,
+  ReadSummaryOptions,
+} from "#3c8d8166992a";
+import { assertAbsoluteRepositoryPath } from "#390741ebf5ab";
+import { text } from "#62f869522d1f";
+import { RepositoryLockManager } from "#90040fe3e934";
+import { createGitArchiveService } from "#07a96afa0a48";
+import { buildRemoteGitArgs, buildRemoteGitEnv } from "#1a2e563ea829";
+import { buildRepositorySummary } from "#4bb83a619bd3";
 import {
   cloneRepository,
   createInitialCommit,
@@ -24,12 +31,12 @@ import {
   isDirectoryEmpty,
   repositoryExists,
   workspaceHasTrackableFiles,
-} from "./run_git.js";
-import { createBranchMethods } from "./create_git_host/branch_methods.js";
-import { createContentMethods } from "./create_git_host/content_methods.js";
-import { createRemoteMethods } from "./create_git_host/remote_methods.js";
-import { createWorkingTreeMethods } from "./create_git_host/working_tree_methods.js";
-import { normalizeManagedExcludePatterns, toGitHostError } from "./create_git_host/shared.js";
+} from "#96b00569f1f4";
+import { createBranchMethods } from "#f88802286a5d";
+import { createContentMethods } from "#4159667f1e87";
+import { createRemoteMethods } from "#a9f1d698c0aa";
+import { createWorkingTreeMethods } from "#de031fc6c08f";
+import { normalizeManagedExcludePatterns, toGitHostError } from "#b3a8e61c79e9";
 
 function createGitHost(options: CreateGitHostOptions): GitHost {
   if (!options || typeof options.resolveRepository !== "function") {

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { createGitHost, createGitSshServer, resolveRepositoryPath } from "../src/index.js";
+import { createGitHost, createGitSshServer, resolveRepositoryPath } from "#rfvjfxzebkbs";
 
 const authorizedKey = String(process.env.GIT_HOST_AUTHORIZED_KEY || "").trim();
 if (!authorizedKey) {

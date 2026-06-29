@@ -11,7 +11,7 @@ import {
   generateSshKeyPair,
   GitHostError,
   normalizeSshPublicKey,
-} from "../../src/index.js";
+} from "#rfvjfxzebkbs";
 import { closeServer, createHost, createServer, git, gitAsync, gitCommit, listen, normalizePublicKey, resolveRepositoryPath, sleep, tempDir, writeFile } from "./helpers.js";
 
 describe("@trebired/git-host", () => {

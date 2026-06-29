@@ -46,10 +46,12 @@ export {
   useGitBlame,
   useGitBlob,
   useGitBranches,
+  useGitCancelWorkflowRun,
   useGitCommit,
   useGitCommits,
   useGitCreateFork,
   useGitCreateRelease,
+  useGitCreateWorkflow,
   useGitDeleteRelease,
   useGitDiff,
   useGitForks,
@@ -58,6 +60,7 @@ export {
   useGitRelease,
   useGitReleases,
   useGitRepositorySummary,
+  useGitRunWorkflow,
   useGitSearch,
   useGitSocialState,
   useGitStarRepository,
@@ -68,7 +71,14 @@ export {
   useGitUnstarRepository,
   useGitUnwatchRepository,
   useGitUpdateRelease,
+  useGitUpdateWorkflow,
   useGitWatchRepository,
+  useGitWorkflow,
+  useGitWorkflowRun,
+  useGitWorkflowRunEvents,
+  useGitWorkflowRuns,
+  useGitWorkflowRunSteps,
+  useGitWorkflows,
 } from "./hooks.js";
 export {
   createGitRepositoryRouteAdapter,
@@ -96,6 +106,9 @@ export type {
   GitLinguistSocketEvent,
   GitLinguistSocketProgressEvent,
   GitLinguistSocketResultEvent,
+  GitWorkflowRunSocketDoneEvent,
+  GitWorkflowRunSocketErrorEvent,
+  GitWorkflowRunSocketEvent,
 } from "./client.js";
 export type {
   GitApiClientProviderProps,
@@ -119,6 +132,12 @@ export type {
   UseGitTagOptions,
   UseGitTagsOptions,
   UseGitTreeOptions,
+  UseGitWorkflowOptions,
+  UseGitWorkflowRunEventsOptions,
+  UseGitWorkflowRunOptions,
+  UseGitWorkflowRunsOptions,
+  UseGitWorkflowRunStepsOptions,
+  UseGitWorkflowsOptions,
 } from "./hooks.js";
 export type {
   GitRepositoryEmptyStateProps,

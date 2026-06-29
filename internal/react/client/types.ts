@@ -5,7 +5,15 @@ import type {
   GitSourceArchiveLinks,
   GitBlob,
   GitBranchSummary,
+  GitForgeActivityFilters,
   GitForgeActivityEntry,
+  GitForgeWorkflow,
+  GitForgeWorkflowFilters,
+  GitForgeWorkflowRun,
+  GitForgeWorkflowRunEvent,
+  GitForgeWorkflowRunEventFilters,
+  GitForgeWorkflowRunFilters,
+  GitForgeWorkflowRunStep,
   GitForgeFork,
   GitForgeRelease,
   GitForgeReleaseAsset,
@@ -129,6 +137,32 @@ type GitLinguistSocketEvent =
   | GitLinguistSocketProgressEvent
   | GitLinguistSocketResultEvent;
 
+type GitWorkflowRunSocketDoneEvent = {
+  ok: boolean;
+  repository_id?: string;
+  repository_key?: string;
+  run_id?: string;
+  type: "done";
+};
+
+type GitWorkflowRunSocketErrorEvent = {
+  error: {
+    code: string;
+    details?: unknown;
+    message: string;
+  };
+  repository_id?: string;
+  repository_key?: string;
+  run_id?: string;
+  status?: number;
+  type: "error";
+};
+
+type GitWorkflowRunSocketEvent =
+  | GitWorkflowRunSocketDoneEvent
+  | GitWorkflowRunSocketErrorEvent
+  | (GitForgeWorkflowRunEvent & { type: GitForgeWorkflowRunEvent["type"] });
+
 type GitApiClient = {
   baseUrl: string;
   diff(
@@ -149,7 +183,28 @@ type GitApiClient = {
     },
   ): Promise<GitCommitSummary[]>;
   listTags(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitTagSummary[]>;
-  listActivity(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeActivityEntry[]>;
+  listActivity(
+    repositoryKey: string,
+    options?: GitApiClientRequestOptions & GitForgeActivityFilters,
+  ): Promise<GitForgeActivityEntry[]>;
+  listWorkflowRuns(
+    repositoryKey: string,
+    options?: GitApiClientRequestOptions & GitForgeWorkflowRunFilters,
+  ): Promise<GitForgeWorkflowRun[]>;
+  listWorkflowRunSteps(
+    repositoryKey: string,
+    runId: string,
+    options?: GitApiClientRequestOptions,
+  ): Promise<GitForgeWorkflowRunStep[]>;
+  listWorkflowRunEvents(
+    repositoryKey: string,
+    runId: string,
+    options?: GitApiClientRequestOptions & GitForgeWorkflowRunEventFilters,
+  ): Promise<GitForgeWorkflowRunEvent[]>;
+  listWorkflows(
+    repositoryKey: string,
+    options?: GitApiClientRequestOptions & GitForgeWorkflowFilters,
+  ): Promise<GitForgeWorkflow[]>;
   listForks(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeFork[]>;
   listReleases(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeRelease[]>;
   listTree(
@@ -219,6 +274,16 @@ type GitApiClient = {
       ref?: string;
     },
   ): GitApiEventStream;
+  openWorkflowRunSocket(
+    repositoryKey: string,
+    runId: string,
+    options?: GitApiClientRequestOptions & {
+      afterSequence?: number;
+      onDone?: (event: GitWorkflowRunSocketDoneEvent) => MaybePromise<void>;
+      onError?: (event: GitWorkflowRunSocketErrorEvent) => MaybePromise<void>;
+      onEvent?: (event: GitWorkflowRunSocketEvent) => MaybePromise<void>;
+    },
+  ): GitApiEventStream;
   readTag(
     repositoryKey: string,
     tagName: string,
@@ -230,6 +295,16 @@ type GitApiClient = {
     releaseId: string,
     options?: GitApiClientRequestOptions,
   ): Promise<GitForgeRelease>;
+  readWorkflow(
+    repositoryKey: string,
+    workflowId: string,
+    options?: GitApiClientRequestOptions,
+  ): Promise<GitForgeWorkflow>;
+  readWorkflowRun(
+    repositoryKey: string,
+    runId: string,
+    options?: GitApiClientRequestOptions,
+  ): Promise<GitForgeWorkflowRun>;
   readSocialState(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeSocialState>;
   readSummary(
     repositoryKey: string,
@@ -287,6 +362,43 @@ type GitApiClient = {
     },
   ): Promise<GitApiSuccessResponse<TAction, TData>>;
   starRepository(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeSocialState>;
+  createWorkflow(
+    repositoryKey: string,
+    input: GitApiClientRequestOptions & {
+      enabled?: boolean;
+      env?: Record<string, string>;
+      name: string;
+      slug?: string;
+      source?: {
+        branches?: string[];
+        env?: Record<string, string>;
+        tags?: string[];
+      };
+      steps: Array<{
+        env?: Record<string, string>;
+        id?: string;
+        name: string;
+        run: string;
+        shell?: string;
+      }>;
+      trigger: string;
+    },
+  ): Promise<GitForgeWorkflow>;
+  runWorkflow(
+    repositoryKey: string,
+    input: GitApiClientRequestOptions & {
+      branch?: string;
+      commitHash?: string;
+      ref?: string;
+      triggerContext?: Record<string, unknown>;
+      workflowId: string;
+    },
+  ): Promise<GitForgeWorkflowRun>;
+  cancelWorkflowRun(
+    repositoryKey: string,
+    runId: string,
+    options?: GitApiClientRequestOptions,
+  ): Promise<GitForgeWorkflowRun>;
   syncFork(
     repositoryKey: string,
     forkId: string,
@@ -309,6 +421,29 @@ type GitApiClient = {
     },
   ): Promise<GitForgeRelease>;
   watchRepository(repositoryKey: string, options?: GitApiClientRequestOptions): Promise<GitForgeSocialState>;
+  updateWorkflow(
+    repositoryKey: string,
+    workflowId: string,
+    input: GitApiClientRequestOptions & {
+      enabled?: boolean;
+      env?: Record<string, string>;
+      name?: string;
+      slug?: string;
+      source?: {
+        branches?: string[];
+        env?: Record<string, string>;
+        tags?: string[];
+      };
+      steps?: Array<{
+        env?: Record<string, string>;
+        id?: string;
+        name: string;
+        run: string;
+        shell?: string;
+      }>;
+      trigger?: string;
+    },
+  ): Promise<GitForgeWorkflow>;
 };
 
 export type {
@@ -323,6 +458,10 @@ export type {
   GitApiResponse,
   GitApiResource,
   GitApiSuccessResponse,
+  GitForgeActivityFilters,
+  GitWorkflowRunSocketDoneEvent,
+  GitWorkflowRunSocketErrorEvent,
+  GitWorkflowRunSocketEvent,
   GitLinguistSocketDoneEvent,
   GitLinguistSocketErrorEvent,
   GitLinguistSocketEvent,

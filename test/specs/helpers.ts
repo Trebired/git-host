@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 
-import { createGitHost, resolveRepositoryPath } from "../../src/index.js";
+import { createGitHost, resolveRepositoryPath } from "#rfvjfxzebkbs";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

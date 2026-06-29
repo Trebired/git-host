@@ -11,6 +11,13 @@ import type {
   GitForgeReleaseAsset,
   GitForgeRepositoryOverview,
   GitForgeSocialState,
+  GitForgeWorkflow,
+  GitForgeWorkflowFilters,
+  GitForgeWorkflowRun,
+  GitForgeWorkflowRunEvent,
+  GitForgeWorkflowRunEventFilters,
+  GitForgeWorkflowRunFilters,
+  GitForgeWorkflowRunStep,
   GitTagDetail,
   GitTagSummary,
   GitCommitDetail,
@@ -119,6 +126,18 @@ type UseGitForksOptions = GitApiQueryOptions<GitForgeFork[]>;
 
 type UseGitActivityOptions = GitApiQueryOptions<GitForgeActivityEntry[]>;
 
+type UseGitWorkflowOptions = GitApiQueryOptions<GitForgeWorkflow>;
+
+type UseGitWorkflowsOptions = GitApiQueryOptions<GitForgeWorkflow[]> & GitForgeWorkflowFilters;
+
+type UseGitWorkflowRunOptions = GitApiQueryOptions<GitForgeWorkflowRun>;
+
+type UseGitWorkflowRunsOptions = GitApiQueryOptions<GitForgeWorkflowRun[]> & GitForgeWorkflowRunFilters;
+
+type UseGitWorkflowRunStepsOptions = GitApiQueryOptions<GitForgeWorkflowRunStep[]>;
+
+type UseGitWorkflowRunEventsOptions = GitApiQueryOptions<GitForgeWorkflowRunEvent[]> & GitForgeWorkflowRunEventFilters;
+
 export type {
   GitApiClientProviderProps,
   GitApiMutationResult,
@@ -142,6 +161,12 @@ export type {
   UseGitTagOptions,
   UseGitTagsOptions,
   UseGitTreeOptions,
+  UseGitWorkflowOptions,
+  UseGitWorkflowRunEventsOptions,
+  UseGitWorkflowRunOptions,
+  UseGitWorkflowRunsOptions,
+  UseGitWorkflowRunStepsOptions,
+  UseGitWorkflowsOptions,
   GitBlame,
   GitBranchSummary,
   GitCommitDetail,
@@ -159,5 +184,9 @@ export type {
   GitForgeReleaseAsset,
   GitForgeRepositoryOverview,
   GitForgeSocialState,
+  GitForgeWorkflow,
+  GitForgeWorkflowRun,
+  GitForgeWorkflowRunEvent,
+  GitForgeWorkflowRunStep,
   GitSearchResult,
 };

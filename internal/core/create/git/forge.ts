@@ -3,9 +3,11 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { logPackageInitialized } from "@trebired/logger-adapter";
 
-import { GitHostError } from "../errors.js";
-import { resolveLogger } from "../logging.js";
+import { GitHostError } from "#8974ac53d713";
+import { resolveLogger } from "#5a29135e56c1";
 import type {
+  CancelGitForgeWorkflowRunInput,
+  CreateGitForgeWorkflowInput,
   CreateGitForgeForkInput,
   CreateGitForgeOptions,
   CreateGitForgeReleaseInput,
@@ -22,13 +24,20 @@ import type {
   GitForgeReleaseAssetLink,
   GitForgeRepositoryOverview,
   GitForgeSocialState,
+  GitForgeWorkflowFilters,
+  GitForgeWorkflowRunEventFilters,
+  GitForgeWorkflowRunFilters,
   GitRepositoryHandle,
+  RunGitForgeWorkflowInput,
   SyncGitForgeForkInput,
   UpdateGitForgeReleaseInput,
-} from "../types.js";
-import { text } from "../utils/text.js";
-import { fetchRepository } from "./remote.js";
-import { buildGitEnv, cloneRepository, ensureHostedRepositoryConfig, repositoryExists, runGit } from "./run_git.js";
+  UpdateGitForgeWorkflowInput,
+} from "#3c8d8166992a";
+import { text } from "#62f869522d1f";
+import { fetchRepository } from "#1a2e563ea829";
+import { createGitForgeActivityRecorder } from "../../activity.js";
+import { createGitForgeActionsRuntime } from "../../forge_actions.js";
+import { buildGitEnv, cloneRepository, ensureHostedRepositoryConfig, repositoryExists, runGit } from "#96b00569f1f4";
 
 function repositoryHandleFromSummary(summary: GitForgeRepositoryOverview["repository"]): GitRepositoryHandle {
   return {
@@ -115,31 +124,6 @@ async function ensureUpstreamRemote(repository: GitRepositoryHandle, upstreamPat
   }
 }
 
-function buildActivitySummary(kind: GitForgeActivityKind, repositoryId: string, metadata: Record<string, unknown>): string {
-  switch (kind) {
-    case "release.create":
-      return `Published release ${text(metadata.tag_name)} in ${repositoryId}.`;
-    case "release.update":
-      return `Updated release ${text(metadata.release_id)} in ${repositoryId}.`;
-    case "release.delete":
-      return `Deleted release ${text(metadata.release_id)} in ${repositoryId}.`;
-    case "fork.create":
-      return `Created fork ${text(metadata.fork_repository_id)} from ${repositoryId}.`;
-    case "fork.sync":
-      return `Synced fork ${text(metadata.fork_repository_id)} with ${repositoryId}.`;
-    case "star":
-      return `Starred ${repositoryId}.`;
-    case "unstar":
-      return `Unstarred ${repositoryId}.`;
-    case "watch":
-      return `Started watching ${repositoryId}.`;
-    case "unwatch":
-      return `Stopped watching ${repositoryId}.`;
-    default:
-      return `Updated ${repositoryId}.`;
-  }
-}
-
 function createGitForge(options: CreateGitForgeOptions): GitForge {
   if (!options || typeof options.gitHost !== "object") {
     throw new TypeError("createGitForge() requires a gitHost instance.");
@@ -154,6 +138,20 @@ function createGitForge(options: CreateGitForgeOptions): GitForge {
   const logger = resolveLogger(options.logger, options.loggerAdapter);
   const logGroup = "git-host.forge";
   const verbose = options.verbose === true;
+  const activityRecorder = createGitForgeActivityRecorder({
+    storage: options.storage.activity,
+  });
+  const actions = options.storage.actions
+    ? createGitForgeActionsRuntime({
+      actions: options.actions,
+      gitHost: options.gitHost,
+      releases: options.storage.releases,
+      storage: options.storage.actions,
+    })
+    : null;
+  if (actions) {
+    actions.bindActivityStorage(options.storage.activity);
+  }
 
   logPackageInitialized({
     adapter: options.loggerAdapter,
@@ -169,16 +167,15 @@ function createGitForge(options: CreateGitForgeOptions): GitForge {
     kind: GitForgeActivityKind,
     metadata: Record<string, unknown> = {},
   ): Promise<GitForgeActivityEntry> {
-    const entry: GitForgeActivityEntry = {
+    return await activityRecorder.recordActivity({
       actor_id: actor.id,
+      actor_label: text(actor.name, actor.id),
       created_at: nowIso(),
-      id: randomUUID(),
       kind,
       metadata,
       repository_id: repositoryId,
-      summary: buildActivitySummary(kind, repositoryId, metadata),
-    };
-    return await options.storage.activity.createActivity(entry);
+      source: "forge",
+    });
   }
 
   async function readSocialState(repositoryId: string, actorId?: string): Promise<GitForgeSocialState> {
@@ -203,7 +200,7 @@ function createGitForge(options: CreateGitForgeOptions): GitForge {
       options.gitHost.readSummary(repositoryId),
       options.storage.releases.listReleases(repositoryId),
       options.storage.forks.listForks(repositoryId),
-      options.storage.activity.listActivity(repositoryId),
+      activityRecorder.listActivity(repositoryId),
       readSocialState(repositoryId, actorId),
     ]);
     const sortedReleases = Array.from(releases).sort((left, right) => text(right.published_at || right.created_at).localeCompare(text(left.published_at || left.created_at)));
@@ -281,6 +278,92 @@ function createGitForge(options: CreateGitForgeOptions): GitForge {
 
     async readSocialState(repositoryId: string, input = {}) {
       return await readSocialState(repositoryId, text(input.actorId));
+    },
+
+    async createWorkflow(repositoryId: string, input: CreateGitForgeWorkflowInput) {
+      if (!actions) {
+        throw new GitHostError("forge_actions_not_configured", "Actions storage is required to create workflows.");
+      }
+      return await actions.createWorkflow(repositoryId, {
+        actor: assertActor(input.actor),
+        enabled: input.enabled,
+        env: input.env,
+        name: input.name,
+        slug: input.slug,
+        source: input.source,
+        steps: input.steps,
+        trigger: input.trigger,
+      });
+    },
+
+    async updateWorkflow(repositoryId: string, workflowId: string, input: UpdateGitForgeWorkflowInput) {
+      if (!actions) {
+        throw new GitHostError("forge_actions_not_configured", "Actions storage is required to update workflows.");
+      }
+      return await actions.updateWorkflow(repositoryId, workflowId, {
+        ...input,
+        actor: assertActor(input.actor),
+      });
+    },
+
+    async listWorkflows(repositoryId: string, filters: GitForgeWorkflowFilters = {}) {
+      if (!actions) return [];
+      return await actions.listWorkflows(repositoryId, filters);
+    },
+
+    async readWorkflow(repositoryId: string, workflowId: string) {
+      if (!actions) {
+        throw new GitHostError("forge_actions_not_configured", "Actions storage is required to read workflows.");
+      }
+      return await actions.readWorkflow(repositoryId, workflowId);
+    },
+
+    async runWorkflow(repositoryId: string, workflowId: string, input: RunGitForgeWorkflowInput) {
+      if (!actions) {
+        throw new GitHostError("forge_actions_not_configured", "Actions storage is required to run workflows.");
+      }
+      return await actions.runWorkflow(repositoryId, workflowId, {
+        ...input,
+        actor: assertActor(input.actor),
+      });
+    },
+
+    async cancelWorkflowRun(repositoryId: string, runId: string, input: CancelGitForgeWorkflowRunInput) {
+      if (!actions) {
+        throw new GitHostError("forge_actions_not_configured", "Actions storage is required to cancel workflow runs.");
+      }
+      return await actions.cancelWorkflowRun(repositoryId, runId, assertActor(input.actor));
+    },
+
+    async listWorkflowRuns(repositoryId: string, filters: GitForgeWorkflowRunFilters = {}) {
+      if (!actions) return [];
+      return await actions.listWorkflowRuns(repositoryId, filters);
+    },
+
+    async readWorkflowRun(repositoryId: string, runId: string) {
+      if (!actions) {
+        throw new GitHostError("forge_actions_not_configured", "Actions storage is required to read workflow runs.");
+      }
+      return await actions.readWorkflowRun(repositoryId, runId);
+    },
+
+    async listWorkflowRunSteps(repositoryId: string, runId: string) {
+      if (!actions) return [];
+      return await actions.listWorkflowRunSteps(repositoryId, runId);
+    },
+
+    async listWorkflowRunEvents(repositoryId: string, runId: string, filters: GitForgeWorkflowRunEventFilters = {}) {
+      if (!actions) return [];
+      return await actions.listWorkflowRunEvents(repositoryId, runId, filters);
+    },
+
+    subscribeWorkflowRun(repositoryId: string, runId: string, listener) {
+      if (!actions) {
+        return {
+          close() {},
+        };
+      }
+      return actions.subscribeWorkflowRun(repositoryId, runId, listener);
     },
 
     async starRepository(repositoryId: string, input: { actor: GitForgeActor }) {
@@ -464,9 +547,8 @@ function createGitForge(options: CreateGitForgeOptions): GitForge {
       });
     },
 
-    async listActivity(repositoryId: string) {
-      const entries = await options.storage.activity.listActivity(repositoryId);
-      return Array.from(entries).sort((left, right) => text(right.created_at).localeCompare(text(left.created_at)));
+    async listActivity(repositoryId: string, filters = {}) {
+      return await activityRecorder.listActivity(repositoryId, filters);
     },
 
     async listForks(repositoryId: string): Promise<GitForgeFork[]> {

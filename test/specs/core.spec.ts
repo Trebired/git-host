@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { gunzipSync } from "node:zlib";
 
-import { createFileSystemGitArchiveCache, createGitHost, formatTreeAscii, nestTreeEntries } from "../../src/index.js";
+import { createFileSystemGitArchiveCache, createGitHost, formatTreeAscii, nestTreeEntries } from "#rfvjfxzebkbs";
 import {
   captureEventSink,
   captureLogger,

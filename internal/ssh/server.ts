@@ -224,7 +224,7 @@ function createGitSshServer(options: CreateGitSshServerOptions) {
             try { channel.stderr.write(chunk); } catch {}
           });
           child.on("close", (code) => {
-            reportSshAuditEvent(options, logger, verbose, {
+            const auditEvent = {
               command: requested.command,
               exitCode: Number(code) || 0,
               identity: auth.identity,
@@ -236,7 +236,11 @@ function createGitSshServer(options: CreateGitSshServerOptions) {
               service: requested.service,
               username: auth.username,
               wantsWrite: requested.wantsWrite,
-            });
+            } as const;
+            reportSshAuditEvent(options, logger, verbose, auditEvent);
+            if (options.activity) {
+              void Promise.resolve(options.activity.recordSshAuditEvent(auditEvent)).catch(() => {});
+            }
             try { channel.exit(Number(code) || 0); } catch {}
             try { channel.close(); } catch {}
           });

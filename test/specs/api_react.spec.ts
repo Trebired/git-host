@@ -10,7 +10,7 @@ import {
   createGitApiSocketServer,
   createGitHost,
   writeGitArchiveResponse,
-} from "../../src/index.js";
+} from "#rfvjfxzebkbs";
 import {
   createGitApiClient,
   GitApiClientProvider,
@@ -21,7 +21,7 @@ import {
   useGitSearch,
   useGitTags,
   useGitTree,
-} from "../../src/react/index.js";
+} from "#qrrrat6gjo0q";
 import { createHost, createServer, fetchJson, listen, resolveRepositoryPath, sleep, tempDir, writeFile } from "./helpers.js";
 import { captureLogger } from "./helpers.js";
 

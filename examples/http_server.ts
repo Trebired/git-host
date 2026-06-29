@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { createGitHost, createGitHttpHandler, resolveRepositoryPath } from "../src/index.js";
+import { createGitHost, createGitHttpHandler, resolveRepositoryPath } from "#rfvjfxzebkbs";
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "@trebired-git-host-http-"));
 const repositoriesRoot = path.join(root, "repos");

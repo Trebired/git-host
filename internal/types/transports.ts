@@ -2,10 +2,17 @@ import type { IncomingMessage, Server as HttpServer } from "node:http";
 import type { ServerOptions as SocketIoServerOptions } from "socket.io";
 
 import type { GitHostLogger, GitHostLoggerAdapter, MaybePromise } from "./common.js";
+import type { GitForgeTransportActivityRecorder } from "./forge.js";
 import type { GitHost } from "./host.js";
 import type { GitRepositoryHandle } from "./repository.js";
 
 type GitApiResource =
+  | "action"
+  | "action_run"
+  | "action_run_events"
+  | "action_run_steps"
+  | "action_runs"
+  | "actions"
   | "activity"
   | "asset"
   | "archive"
@@ -109,6 +116,7 @@ type GitHttpResolvedRepository = {
 };
 
 type CreateGitHttpHandlerOptions = {
+  activity?: GitForgeTransportActivityRecorder;
   authenticate?: (input: {
     method: string;
     pathname: string;
@@ -181,6 +189,7 @@ type GitSshAuditEvent = {
 };
 
 type CreateGitSshServerOptions = {
+  activity?: GitForgeTransportActivityRecorder;
   authenticate: (input: {
     keyType: string;
     publicKey: string;

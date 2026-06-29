@@ -26,6 +26,7 @@ import type {
 import { text } from "#sy81xkgkmoa0";
 
 type GitRepositoryPageKey =
+  | "actions"
   | "activity"
   | "blame"
   | "branches"
@@ -86,6 +87,8 @@ type GitRepositoryUiSlot =
   | "title-block";
 
 type GitRepositoryRouteAdapter = {
+  actionRun: (repositoryKey: string, runId: string) => string;
+  actions: (repositoryKey: string) => string;
   activity: (repositoryKey: string) => string;
   blame: (repositoryKey: string, path: string, ref?: string) => string;
   branches: (repositoryKey: string) => string;
@@ -149,9 +152,12 @@ type GitRepositoryUiBranding = {
 };
 
 type GitRepositoryUiPolicy = {
+  canCancelActions?: boolean;
+  canConfigureActions?: boolean;
   canCreateFork?: boolean;
   canCreateRelease?: boolean;
   canDeleteRelease?: boolean;
+  canRunActions?: boolean;
   canUpdateRelease?: boolean;
 };
 
@@ -171,6 +177,12 @@ type GitRepositoryFrontEndInitialData = {
   tag?: GitTagDetail | null;
   tags?: GitTagSummary[] | null;
   tree?: GitTreeEntry[] | null;
+  workflow?: import("#1mbdfxwwqqpa").GitForgeWorkflow | null;
+  workflowRun?: import("#1mbdfxwwqqpa").GitForgeWorkflowRun | null;
+  workflowRunEvents?: import("#1mbdfxwwqqpa").GitForgeWorkflowRunEvent[] | null;
+  workflowRunSteps?: import("#1mbdfxwwqqpa").GitForgeWorkflowRunStep[] | null;
+  workflowRuns?: import("#1mbdfxwwqqpa").GitForgeWorkflowRun[] | null;
+  workflows?: import("#1mbdfxwwqqpa").GitForgeWorkflow[] | null;
 };
 
 type GitRepositoryLoadingStateProps = {
@@ -238,6 +250,12 @@ function createGitRepositoryRouteAdapter(input: {
   const repositoryPath = (repositoryKey: string) => `${repositoryBasePath}/${encodeURIComponent(repositoryKey)}`;
 
   return {
+    actions(repositoryKey) {
+      return `${repositoryPath(repositoryKey)}/actions`;
+    },
+    actionRun(repositoryKey, runId) {
+      return `${repositoryPath(repositoryKey)}/actions/runs/${encodeURIComponent(runId)}`;
+    },
     overview(repositoryKey) {
       return `${repositoryPath(repositoryKey)}/overview`;
     },

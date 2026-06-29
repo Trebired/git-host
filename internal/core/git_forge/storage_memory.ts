@@ -1,12 +1,22 @@
 import { randomUUID } from "node:crypto";
 
 import type {
+  GitForgeActivityFilters,
   GitForgeActivityEntry,
+  GitForgeActionsStorage,
   GitForgeForkStorageRecord,
   GitForgeRelease,
   GitForgeStorageAdapter,
+  GitForgeWorkflow,
+  GitForgeWorkflowFilters,
+  GitForgeWorkflowRun,
+  GitForgeWorkflowRunEvent,
+  GitForgeWorkflowRunEventFilters,
+  GitForgeWorkflowRunFilters,
+  GitForgeWorkflowRunStep,
 } from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
+import { matchesActivityFilters, sortActivityEntries } from "../activity.js";
 
 function createInMemoryGitForgeStorageAdapter(): GitForgeStorageAdapter {
   const releases = new Map<string, Map<string, GitForgeRelease>>();
@@ -15,6 +25,10 @@ function createInMemoryGitForgeStorageAdapter(): GitForgeStorageAdapter {
   const forks = new Map<string, GitForgeForkStorageRecord>();
   const forksByUpstream = new Map<string, Set<string>>();
   const activity = new Map<string, GitForgeActivityEntry[]>();
+  const workflows = new Map<string, Map<string, GitForgeWorkflow>>();
+  const runs = new Map<string, Map<string, GitForgeWorkflowRun>>();
+  const runSteps = new Map<string, Map<string, GitForgeWorkflowRunStep>>();
+  const runEvents = new Map<string, GitForgeWorkflowRunEvent[]>();
 
   function releaseMap(repositoryId: string) {
     const key = text(repositoryId);
@@ -46,7 +60,187 @@ function createInMemoryGitForgeStorageAdapter(): GitForgeStorageAdapter {
     return current;
   }
 
+  function workflowMap(repositoryId: string) {
+    const key = text(repositoryId);
+    let current = workflows.get(key);
+    if (!current) {
+      current = new Map();
+      workflows.set(key, current);
+    }
+    return current;
+  }
+
+  function runMap(repositoryId: string) {
+    const key = text(repositoryId);
+    let current = runs.get(key);
+    if (!current) {
+      current = new Map();
+      runs.set(key, current);
+    }
+    return current;
+  }
+
+  function runStepMap(runId: string) {
+    const key = text(runId);
+    let current = runSteps.get(key);
+    if (!current) {
+      current = new Map();
+      runSteps.set(key, current);
+    }
+    return current;
+  }
+
+  function runEventList(runId: string) {
+    const key = text(runId);
+    let current = runEvents.get(key);
+    if (!current) {
+      current = [];
+      runEvents.set(key, current);
+    }
+    return current;
+  }
+
+  function matchesWorkflowFilters(entry: GitForgeWorkflow, filters: GitForgeWorkflowFilters = {}) {
+    if (filters.enabled != null && entry.enabled !== (filters.enabled === true)) return false;
+    const query = text(filters.query).toLowerCase();
+    if (query && ![entry.id, entry.name, entry.slug].some((value) => text(value).toLowerCase().includes(query))) return false;
+    const triggers = Array.isArray(filters.trigger) ? filters.trigger : (filters.trigger ? [filters.trigger] : []);
+    if (triggers.length && !triggers.map((value) => text(value)).includes(text(entry.trigger))) return false;
+    return true;
+  }
+
+  function matchesWorkflowRunFilters(entry: GitForgeWorkflowRun, filters: GitForgeWorkflowRunFilters = {}) {
+    const query = text(filters.query).toLowerCase();
+    if (query && ![
+      entry.id,
+      entry.branch,
+      entry.commit_hash,
+      entry.ref,
+      entry.summary,
+      entry.workflow_id,
+      entry.created_by,
+    ].some((value) => text(value).toLowerCase().includes(query))) return false;
+    if (text(filters.actor) && text(entry.created_by) !== text(filters.actor)) return false;
+    if (text(filters.branch) && text(entry.branch) !== text(filters.branch)) return false;
+    if (text(filters.ref) && text(entry.ref) !== text(filters.ref)) return false;
+    if (text(filters.workflowId) && text(entry.workflow_id) !== text(filters.workflowId)) return false;
+    const statuses = Array.isArray(filters.status) ? filters.status : (filters.status ? [filters.status] : []);
+    if (statuses.length && !statuses.map((value) => text(value)).includes(text(entry.status))) return false;
+    const triggers = Array.isArray(filters.triggerKind) ? filters.triggerKind : (filters.triggerKind ? [filters.triggerKind] : []);
+    if (triggers.length && !triggers.map((value) => text(value)).includes(text(entry.trigger_kind))) return false;
+    const createdAfter = text(filters.createdAfter);
+    if (createdAfter && text(entry.created_at) < createdAfter) return false;
+    const createdBefore = text(filters.createdBefore);
+    if (createdBefore && text(entry.created_at) > createdBefore) return false;
+    return true;
+  }
+
+  function sortWorkflowRuns(entries: GitForgeWorkflowRun[]) {
+    return Array.from(entries).sort((left, right) => text(right.created_at).localeCompare(text(left.created_at)) || text(right.id).localeCompare(text(left.id)));
+  }
+
+  function sortWorkflowRunSteps(entries: GitForgeWorkflowRunStep[]) {
+    return Array.from(entries).sort((left, right) => left.index - right.index || text(left.id).localeCompare(text(right.id)));
+  }
+
+  function sortWorkflowRunEvents(entries: GitForgeWorkflowRunEvent[]) {
+    return Array.from(entries).sort((left, right) => left.sequence - right.sequence || text(left.id).localeCompare(text(right.id)));
+  }
+
+  const actions: GitForgeActionsStorage = {
+    async createWorkflow(input: GitForgeWorkflow) {
+      const workflow = {
+        ...input,
+        id: text(input.id) || randomUUID(),
+      };
+      workflowMap(workflow.repository_id).set(workflow.id, workflow);
+      return workflow;
+    },
+    async readWorkflow(repositoryId: string, workflowId: string) {
+      return workflowMap(repositoryId).get(text(workflowId)) || null;
+    },
+    async listWorkflows(repositoryId: string, filters: GitForgeWorkflowFilters = {}) {
+      return Array.from(workflowMap(repositoryId).values()).filter((entry) => matchesWorkflowFilters(entry, filters));
+    },
+    async updateWorkflow(repositoryId: string, workflowId: string, input) {
+      const current = workflowMap(repositoryId).get(text(workflowId));
+      if (!current) return null;
+      const next = {
+        ...current,
+        ...input,
+      };
+      workflowMap(repositoryId).set(text(workflowId), next);
+      return next;
+    },
+    async createWorkflowRun(input: GitForgeWorkflowRun) {
+      const run = {
+        ...input,
+        id: text(input.id) || randomUUID(),
+      };
+      runMap(run.repository_id).set(run.id, run);
+      return run;
+    },
+    async readWorkflowRun(repositoryId: string, runId: string) {
+      return runMap(repositoryId).get(text(runId)) || null;
+    },
+    async listWorkflowRuns(repositoryId: string, filters: GitForgeWorkflowRunFilters = {}) {
+      return sortWorkflowRuns(
+        Array.from(runMap(repositoryId).values()).filter((entry) => matchesWorkflowRunFilters(entry, filters)),
+      );
+    },
+    async updateWorkflowRun(repositoryId: string, runId: string, input) {
+      const current = runMap(repositoryId).get(text(runId));
+      if (!current) return null;
+      const next = {
+        ...current,
+        ...input,
+      };
+      runMap(repositoryId).set(text(runId), next);
+      return next;
+    },
+    async createWorkflowRunStep(input: GitForgeWorkflowRunStep) {
+      const step = {
+        ...input,
+        id: text(input.id) || randomUUID(),
+      };
+      runStepMap(step.run_id).set(step.id, step);
+      return step;
+    },
+    async listWorkflowRunSteps(runId: string) {
+      return sortWorkflowRunSteps(Array.from(runStepMap(runId).values()));
+    },
+    async updateWorkflowRunStep(runId: string, stepId: string, input) {
+      const current = runStepMap(runId).get(text(stepId));
+      if (!current) return null;
+      const next = {
+        ...current,
+        ...input,
+      };
+      runStepMap(runId).set(text(stepId), next);
+      return next;
+    },
+    async appendWorkflowRunEvent(input: GitForgeWorkflowRunEvent) {
+      const rows = runEventList(input.run_id);
+      const event = {
+        ...input,
+        id: text(input.id) || randomUUID(),
+        sequence: Number(input.sequence) || rows.length + 1,
+      };
+      rows.push(event);
+      return event;
+    },
+    async listWorkflowRunEvents(runId: string, filters: GitForgeWorkflowRunEventFilters = {}) {
+      const afterSequence = Number(filters.afterSequence) || 0;
+      const limit = Number(filters.limit) || 0;
+      const entries = sortWorkflowRunEvents(
+        runEventList(runId).filter((entry) => entry.sequence > afterSequence),
+      );
+      return limit > 0 ? entries.slice(-limit) : entries;
+    },
+  };
+
   return {
+    actions,
     releases: {
       async listReleases(repositoryId: string) {
         return Array.from(releaseMap(repositoryId).values());
@@ -129,7 +323,10 @@ function createInMemoryGitForgeStorageAdapter(): GitForgeStorageAdapter {
       async createActivity(input: GitForgeActivityEntry) {
         const entry = {
           ...input,
+          actor_id: text(input.actor_id),
+          ...(text(input.actor_label) ? { actor_label: text(input.actor_label) } : {}),
           id: text(input.id) || randomUUID(),
+          ...(text(input.source) ? { source: text(input.source) as GitForgeActivityEntry["source"] } : {}),
         };
         const key = text(entry.repository_id);
         const rows = activity.get(key) || [];
@@ -137,8 +334,10 @@ function createInMemoryGitForgeStorageAdapter(): GitForgeStorageAdapter {
         activity.set(key, rows);
         return entry;
       },
-      async listActivity(repositoryId: string) {
-        return Array.from(activity.get(text(repositoryId)) || []);
+      async listActivity(repositoryId: string, filters: GitForgeActivityFilters = {}) {
+        return sortActivityEntries(
+          Array.from(activity.get(text(repositoryId)) || []).filter((entry) => matchesActivityFilters(entry, filters)),
+        );
       },
     },
   };

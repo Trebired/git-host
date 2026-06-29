@@ -8,6 +8,10 @@ import type {
   GitForgeRelease,
   GitForgeRepositoryOverview,
   GitForgeSocialState,
+  GitForgeWorkflow,
+  GitForgeWorkflowRun,
+  GitForgeWorkflowRunEvent,
+  GitForgeWorkflowRunStep,
   GitTagDetail,
   GitTagSummary,
   GitCommitDetail,
@@ -40,6 +44,12 @@ import type {
   UseGitTagOptions,
   UseGitTagsOptions,
   UseGitTreeOptions,
+  UseGitWorkflowOptions,
+  UseGitWorkflowRunEventsOptions,
+  UseGitWorkflowRunOptions,
+  UseGitWorkflowRunsOptions,
+  UseGitWorkflowRunStepsOptions,
+  UseGitWorkflowsOptions,
 } from "./types.js";
 
 function useGitRepositorySummary(
@@ -433,6 +443,144 @@ function useGitActivity(
   });
 }
 
+function useGitWorkflows(
+  repositoryKey: string,
+  options?: UseGitWorkflowsOptions,
+): GitApiQueryResult<GitForgeWorkflow[]> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: ["workflows", repositoryKey, options?.enabled, options?.query ?? "", JSON.stringify(options?.trigger || [])],
+    load(client, signal) {
+      return client.listWorkflows(repositoryKey, {
+        enabled: options?.enabled,
+        headers: options?.headers,
+        query: options?.query,
+        signal,
+        trigger: options?.trigger,
+      });
+    },
+  });
+}
+
+function useGitWorkflow(
+  repositoryKey: string,
+  workflowId: string,
+  options?: UseGitWorkflowOptions,
+): GitApiQueryResult<GitForgeWorkflow> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey) && Boolean(workflowId);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: ["workflow", repositoryKey, workflowId],
+    load(client, signal) {
+      return client.readWorkflow(repositoryKey, workflowId, {
+        headers: options?.headers,
+        signal,
+      });
+    },
+  });
+}
+
+function useGitWorkflowRuns(
+  repositoryKey: string,
+  options?: UseGitWorkflowRunsOptions,
+): GitApiQueryResult<GitForgeWorkflowRun[]> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: [
+      "workflow-runs",
+      repositoryKey,
+      options?.actor ?? "",
+      options?.branch ?? "",
+      options?.createdAfter ?? "",
+      options?.createdBefore ?? "",
+      options?.query ?? "",
+      options?.ref ?? "",
+      JSON.stringify(options?.status || []),
+      JSON.stringify(options?.triggerKind || []),
+      options?.workflowId ?? "",
+    ],
+    load(client, signal) {
+      return client.listWorkflowRuns(repositoryKey, {
+        actor: options?.actor,
+        branch: options?.branch,
+        createdAfter: options?.createdAfter,
+        createdBefore: options?.createdBefore,
+        headers: options?.headers,
+        query: options?.query,
+        ref: options?.ref,
+        signal,
+        status: options?.status,
+        triggerKind: options?.triggerKind,
+        workflowId: options?.workflowId,
+      });
+    },
+  });
+}
+
+function useGitWorkflowRun(
+  repositoryKey: string,
+  runId: string,
+  options?: UseGitWorkflowRunOptions,
+): GitApiQueryResult<GitForgeWorkflowRun> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey) && Boolean(runId);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: ["workflow-run", repositoryKey, runId],
+    load(client, signal) {
+      return client.readWorkflowRun(repositoryKey, runId, {
+        headers: options?.headers,
+        signal,
+      });
+    },
+  });
+}
+
+function useGitWorkflowRunSteps(
+  repositoryKey: string,
+  runId: string,
+  options?: UseGitWorkflowRunStepsOptions,
+): GitApiQueryResult<GitForgeWorkflowRunStep[]> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey) && Boolean(runId);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: ["workflow-run-steps", repositoryKey, runId],
+    load(client, signal) {
+      return client.listWorkflowRunSteps(repositoryKey, runId, {
+        headers: options?.headers,
+        signal,
+      });
+    },
+  });
+}
+
+function useGitWorkflowRunEvents(
+  repositoryKey: string,
+  runId: string,
+  options?: UseGitWorkflowRunEventsOptions,
+): GitApiQueryResult<GitForgeWorkflowRunEvent[]> {
+  const enabled = (options?.enabled !== false) && Boolean(repositoryKey) && Boolean(runId);
+  return useGitApiQuery({
+    ...options,
+    enabled,
+    key: ["workflow-run-events", repositoryKey, runId, options?.afterSequence ?? null, options?.limit ?? null],
+    load(client, signal) {
+      return client.listWorkflowRunEvents(repositoryKey, runId, {
+        afterSequence: options?.afterSequence,
+        headers: options?.headers,
+        limit: options?.limit,
+        signal,
+      });
+    },
+  });
+}
+
 function applyGitStarOptimisticState(
   current: GitForgeSocialState | null,
   starred: boolean,
@@ -571,6 +719,62 @@ function useGitSyncFork(repositoryKey: string, forkId: string, options?: GitApiQ
   });
 }
 
+function useGitCreateWorkflow(repositoryKey: string, options?: GitApiQueryOptions<GitForgeWorkflow>) {
+  return useGitApiMutation<Parameters<GitApiClient["createWorkflow"]>[1], GitForgeWorkflow>({
+    client: options?.client,
+    mutate(client, input) {
+      return client.createWorkflow(repositoryKey, {
+        ...input,
+        headers: {
+          ...(options?.headers || {}),
+          ...(input.headers || {}),
+        },
+      });
+    },
+  });
+}
+
+function useGitUpdateWorkflow(repositoryKey: string, workflowId: string, options?: GitApiQueryOptions<GitForgeWorkflow>) {
+  return useGitApiMutation<Parameters<GitApiClient["updateWorkflow"]>[2], GitForgeWorkflow>({
+    client: options?.client,
+    mutate(client, input) {
+      return client.updateWorkflow(repositoryKey, workflowId, {
+        ...input,
+        headers: {
+          ...(options?.headers || {}),
+          ...(input.headers || {}),
+        },
+      });
+    },
+  });
+}
+
+function useGitRunWorkflow(repositoryKey: string, options?: GitApiQueryOptions<GitForgeWorkflowRun>) {
+  return useGitApiMutation<Parameters<GitApiClient["runWorkflow"]>[1], GitForgeWorkflowRun>({
+    client: options?.client,
+    mutate(client, input) {
+      return client.runWorkflow(repositoryKey, {
+        ...input,
+        headers: {
+          ...(options?.headers || {}),
+          ...(input.headers || {}),
+        },
+      });
+    },
+  });
+}
+
+function useGitCancelWorkflowRun(repositoryKey: string, runId: string, options?: GitApiQueryOptions<GitForgeWorkflowRun>) {
+  return useGitApiMutation<void, GitForgeWorkflowRun>({
+    client: options?.client,
+    mutate(client) {
+      return client.cancelWorkflowRun(repositoryKey, runId, {
+        headers: options?.headers,
+      });
+    },
+  });
+}
+
 export {
   applyGitStarOptimisticState,
   applyGitWatchOptimisticState,
@@ -579,10 +783,12 @@ export {
   useGitBlame,
   useGitBlob,
   useGitBranches,
+  useGitCancelWorkflowRun,
   useGitCommit,
   useGitCommits,
   useGitCreateFork,
   useGitCreateRelease,
+  useGitCreateWorkflow,
   useGitDeleteRelease,
   useGitDiff,
   useGitForks,
@@ -591,6 +797,7 @@ export {
   useGitRelease,
   useGitReleases,
   useGitRepositorySummary,
+  useGitRunWorkflow,
   useGitSearch,
   useGitSocialState,
   useGitStarRepository,
@@ -601,5 +808,12 @@ export {
   useGitUnstarRepository,
   useGitUnwatchRepository,
   useGitUpdateRelease,
+  useGitUpdateWorkflow,
   useGitWatchRepository,
+  useGitWorkflow,
+  useGitWorkflowRun,
+  useGitWorkflowRunEvents,
+  useGitWorkflowRuns,
+  useGitWorkflowRunSteps,
+  useGitWorkflows,
 };

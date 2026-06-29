@@ -1,39 +1,23 @@
 import type { GitApiResource } from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
-
-function normalizeBasePath(value: unknown): string {
-  const next = text(value).replace(/\/+$/g, "");
-  if (!next || next === "/") return "";
-  return next.startsWith("/") ? next : `/${next}`;
-}
-
-function decodeRouteSegment(value: string): string | null {
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return null;
-  }
-}
+import { decodeRouteSegment, parseRepositoryRoute } from "../routing.js";
 
 function parseGitApiRoute(pathnameInput: unknown, basePathInput: unknown) {
-  const pathname = text(pathnameInput, "/");
-  const basePath = normalizeBasePath(basePathInput);
-  if (basePath && !pathname.startsWith(`${basePath}/`) && pathname !== basePath) return null;
-
-  const remainder = basePath
-    ? pathname.slice(basePath.length).replace(/^\/+/, "")
-    : pathname.replace(/^\/+/, "");
-  if (!remainder) return null;
-
-  const segments = remainder.split("/").filter(Boolean);
-  if (segments[0] !== "repositories" || segments.length < 3) return null;
-
-  const repositoryKey = decodeRouteSegment(segments[1] || "");
-  if (!repositoryKey) return null;
-
+  const route = parseRepositoryRoute(pathnameInput, basePathInput);
+  if (!route) return null;
+  const { repositoryKey, segments } = route;
   const action = text(segments[2]) as GitApiResource | "unknown";
-  if (
-    action === "summary"
+  if (isDirectRepositoryAction(action)) return segments.length === 3 ? { action, repositoryKey } : null;
+  if (action === "tarball" || action === "zipball") {
+    return parseArchiveRoute(action, repositoryKey, segments[3], segments.length);
+  }
+  if (action === "commits") return parseCommitRoute(repositoryKey, segments);
+  if (action === "tags") return parseTagRoute(repositoryKey, segments);
+  return null;
+}
+
+function isDirectRepositoryAction(action: GitApiResource | "unknown") {
+  return action === "summary"
     || action === "branches"
     || action === "tree"
     || action === "blob"
@@ -41,41 +25,27 @@ function parseGitApiRoute(pathnameInput: unknown, basePathInput: unknown) {
     || action === "linguist"
     || action === "blame"
     || action === "search"
-    || action === "archive"
-  ) {
-    if (segments.length !== 3) return null;
-    return { action, repositoryKey };
-  }
+    || action === "archive";
+}
 
-  if ((action === "tarball" || action === "zipball") && segments.length === 4) {
-    const refName = decodeRouteSegment(segments[3] || "");
-    if (!refName) return null;
-    return {
-      action: action as "tarball" | "zipball",
-      refName,
-      repositoryKey,
-    };
-  }
+function parseArchiveRoute(action: "tarball" | "zipball", repositoryKey: string, value: string | undefined, length: number) {
+  if (length !== 4) return null;
+  const refName = decodeRouteSegment(value || "");
+  return refName ? { action, refName, repositoryKey } : null;
+}
 
-  if (action === "commits") {
-    if (segments.length === 3) return { action, repositoryKey };
-    if (segments.length === 4) {
-      const commitRef = decodeRouteSegment(segments[3] || "");
-      if (!commitRef) return null;
-      return { action: "commit" as const, commitRef, repositoryKey };
-    }
-  }
+function parseCommitRoute(repositoryKey: string, segments: string[]) {
+  if (segments.length === 3) return { action: "commits" as const, repositoryKey };
+  if (segments.length !== 4) return null;
+  const commitRef = decodeRouteSegment(segments[3] || "");
+  return commitRef ? { action: "commit" as const, commitRef, repositoryKey } : null;
+}
 
-  if (action === "tags") {
-    if (segments.length === 3) return { action, repositoryKey };
-    if (segments.length === 4) {
-      const tagName = decodeRouteSegment(segments[3] || "");
-      if (!tagName) return null;
-      return { action: "tag" as const, repositoryKey, tagName };
-    }
-  }
-
-  return null;
+function parseTagRoute(repositoryKey: string, segments: string[]) {
+  if (segments.length === 3) return { action: "tags" as const, repositoryKey };
+  if (segments.length !== 4) return null;
+  const tagName = decodeRouteSegment(segments[3] || "");
+  return tagName ? { action: "tag" as const, repositoryKey, tagName } : null;
 }
 
 export { parseGitApiRoute };

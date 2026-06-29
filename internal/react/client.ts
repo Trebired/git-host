@@ -1,12 +1,16 @@
 import { io as connectSocket } from "socket.io-client";
 
 import {
+  ACTIONS_RUN_DONE_EVENT,
+  ACTIONS_RUN_ERROR_EVENT,
+  ACTIONS_RUN_EVENT,
+  ACTIONS_RUN_SUBSCRIBE_EVENT,
   LINGUIST_DONE_EVENT,
   LINGUIST_ERROR_EVENT,
   LINGUIST_PROGRESS_EVENT,
   LINGUIST_RESULT_EVENT,
   LINGUIST_START_EVENT,
-} from "../api/socket_events.js";
+} from "#e1ead083c558";
 import type {
   CreateGitApiClientOptions,
   GitApiClient,
@@ -15,6 +19,9 @@ import type {
   GitLinguistSocketEvent,
   GitLinguistSocketProgressEvent,
   GitLinguistSocketResultEvent,
+  GitWorkflowRunSocketDoneEvent,
+  GitWorkflowRunSocketErrorEvent,
+  GitWorkflowRunSocketEvent,
   GitApiClientRequestOptions,
   GitApiResource,
   GitApiResponse,
@@ -51,6 +58,15 @@ function resolveSocketEndpoint(
   return absolute
     ? { path, url: `${absolute.protocol}//${absolute.host}` }
     : { path };
+}
+
+function joinQueryValue(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    const rows = value.map((entry) => String(entry || "").trim()).filter(Boolean);
+    return rows.length ? rows.join(",") : undefined;
+  }
+  const single = String(value || "").trim();
+  return single || undefined;
 }
 
 function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
@@ -191,7 +207,144 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
       return response.data;
     },
     async listActivity(repositoryKey, input) {
-      const response = await request<"activity", ReturnType<GitApiClient["listActivity"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "activity", input);
+      const response = await request<"activity", ReturnType<GitApiClient["listActivity"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "activity", {
+        headers: input?.headers,
+        query: buildQuery({
+          actor: input?.actor,
+          createdAfter: input?.createdAfter,
+          createdBefore: input?.createdBefore,
+          kind: joinQueryValue(input?.kind as string | string[] | undefined),
+          source: joinQueryValue(input?.source as string | string[] | undefined),
+        }),
+        signal: input?.signal,
+      });
+      return response.data;
+    },
+    async listWorkflows(repositoryKey, input) {
+      const response = await request<"actions", ReturnType<GitApiClient["listWorkflows"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "actions", {
+        headers: input?.headers,
+        query: buildQuery({
+          enabled: input?.enabled,
+          query: input?.query,
+          trigger: joinQueryValue(input?.trigger as string | string[] | undefined),
+        }),
+        signal: input?.signal,
+      });
+      return response.data;
+    },
+    async createWorkflow(repositoryKey, input) {
+      const response = await request<"actions", ReturnType<GitApiClient["createWorkflow"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        "actions",
+        {
+          body: {
+            enabled: input.enabled !== false,
+            env: input.env,
+            name: input.name,
+            slug: input.slug,
+            source: input.source,
+            steps: input.steps,
+            trigger: input.trigger,
+          },
+          headers: input.headers,
+          method: "POST",
+          signal: input.signal,
+        },
+      );
+      return response.data;
+    },
+    async updateWorkflow(repositoryKey, workflowId, input) {
+      const response = await request<"action", ReturnType<GitApiClient["updateWorkflow"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        `actions/${encodePathSegment(workflowId)}`,
+        {
+          body: {
+            enabled: input.enabled,
+            env: input.env,
+            name: input.name,
+            slug: input.slug,
+            source: input.source,
+            steps: input.steps,
+            trigger: input.trigger,
+          },
+          headers: input.headers,
+          method: "PATCH",
+          signal: input.signal,
+        },
+      );
+      return response.data;
+    },
+    async listWorkflowRuns(repositoryKey, input) {
+      const response = await request<"action_runs", ReturnType<GitApiClient["listWorkflowRuns"]> extends Promise<infer TData> ? TData : never>(repositoryKey, "actions/runs", {
+        headers: input?.headers,
+        query: buildQuery({
+          actor: input?.actor,
+          branch: input?.branch,
+          createdAfter: input?.createdAfter,
+          createdBefore: input?.createdBefore,
+          query: input?.query,
+          ref: input?.ref,
+          status: joinQueryValue(input?.status as string | string[] | undefined),
+          triggerKind: joinQueryValue(input?.triggerKind as string | string[] | undefined),
+          workflowId: input?.workflowId,
+        }),
+        signal: input?.signal,
+      });
+      return response.data;
+    },
+    async listWorkflowRunSteps(repositoryKey, runId, input) {
+      const response = await request<"action_run_steps", ReturnType<GitApiClient["listWorkflowRunSteps"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        `actions/runs/${encodePathSegment(runId)}/steps`,
+        input,
+      );
+      return response.data;
+    },
+    async listWorkflowRunEvents(repositoryKey, runId, input) {
+      const response = await request<"action_run_events", ReturnType<GitApiClient["listWorkflowRunEvents"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        `actions/runs/${encodePathSegment(runId)}/events`,
+        {
+          headers: input?.headers,
+          query: buildQuery({
+            afterSequence: input?.afterSequence,
+            limit: input?.limit,
+          }),
+          signal: input?.signal,
+        },
+      );
+      return response.data;
+    },
+    async runWorkflow(repositoryKey, input) {
+      const response = await request<"action_runs", ReturnType<GitApiClient["runWorkflow"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        "actions/runs",
+        {
+          body: {
+            branch: input.branch,
+            commitHash: input.commitHash,
+            ref: input.ref,
+            triggerContext: input.triggerContext,
+            workflowId: input.workflowId,
+          },
+          headers: input.headers,
+          method: "POST",
+          signal: input.signal,
+        },
+      );
+      return response.data;
+    },
+    async cancelWorkflowRun(repositoryKey, runId, input) {
+      const response = await request<"action_run", ReturnType<GitApiClient["cancelWorkflowRun"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        `actions/runs/${encodePathSegment(runId)}/cancel`,
+        {
+          body: {},
+          headers: input?.headers,
+          method: "POST",
+          signal: input?.signal,
+        },
+      );
       return response.data;
     },
     async listCommits(repositoryKey, input) {
@@ -410,6 +563,119 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
         completed,
       };
     },
+    openWorkflowRunSocket(repositoryKey, runId, input) {
+      const { path, url } = resolveSocketEndpoint(baseUrl, options.socketOptions && options.socketOptions.path);
+      let socket: ReturnType<typeof connectSocket> | null = null;
+      let settled = false;
+      let rejectCompleted: ((reason?: unknown) => void) | null = null;
+      let resolveCompleted: (() => void) | null = null;
+      const cleanup = () => {
+        socket?.off(ACTIONS_RUN_EVENT);
+        socket?.off(ACTIONS_RUN_DONE_EVENT);
+        socket?.off(ACTIONS_RUN_ERROR_EVENT);
+        socket?.off("connect");
+        socket?.off("connect_error");
+        input?.signal?.removeEventListener("abort", onAbort);
+      };
+      const finish = (kind: "reject" | "resolve", value?: unknown) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (kind === "resolve") resolveCompleted && resolveCompleted();
+        else rejectCompleted && rejectCompleted(value);
+        socket?.disconnect();
+      };
+      const onAbort = () => {
+        const abortError = new Error("Git workflow run socket request was aborted.");
+        abortError.name = "AbortError";
+        finish("reject", abortError);
+      };
+      input?.signal?.addEventListener("abort", onAbort, { once: true });
+
+      const completed = new Promise<void>((resolve, reject) => {
+        resolveCompleted = resolve;
+        rejectCompleted = reject;
+      });
+
+      void (async () => {
+        const repositoryBasePath = `/repositories/${encodePathSegment(repositoryKey)}`;
+        const requestPath = `${repositoryBasePath}/actions/runs/${encodePathSegment(runId)}/socket`;
+        const resolvedHeaders = mergeHeaders(
+          await resolveHeaders(options.headers, {
+            path: requestPath,
+            repositoryKey,
+          }),
+          input?.headers,
+        );
+
+        socket = connectSocket(url, {
+          ...(options.socketOptions || {}),
+          autoConnect: false,
+          extraHeaders: {
+            ...((options.socketOptions && options.socketOptions.extraHeaders) || {}),
+            ...(resolvedHeaders || {}),
+          },
+          path,
+          transports: (options.socketOptions && options.socketOptions.transports) || ["websocket"],
+        });
+        if (settled) {
+          socket.disconnect();
+          return;
+        }
+        socket.on("connect", () => {
+          socket && socket.emit(ACTIONS_RUN_SUBSCRIBE_EVENT, {
+            afterSequence: input?.afterSequence,
+            repositoryKey,
+            runId,
+          });
+        });
+        socket.on("connect_error", (error: Error) => {
+          finish("reject", error);
+        });
+        socket.on(ACTIONS_RUN_EVENT, async (payload: unknown) => {
+          await input?.onEvent?.(payload as GitWorkflowRunSocketEvent);
+        });
+        socket.on(ACTIONS_RUN_DONE_EVENT, async (payload: unknown) => {
+          const nextEvent = {
+            ...(payload as Omit<GitWorkflowRunSocketDoneEvent, "type">),
+            type: "done",
+          } as GitWorkflowRunSocketDoneEvent;
+          await input?.onDone?.(nextEvent);
+          await input?.onEvent?.(nextEvent);
+          finish(nextEvent.ok === false ? "reject" : "resolve", nextEvent.ok === false
+            ? new GitApiClientError({
+              code: "git_api_error",
+              message: "Git workflow run socket ended without a successful result.",
+              status: 500,
+            })
+            : undefined);
+        });
+        socket.on(ACTIONS_RUN_ERROR_EVENT, async (payload: unknown) => {
+          const nextEvent = {
+            ...(payload as Omit<GitWorkflowRunSocketErrorEvent, "type">),
+            type: "error",
+          } as GitWorkflowRunSocketErrorEvent;
+          await input?.onError?.(nextEvent);
+          await input?.onEvent?.(nextEvent);
+          finish("reject", new GitApiClientError({
+            code: nextEvent.error.code,
+            details: nextEvent.error.details,
+            message: nextEvent.error.message,
+            status: nextEvent.status || 500,
+          }));
+        });
+        socket.connect();
+      })().catch((error) => {
+        finish("reject", error);
+      });
+
+      return {
+        close() {
+          onAbort();
+        },
+        completed,
+      };
+    },
     async readTag(repositoryKey, tagName, input) {
       const response = await request<"tag", ReturnType<GitApiClient["readTag"]> extends Promise<infer TData> ? TData : never>(
         repositoryKey,
@@ -426,6 +692,22 @@ function createGitApiClient(options: CreateGitApiClientOptions): GitApiClient {
       const response = await request<"release", ReturnType<GitApiClient["readRelease"]> extends Promise<infer TData> ? TData : never>(
         repositoryKey,
         `releases/${encodePathSegment(releaseId)}`,
+        input,
+      );
+      return response.data;
+    },
+    async readWorkflow(repositoryKey, workflowId, input) {
+      const response = await request<"action", ReturnType<GitApiClient["readWorkflow"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        `actions/${encodePathSegment(workflowId)}`,
+        input,
+      );
+      return response.data;
+    },
+    async readWorkflowRun(repositoryKey, runId, input) {
+      const response = await request<"action_run", ReturnType<GitApiClient["readWorkflowRun"]> extends Promise<infer TData> ? TData : never>(
+        repositoryKey,
+        `actions/runs/${encodePathSegment(runId)}`,
         input,
       );
       return response.data;
@@ -589,6 +871,9 @@ export type {
   GitApiHeaderResolver,
   GitApiResponse,
   GitApiSuccessResponse,
+  GitWorkflowRunSocketDoneEvent,
+  GitWorkflowRunSocketErrorEvent,
+  GitWorkflowRunSocketEvent,
   GitLinguistSocketDoneEvent,
   GitLinguistSocketErrorEvent,
   GitLinguistSocketEvent,

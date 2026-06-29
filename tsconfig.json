@@ -11,8 +11,29 @@
     "moduleResolution": "Bundler",
     "noEmit": true,
     "paths": {
+      "#0393514b57bc": [
+        "./internal/api/socket/server.ts"
+      ],
+      "#07a96afa0a48": [
+        "./internal/core/archive.ts"
+      ],
+      "#0bba403f3e43": [
+        "./internal/constants.ts"
+      ],
       "#1051qntat2i5": [
         "./src/core/archive.ts"
+      ],
+      "#115ffae16859": [
+        "./internal/core/repository/parsers.ts"
+      ],
+      "#14021226ec9b": [
+        "./internal/types/index.ts"
+      ],
+      "#17b925930e92": [
+        "./internal/react/client/error.ts"
+      ],
+      "#1a2e563ea829": [
+        "./internal/core/remote.ts"
       ],
       "#1bae0atkgje7": [
         "./src/core/run_git/repository_setup.ts"
@@ -32,8 +53,29 @@
       "#1uaqd3hnpa5k": [
         "./src/api/handler/archive.ts"
       ],
+      "#2161a5929bec": [
+        "./internal/ssh/keys.ts"
+      ],
+      "#2c9e26f53461": [
+        "./internal/types/transports.ts"
+      ],
       "#2cwf3dkfcm3w": [
         "./src/types/transports.ts"
+      ],
+      "#2ebf9ed6336f": [
+        "./internal/core/inspect/icon_theme.ts"
+      ],
+      "#342cd29fa025": [
+        "./internal/ssh/server.ts"
+      ],
+      "#390741ebf5ab": [
+        "./internal/utils/paths.ts"
+      ],
+      "#3c8d8166992a": [
+        "./internal/types.ts"
+      ],
+      "#3fbd2c4f854c": [
+        "./internal/core/run_git/repository_setup.ts"
       ],
       "#3toq76s0rt30": [
         "./src/react/hooks/query.ts"
@@ -44,11 +86,74 @@
       "#40nx1s0ag764": [
         "./src/core/create_git_host/content_methods.ts"
       ],
+      "#4159667f1e87": [
+        "./internal/core/create_git_host/content_methods.ts"
+      ],
+      "#42965357d713": [
+        "./internal/core/archive_cache_filesystem.ts"
+      ],
+      "#42f32dd5cd30": [
+        "./internal/core/operation_state.ts"
+      ],
+      "#4bb83a619bd3": [
+        "./internal/core/repository.ts"
+      ],
+      "#4c94c22378b2": [
+        "./internal/types/forge.ts"
+      ],
+      "#4e7ff1c92ff1": [
+        "./internal/api/handler/response.ts"
+      ],
+      "#4f3a1fa5de07": [
+        "./internal/react/hooks/types.ts"
+      ],
+      "#53fe5bbf2789": [
+        "./internal/api/handler/action.ts"
+      ],
       "#54sqm2cb0m84": [
         "./src/http/handler/helpers.ts"
       ],
+      "#58f5a76a572c": [
+        "./internal/core/run_git/env.ts"
+      ],
+      "#59b3abcebf1a": [
+        "./internal/types/host.ts"
+      ],
+      "#5a0e75b6bdb8": [
+        "./internal/types/common.ts"
+      ],
+      "#5a29135e56c1": [
+        "./internal/logging.ts"
+      ],
       "#5b9hlx9mpezy": [
         "./src/api/handler/route.ts"
+      ],
+      "#5f2400e3636a": [
+        "./internal/api/handler.ts"
+      ],
+      "#5f5fe2262a26": [
+        "./internal/core/inspect/linguist_progress.ts"
+      ],
+      "#61bf255baf35": [
+        "./internal/core/inspect/helpers.ts"
+      ],
+      "#622bd171bea7": [
+        "./internal/core/run_git/process.ts"
+      ],
+      "#62f869522d1f": [
+        "./internal/utils/text.ts"
+      ],
+      "#632ac808a058": [
+        "./internal/core/inspect.ts"
+      ],
+      "#666a84ce027e": [
+        "./internal/types/repository.ts"
+      ],
+      "#66ac2545b926": [
+        "./internal/core/working_tree/mutate.ts"
+      ],
+      "#68c5a1845ad6": [
+        "./internal/core/working_tree/shared.ts"
       ],
       "#6qp108ftbm6e": [
         "./src/core/remote.ts"
@@ -56,14 +161,62 @@
       "#71gcz975lbgv": [
         "./src/ssh/keys.ts"
       ],
+      "#7852a9866044": [
+        "./internal/react/client/types.ts"
+      ],
       "#7maf6oi3wbka": [
         "./src/core/working_tree/shared.ts"
+      ],
+      "#7w8sv0ru98tg": [
+        "./internal/api/socket_server.ts"
+      ],
+      "#8392d406df71": [
+        "./internal/browser/index.ts"
+      ],
+      "#87337d1a79d6": [
+        "./internal/backend/utils/time.ts"
+      ],
+      "#8974ac53d713": [
+        "./internal/errors.ts"
+      ],
+      "#8aa7b293569e": [
+        "./internal/react/components.ts"
+      ],
+      "#8b0f4b678e79": [
+        "./internal/core/working_tree.ts"
+      ],
+      "#8c51a3b3b48b": [
+        "./internal/react/client.ts"
+      ],
+      "#8pibovqk3akx": [
+        "./internal/core/create_git_forge.ts"
       ],
       "#8um0tm4l4cve": [
         "./src/types/repository.ts"
       ],
+      "#90040fe3e934": [
+        "./internal/core/locks.ts"
+      ],
       "#92b2mrh7s066": [
         "./src/core/create_git_host/shared.ts"
+      ],
+      "#94a1724e0014": [
+        "./internal/react/hooks/resources.ts"
+      ],
+      "#9652e5354aa6": [
+        "./internal/frontend/js/utils/text.ts"
+      ],
+      "#96b00569f1f4": [
+        "./internal/core/run_git.ts"
+      ],
+      "#999903aa9828": [
+        "./internal/react/ui/context.ts"
+      ],
+      "#9ed9deeef558": [
+        "./internal/core/working_tree/read.ts"
+      ],
+      "#9eedb3d763ad": [
+        "./internal/ssh/server/shared.ts"
       ],
       "#9wiq1v1nlp1y": [
         "./src/core/run_git/process.ts"
@@ -71,14 +224,44 @@
       "#a08ndk3v0tpm": [
         "./src/core/locks.ts"
       ],
+      "#a62e56e1fef5": [
+        "./internal/core/inspection.ts"
+      ],
+      "#a9f1d698c0aa": [
+        "./internal/core/create_git_host/remote_methods.ts"
+      ],
+      "#b2abc9887206": [
+        "./internal/ssh/server/audit.ts"
+      ],
+      "#b3a8e61c79e9": [
+        "./internal/core/create_git_host/shared.ts"
+      ],
+      "#b48819617d2f": [
+        "./internal/api/handler/route.ts"
+      ],
+      "#b8c8814b833e": [
+        "./internal/core/create/git/host.ts"
+      ],
       "#bv4sbh70kns7": [
         "./src/frontend/js/utils/text.ts"
       ],
       "#c471wkla2eun": [
         "./src/ssh/server.ts"
       ],
+      "#c4fd5905235f": [
+        "./internal/api/forge/handler.ts"
+      ],
+      "#c781974d726d": [
+        "./internal/react/index.ts"
+      ],
+      "#cca837948b54": [
+        "./internal/react/hooks.ts"
+      ],
       "#cqgsder5zlmf": [
         "./src/logging.ts"
+      ],
+      "#d66a914eb693": [
+        "./internal/backend/utils/object.ts"
       ],
       "#d7cs7wdmybuf": [
         "./src/core/operation_state.ts"
@@ -86,20 +269,62 @@
       "#d8b5p2m18xp0": [
         "./src/ssh/server/audit.ts"
       ],
+      "#daa89828a013": [
+        "./internal/http/handler.ts"
+      ],
+      "#de031fc6c08f": [
+        "./internal/core/create_git_host/working_tree_methods.ts"
+      ],
+      "#de066fa37e98": [
+        "./internal/react/hooks/query.ts"
+      ],
       "#dvi96619a1y9": [
         "./src/react/hooks/types.ts"
+      ],
+      "#e1ead083c558": [
+        "./internal/api/socket/events.ts"
       ],
       "#e4nui7i44nqo": [
         "./src/react/hooks.ts"
       ],
+      "#e65e172ffada": [
+        "./internal/core/git_forge/storage_memory.ts"
+      ],
+      "#e8559447ec5f": [
+        "./internal/api/forge/route.ts"
+      ],
+      "#ea71f5c6858f": [
+        "./internal/core/create/git/forge.ts"
+      ],
+      "#ebe51631bc41": [
+        "./internal/backend/utils/normalize.ts"
+      ],
       "#ebw9yuqcyi9w": [
         "./src/errors.ts"
+      ],
+      "#f6968f8cf46f": [
+        "./internal/react/client/helpers.ts"
+      ],
+      "#f88802286a5d": [
+        "./internal/core/create_git_host/branch_methods.ts"
       ],
       "#f8p17v0habtt": [
         "./src/core/create/git/host.ts"
       ],
+      "#fb997ea04aaa": [
+        "./internal/http/handler/helpers.ts"
+      ],
+      "#fcd73bf294d5": [
+        "./internal/index.ts"
+      ],
       "#fdlygmvtu0no": [
         "./src/react/components.ts"
+      ],
+      "#ff0a1cf158cf": [
+        "./internal/api/handler/archive.ts"
+      ],
+      "#g06ee0cu71rw": [
+        "./internal/api/socket_events.ts"
       ],
       "#gagsdioegzgz": [
         "./src/core/inspect/linguist_progress.ts"
@@ -121,6 +346,9 @@
       ],
       "#i4s1k51ofdv3": [
         "./src/react/client/error.ts"
+      ],
+      "#ilx3kqu9mplv": [
+        "./internal/core/create_git_host.ts"
       ],
       "#j29gfnt2cscg": [
         "./src/backend/utils/object.ts"
@@ -200,6 +428,9 @@
       "#uzarbapld5e4": [
         "./src/core/working_tree/read.ts"
       ],
+      "#v2gv78g55t1o": [
+        "./tb.code-discipline.ts"
+      ],
       "#wb5qec2x6c0t": [
         "./src/backend/utils/normalize.ts"
       ],
@@ -226,222 +457,6 @@
       ],
       "#zwhym49orp46": [
         "./src/core/create/git/forge.ts"
-      ],
-      "#c4fd5905235f": [
-        "./internal/api/forge/handler.ts"
-      ],
-      "#e8559447ec5f": [
-        "./internal/api/forge/route.ts"
-      ],
-      "#53fe5bbf2789": [
-        "./internal/api/handler/action.ts"
-      ],
-      "#ff0a1cf158cf": [
-        "./internal/api/handler/archive.ts"
-      ],
-      "#4e7ff1c92ff1": [
-        "./internal/api/handler/response.ts"
-      ],
-      "#b48819617d2f": [
-        "./internal/api/handler/route.ts"
-      ],
-      "#5f2400e3636a": [
-        "./internal/api/handler.ts"
-      ],
-      "#e1ead083c558": [
-        "./internal/api/socket/events.ts"
-      ],
-      "#0393514b57bc": [
-        "./internal/api/socket/server.ts"
-      ],
-      "#ebe51631bc41": [
-        "./internal/backend/utils/normalize.ts"
-      ],
-      "#d66a914eb693": [
-        "./internal/backend/utils/object.ts"
-      ],
-      "#87337d1a79d6": [
-        "./internal/backend/utils/time.ts"
-      ],
-      "#8392d406df71": [
-        "./internal/browser/index.ts"
-      ],
-      "#0bba403f3e43": [
-        "./internal/constants.ts"
-      ],
-      "#07a96afa0a48": [
-        "./internal/core/archive.ts"
-      ],
-      "#42965357d713": [
-        "./internal/core/archive_cache_filesystem.ts"
-      ],
-      "#ea71f5c6858f": [
-        "./internal/core/create/git/forge.ts"
-      ],
-      "#b8c8814b833e": [
-        "./internal/core/create/git/host.ts"
-      ],
-      "#f88802286a5d": [
-        "./internal/core/create_git_host/branch_methods.ts"
-      ],
-      "#4159667f1e87": [
-        "./internal/core/create_git_host/content_methods.ts"
-      ],
-      "#a9f1d698c0aa": [
-        "./internal/core/create_git_host/remote_methods.ts"
-      ],
-      "#b3a8e61c79e9": [
-        "./internal/core/create_git_host/shared.ts"
-      ],
-      "#de031fc6c08f": [
-        "./internal/core/create_git_host/working_tree_methods.ts"
-      ],
-      "#e65e172ffada": [
-        "./internal/core/git_forge/storage_memory.ts"
-      ],
-      "#61bf255baf35": [
-        "./internal/core/inspect/helpers.ts"
-      ],
-      "#2ebf9ed6336f": [
-        "./internal/core/inspect/icon_theme.ts"
-      ],
-      "#5f5fe2262a26": [
-        "./internal/core/inspect/linguist_progress.ts"
-      ],
-      "#632ac808a058": [
-        "./internal/core/inspect.ts"
-      ],
-      "#a62e56e1fef5": [
-        "./internal/core/inspection.ts"
-      ],
-      "#90040fe3e934": [
-        "./internal/core/locks.ts"
-      ],
-      "#42f32dd5cd30": [
-        "./internal/core/operation_state.ts"
-      ],
-      "#1a2e563ea829": [
-        "./internal/core/remote.ts"
-      ],
-      "#115ffae16859": [
-        "./internal/core/repository/parsers.ts"
-      ],
-      "#4bb83a619bd3": [
-        "./internal/core/repository.ts"
-      ],
-      "#58f5a76a572c": [
-        "./internal/core/run_git/env.ts"
-      ],
-      "#622bd171bea7": [
-        "./internal/core/run_git/process.ts"
-      ],
-      "#3fbd2c4f854c": [
-        "./internal/core/run_git/repository_setup.ts"
-      ],
-      "#96b00569f1f4": [
-        "./internal/core/run_git.ts"
-      ],
-      "#66ac2545b926": [
-        "./internal/core/working_tree/mutate.ts"
-      ],
-      "#9ed9deeef558": [
-        "./internal/core/working_tree/read.ts"
-      ],
-      "#68c5a1845ad6": [
-        "./internal/core/working_tree/shared.ts"
-      ],
-      "#8b0f4b678e79": [
-        "./internal/core/working_tree.ts"
-      ],
-      "#8974ac53d713": [
-        "./internal/errors.ts"
-      ],
-      "#9652e5354aa6": [
-        "./internal/frontend/js/utils/text.ts"
-      ],
-      "#fb997ea04aaa": [
-        "./internal/http/handler/helpers.ts"
-      ],
-      "#daa89828a013": [
-        "./internal/http/handler.ts"
-      ],
-      "#fcd73bf294d5": [
-        "./internal/index.ts"
-      ],
-      "#5a29135e56c1": [
-        "./internal/logging.ts"
-      ],
-      "#17b925930e92": [
-        "./internal/react/client/error.ts"
-      ],
-      "#f6968f8cf46f": [
-        "./internal/react/client/helpers.ts"
-      ],
-      "#7852a9866044": [
-        "./internal/react/client/types.ts"
-      ],
-      "#8c51a3b3b48b": [
-        "./internal/react/client.ts"
-      ],
-      "#8aa7b293569e": [
-        "./internal/react/components.ts"
-      ],
-      "#de066fa37e98": [
-        "./internal/react/hooks/query.ts"
-      ],
-      "#94a1724e0014": [
-        "./internal/react/hooks/resources.ts"
-      ],
-      "#4f3a1fa5de07": [
-        "./internal/react/hooks/types.ts"
-      ],
-      "#cca837948b54": [
-        "./internal/react/hooks.ts"
-      ],
-      "#c781974d726d": [
-        "./internal/react/index.ts"
-      ],
-      "#999903aa9828": [
-        "./internal/react/ui/context.ts"
-      ],
-      "#2161a5929bec": [
-        "./internal/ssh/keys.ts"
-      ],
-      "#b2abc9887206": [
-        "./internal/ssh/server/audit.ts"
-      ],
-      "#9eedb3d763ad": [
-        "./internal/ssh/server/shared.ts"
-      ],
-      "#342cd29fa025": [
-        "./internal/ssh/server.ts"
-      ],
-      "#5a0e75b6bdb8": [
-        "./internal/types/common.ts"
-      ],
-      "#4c94c22378b2": [
-        "./internal/types/forge.ts"
-      ],
-      "#59b3abcebf1a": [
-        "./internal/types/host.ts"
-      ],
-      "#14021226ec9b": [
-        "./internal/types/index.ts"
-      ],
-      "#666a84ce027e": [
-        "./internal/types/repository.ts"
-      ],
-      "#2c9e26f53461": [
-        "./internal/types/transports.ts"
-      ],
-      "#3c8d8166992a": [
-        "./internal/types.ts"
-      ],
-      "#390741ebf5ab": [
-        "./internal/utils/paths.ts"
-      ],
-      "#62f869522d1f": [
-        "./internal/utils/text.ts"
       ]
     },
     "resolveJsonModule": true,

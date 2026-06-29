@@ -9,8 +9,8 @@ import {
   createGitForge,
   createGitForgeApiHandler,
   createInMemoryGitForgeStorageAdapter,
-} from "../../src/index.js";
-import { GitApiClientProvider, createGitApiClient } from "../../src/react/index.js";
+} from "#rfvjfxzebkbs";
+import { GitApiClientProvider, createGitApiClient } from "#qrrrat6gjo0q";
 import {
   GitRepositoryForksPage,
   GitRepositoryOverviewPage,
@@ -20,13 +20,13 @@ import {
   GitRepositoryReleasesPage,
   GitRepositorySearchPage,
   GitRepositoryTagsPage,
-} from "../../src/browser/index.js";
+} from "#udv18x1zuger";
 import {
   GitCommitList,
   GitRepositoryShell,
   GitRepositoryUiProvider,
   createGitRepositoryRouteAdapter,
-} from "../../src/react/index.js";
+} from "#qrrrat6gjo0q";
 import { closeServer, createHost, createServer, fetchJson, git, gitCommit, listen, resolveRepositoryPath, sleep, tempDir, writeFile } from "./helpers.js";
 
 function actorHeaders(actorId = "alice") {

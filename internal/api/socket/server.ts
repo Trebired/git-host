@@ -1,20 +1,20 @@
 import { Server as SocketIoServer } from "socket.io";
 import { logPackageInitialized } from "@trebired/logger-adapter";
 
-import { resolveLogger } from "../logging.js";
+import { resolveLogger } from "#5a29135e56c1";
 import type {
   CreateGitApiSocketServerOptions,
   GitLinguistProgressEvent,
-} from "../types.js";
-import { text } from "../utils/text.js";
+} from "#3c8d8166992a";
+import { text } from "#62f869522d1f";
 import {
   LINGUIST_DONE_EVENT,
   LINGUIST_ERROR_EVENT,
   LINGUIST_PROGRESS_EVENT,
   LINGUIST_RESULT_EVENT,
   LINGUIST_START_EVENT,
-} from "./socket_events.js";
-import { authorizationAllowed, serializeError, statusForError } from "./handler/response.js";
+} from "./events.js";
+import { authorizationAllowed, serializeError, statusForError } from "#4e7ff1c92ff1";
 
 function normalizeSocketPath(basePathInput: unknown, socketPathInput: unknown): string {
   const socketPath = text(socketPathInput).replace(/\/+$/g, "");

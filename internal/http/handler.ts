@@ -48,7 +48,11 @@ async function handleGitHttpRequest(req: IncomingMessage, res: ServerResponse, o
     else if (status >= 400 && status < 500 && outcome === "failed") outcome = "denied";
     else if (status < 400) outcome = "completed";
 
-    emitHttpAuditEvent(options.onAuditEvent, { ...audit, outcome, status });
+    const finalAudit = { ...audit, outcome, status };
+    emitHttpAuditEvent(options.onAuditEvent, finalAudit);
+    if (options.activity) {
+      void Promise.resolve(options.activity.recordHttpAuditEvent(finalAudit)).catch(() => {});
+    }
     const metadata = {
       message: audit.message,
       method,

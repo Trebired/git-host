@@ -1,5 +1,6 @@
 import {
   createElement,
+  useEffect,
   useDeferredValue,
   useState,
   type ReactNode,
@@ -14,8 +15,10 @@ import {
   GitBlobView,
   GitBranchList,
   GitBranchSelector,
+  useGitApiClient,
   GitCommitList,
   GitCopyCloneUrlButton,
+  useGitCancelWorkflowRun,
   GitDeleteReleaseButton,
   GitDiffView,
   GitDownloadArchiveButton,
@@ -38,21 +41,38 @@ import {
   useGitBranches,
   useGitCommit,
   useGitCommits,
+  useGitCreateWorkflow,
   useGitDiff,
   useGitForks,
   useGitCreateRelease,
   useGitOverview,
   useGitRelease,
   useGitReleases,
+  useGitRepositoryRouteAdapter,
+  useGitRunWorkflow,
   useGitSearch,
   useGitTags,
   useGitTree,
   useGitUpdateRelease,
+  useGitUpdateWorkflow,
+  useGitWorkflow,
+  useGitWorkflowRun,
+  useGitWorkflowRunEvents,
+  useGitWorkflowRuns,
+  useGitWorkflowRunSteps,
+  useGitWorkflows,
   type GitRepositoryUiProviderProps,
   type GitRepositoryUiTheme,
 } from "#qrrrat6gjo0q";
 import type { GitRepositoryFrontEndInitialData, GitRepositoryRouteAdapter } from "#jtzr4xu4q8bf";
-import type { GitForgeRelease, GitForgeRepositoryOverview } from "#1mbdfxwwqqpa";
+import type {
+  GitForgeRelease,
+  GitForgeRepositoryOverview,
+  GitForgeWorkflow,
+  GitForgeWorkflowRun,
+  GitForgeWorkflowRunEvent,
+  GitForgeWorkflowRunStep,
+} from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
 
 const h = createElement;
@@ -110,8 +130,93 @@ type GitRepositorySearchPageProps = GitBrowserPageProps & {
   refName?: string;
 };
 
+type GitRepositoryActionsPageProps = GitBrowserPageProps & {
+  branch?: string;
+  query?: string;
+  refName?: string;
+  status?: string;
+  triggerKind?: string;
+  workflowId?: string;
+};
+
+type GitRepositoryActionRunPageProps = GitBrowserPageProps & {
+  runId: string;
+};
+
 function joinClassNames(...values: Array<string | undefined | null | false>) {
   return values.filter(Boolean).join(" ");
+}
+
+function formatDateTime(value: string | null | undefined) {
+  const next = text(value);
+  if (!next) return "Unknown";
+  try {
+    return new Date(next).toLocaleString("en-US", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  } catch {
+    return next;
+  }
+}
+
+function formatDuration(startedAt: string | null | undefined, finishedAt: string | null | undefined) {
+  const started = startedAt ? Date.parse(startedAt) : NaN;
+  const finished = finishedAt ? Date.parse(finishedAt) : Date.now();
+  if (!Number.isFinite(started) || !Number.isFinite(finished) || finished < started) return "Unknown";
+  const totalSeconds = Math.floor((finished - started) / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes ? `${minutes}m ${seconds}s` : `${seconds}s`;
+}
+
+function parseCsvList(value: string): string[] | undefined {
+  const next = value
+    .split(",")
+    .map((entry) => text(entry).trim())
+    .filter(Boolean);
+  return next.length ? next : undefined;
+}
+
+function parseWorkflowStepsInput(value: string): GitForgeWorkflow["steps"] {
+  return value
+    .split("\n")
+    .map((entry) => text(entry).trim())
+    .filter(Boolean)
+    .map((run, index) => ({
+      kind: "shell" as const,
+      name: `Step ${index + 1}`,
+      run,
+    }));
+}
+
+function describeWorkflowScope(workflow: GitForgeWorkflow) {
+  const branches = workflow.source?.branches?.length ? `branches: ${workflow.source.branches.join(", ")}` : "";
+  const tags = workflow.source?.tags?.length ? `tags: ${workflow.source.tags.join(", ")}` : "";
+  return [branches, tags].filter(Boolean).join(" · ") || "All refs";
+}
+
+function appendWorkflowEvent(
+  current: GitForgeWorkflowRunEvent[],
+  nextEvent: GitForgeWorkflowRunEvent,
+): GitForgeWorkflowRunEvent[] {
+  if (current.some((entry) => entry.id === nextEvent.id || entry.sequence === nextEvent.sequence)) {
+    return current;
+  }
+  return [...current, nextEvent].sort((left, right) => left.sequence - right.sequence);
+}
+
+function renderWorkflowEventLine(event: GitForgeWorkflowRunEvent) {
+  if (event.type === "step.output") {
+    return `${formatDateTime(event.created_at)} ${event.stream === "stderr" ? "[stderr]" : "[stdout]"} ${text(event.chunk)}`;
+  }
+  if (event.type === "step.started") {
+    return `${formatDateTime(event.created_at)} > ${text(event.step_name)} :: ${text(event.command)}`;
+  }
+  if (event.type === "step.finished") {
+    return `${formatDateTime(event.created_at)} < ${text(event.step_name)} :: ${text(event.summary, text(event.status))}`;
+  }
+  return `${formatDateTime(event.created_at)} ${text(event.summary, event.type)}`;
 }
 
 function findReadme(entries: Array<{ name: string; path: string; type: string }>): string {
@@ -737,6 +842,509 @@ function GitRepositoryActivityPageInner(props: GitBrowserPageProps) {
   });
 }
 
+function GitRepositoryActionsPageInner(props: GitRepositoryActionsPageProps) {
+  const client = useGitApiClient();
+  const routes = useGitRepositoryRouteAdapter();
+  const overview = useGitOverview(props.repositoryKey, {
+    headers: props.headers,
+    initialData: props.initialData?.overview || null,
+  });
+  const [search, setSearch] = useState(text(props.query));
+  const [status, setStatus] = useState(text(props.status));
+  const [triggerKind, setTriggerKind] = useState(text(props.triggerKind));
+  const [workflowId, setWorkflowId] = useState(text(props.workflowId));
+  const [branch, setBranch] = useState(text(props.branch));
+  const [manualRef, setManualRef] = useState(text(props.refName, "HEAD"));
+  const [workflowName, setWorkflowName] = useState("");
+  const [workflowTrigger, setWorkflowTrigger] = useState<GitForgeWorkflow["trigger"]>("push");
+  const [workflowBranches, setWorkflowBranches] = useState("");
+  const [workflowSteps, setWorkflowSteps] = useState("bun install\nbun test");
+  const deferredSearch = useDeferredValue(search);
+  const workflows = useGitWorkflows(props.repositoryKey, {
+    headers: props.headers,
+    initialData: props.initialData?.workflows || null,
+    query: deferredSearch || undefined,
+  });
+  const runs = useGitWorkflowRuns(props.repositoryKey, {
+    branch: text(branch),
+    headers: props.headers,
+    initialData: props.initialData?.workflowRuns || null,
+    query: deferredSearch || undefined,
+    status: status ? [status as GitForgeWorkflowRun["status"]] : undefined,
+    triggerKind: triggerKind ? [triggerKind as GitForgeWorkflowRun["trigger_kind"]] : undefined,
+    workflowId: text(workflowId),
+  });
+  const createWorkflow = useGitCreateWorkflow(props.repositoryKey, { headers: props.headers });
+  const runWorkflow = useGitRunWorkflow(props.repositoryKey, { headers: props.headers });
+
+  async function handleCreateWorkflow(event: Event) {
+    event.preventDefault();
+    const steps = parseWorkflowStepsInput(workflowSteps);
+    if (!text(workflowName) || !steps.length) return;
+    await createWorkflow.mutate({
+      enabled: true,
+      name: workflowName,
+      source: {
+        branches: parseCsvList(workflowBranches),
+      },
+      steps,
+      trigger: workflowTrigger,
+    });
+    setWorkflowName("");
+    setWorkflowBranches("");
+    setWorkflowSteps("bun install\nbun test");
+    workflows.reload();
+  }
+
+  async function handleToggleWorkflow(nextWorkflow: GitForgeWorkflow) {
+    await client.updateWorkflow(props.repositoryKey, nextWorkflow.id, {
+      enabled: !nextWorkflow.enabled,
+      headers: props.headers,
+    });
+    workflows.reload();
+  }
+
+  async function handleRunWorkflow(workflow: GitForgeWorkflow) {
+    const createdRun = await runWorkflow.mutate({
+      ref: text(manualRef, "HEAD"),
+      workflowId: workflow.id,
+    });
+    runs.reload();
+    props.navigate?.(routes.actionRun(props.repositoryKey, createdRun.id));
+  }
+
+  const workflowEntries = workflows.data || [];
+  const runEntries = runs.data || [];
+
+  return h(GitRepositoryShell, {
+    actions: defaultActionBar(props.repositoryKey, props.headers),
+    className: props.className,
+    error: workflows.error || runs.error,
+    loading: overview.loading || workflows.loading || runs.loading,
+    page: "actions",
+    repositoryKey: props.repositoryKey,
+    social: overview.data?.social,
+    stats: overviewStats(overview.data),
+    subtitle: "Repository automation workflows, manual runs, and execution history.",
+    children: h("div", {
+      className: "git-browser-grid",
+      children: [
+        props.policy?.canConfigureActions === false
+          ? null
+          : h("section", {
+            className: "git-browser-card",
+            key: "workflow-create",
+            children: [
+              h("div", { className: "git-browser-card-header", key: "header", children: h("h2", { className: "git-browser-card-title", children: "Create Workflow" }) }),
+              h("form", {
+                className: "git-browser-form",
+                key: "form",
+                onSubmit: handleCreateWorkflow,
+                children: [
+                  h("input", {
+                    className: "git-browser-input",
+                    key: "name",
+                    onChange: (nextEvent: any) => setWorkflowName(text(nextEvent.target?.value)),
+                    placeholder: "Workflow name",
+                    value: workflowName,
+                  }),
+                  h("select", {
+                    className: "git-browser-input",
+                    key: "trigger",
+                    onChange: (nextEvent: any) => setWorkflowTrigger(text(nextEvent.target?.value, "push") as GitForgeWorkflow["trigger"]),
+                    value: workflowTrigger,
+                    children: [
+                      h("option", { key: "push", value: "push", children: "push" }),
+                      h("option", { key: "release-create", value: "release.create", children: "release.create" }),
+                      h("option", { key: "release-update", value: "release.update", children: "release.update" }),
+                      h("option", { key: "manual", value: "manual", children: "manual" }),
+                    ],
+                  }),
+                  h("input", {
+                    className: "git-browser-input",
+                    key: "branches",
+                    onChange: (nextEvent: any) => setWorkflowBranches(text(nextEvent.target?.value)),
+                    placeholder: "Branches, comma-separated (optional)",
+                    value: workflowBranches,
+                  }),
+                  h("textarea", {
+                    className: "git-browser-textarea",
+                    key: "steps",
+                    onChange: (nextEvent: any) => setWorkflowSteps(text(nextEvent.target?.value)),
+                    placeholder: "One shell command per line",
+                    rows: 6,
+                    value: workflowSteps,
+                  }),
+                  h("button", {
+                    className: "git-browser-action-button",
+                    disabled: createWorkflow.loading,
+                    key: "submit",
+                    type: "submit",
+                    children: createWorkflow.loading ? "Creating…" : "Create Workflow",
+                  }),
+                ],
+              }),
+            ],
+          }),
+        h("section", {
+          className: joinClassNames("git-browser-card", props.policy?.canConfigureActions === false ? "git-browser-span-2" : "git-browser-span-2"),
+          key: "workflows",
+          children: [
+            h("div", {
+              className: "git-browser-card-header",
+              key: "header",
+              children: [
+                h("h2", { className: "git-browser-card-title", key: "title", children: "Workflows" }),
+                h("input", {
+                  className: "git-browser-input",
+                  key: "search",
+                  onChange: (nextEvent: any) => setSearch(text(nextEvent.target?.value)),
+                  placeholder: "Search workflows and runs",
+                  value: search,
+                }),
+              ],
+            }),
+            h("p", { className: "git-browser-note", key: "manual-ref", children: "Manual run ref" }),
+            h("input", {
+              className: "git-browser-input",
+              key: "ref",
+              onChange: (nextEvent: any) => setManualRef(text(nextEvent.target?.value, "HEAD")),
+              placeholder: "HEAD",
+              value: manualRef,
+            }),
+            workflowEntries.length
+              ? h("ul", {
+                className: "git-browser-list",
+                key: "list",
+                children: workflowEntries.map((workflow) => h("li", {
+                  className: "git-browser-list-item",
+                  key: workflow.id,
+                  children: [
+                    h("div", { className: "git-browser-card-header", key: `${workflow.id}:header`, children: h("h3", { className: "git-browser-card-title", children: workflow.name }) }),
+                    h("p", { className: "git-browser-note", key: `${workflow.id}:meta`, children: `${workflow.trigger} · ${workflow.enabled ? "enabled" : "disabled"} · ${describeWorkflowScope(workflow)}` }),
+                    h("pre", { className: "git-browser-code-block", key: `${workflow.id}:steps`, children: workflow.steps.map((step) => step.run).join("\n") }),
+                    h(GitRepositoryActionBar, {
+                      key: `${workflow.id}:actions`,
+                      children: [
+                        props.policy?.canRunActions === false
+                          ? null
+                          : h("button", {
+                            className: "git-browser-action-button",
+                            key: "run",
+                            onClick: () => {
+                              void handleRunWorkflow(workflow);
+                            },
+                            type: "button",
+                            children: "Run Now",
+                          }),
+                        props.policy?.canConfigureActions === false
+                          ? null
+                          : h("button", {
+                            className: "git-browser-action-button",
+                            key: "toggle",
+                            onClick: () => {
+                              void handleToggleWorkflow(workflow);
+                            },
+                            type: "button",
+                            children: workflow.enabled ? "Disable" : "Enable",
+                          }),
+                      ],
+                    }),
+                  ],
+                })),
+              })
+              : h("p", { className: "git-browser-note", key: "empty", children: "No workflows configured yet." }),
+          ],
+        }),
+        h("section", {
+          className: "git-browser-card git-browser-span-3",
+          key: "runs",
+          children: [
+            h("div", { className: "git-browser-card-header", key: "header", children: h("h2", { className: "git-browser-card-title", children: "Workflow Runs" }) }),
+            h("div", {
+              className: "git-browser-grid",
+              key: "filters",
+              children: [
+                h("select", {
+                  className: "git-browser-input",
+                  key: "status",
+                  onChange: (nextEvent: any) => setStatus(text(nextEvent.target?.value)),
+                  value: status,
+                  children: [
+                    h("option", { key: "all", value: "", children: "All statuses" }),
+                    ...["queued", "starting", "running", "success", "failed", "cancelled", "skipped"].map((entry) => h("option", {
+                      key: entry,
+                      value: entry,
+                      children: entry,
+                    })),
+                  ],
+                }),
+                h("select", {
+                  className: "git-browser-input",
+                  key: "trigger",
+                  onChange: (nextEvent: any) => setTriggerKind(text(nextEvent.target?.value)),
+                  value: triggerKind,
+                  children: [
+                    h("option", { key: "all", value: "", children: "All triggers" }),
+                    ...["manual", "push", "release.create", "release.update"].map((entry) => h("option", {
+                      key: entry,
+                      value: entry,
+                      children: entry,
+                    })),
+                  ],
+                }),
+                h("select", {
+                  className: "git-browser-input",
+                  key: "workflow",
+                  onChange: (nextEvent: any) => setWorkflowId(text(nextEvent.target?.value)),
+                  value: workflowId,
+                  children: [
+                    h("option", { key: "all", value: "", children: "All workflows" }),
+                    ...workflowEntries.map((workflow) => h("option", {
+                      key: workflow.id,
+                      value: workflow.id,
+                      children: workflow.name,
+                    })),
+                  ],
+                }),
+                h("input", {
+                  className: "git-browser-input",
+                  key: "branch",
+                  onChange: (nextEvent: any) => setBranch(text(nextEvent.target?.value)),
+                  placeholder: "Filter by branch",
+                  value: branch,
+                }),
+              ],
+            }),
+            runEntries.length
+              ? h("ul", {
+                className: "git-browser-list",
+                key: "list",
+                children: runEntries.map((run) => h("li", {
+                  className: "git-browser-list-item",
+                  key: run.id,
+                  children: h("button", {
+                    className: "git-browser-list-link",
+                    onClick: () => props.navigate?.(routes.actionRun(props.repositoryKey, run.id)),
+                    type: "button",
+                    children: `${run.status} · ${run.trigger_kind} · ${text(run.branch, run.ref)} · ${run.summary}`,
+                  }),
+                })),
+              })
+              : h("p", { className: "git-browser-note", key: "empty", children: "No workflow runs match these filters." }),
+          ],
+        }),
+      ],
+    }),
+  });
+}
+
+function GitRepositoryActionRunPageInner(props: GitRepositoryActionRunPageProps) {
+  const client = useGitApiClient();
+  const routes = useGitRepositoryRouteAdapter();
+  const overview = useGitOverview(props.repositoryKey, {
+    headers: props.headers,
+    initialData: props.initialData?.overview || null,
+  });
+  const run = useGitWorkflowRun(props.repositoryKey, props.runId, {
+    headers: props.headers,
+    initialData: props.initialData?.workflowRun || null,
+  });
+  const workflow = useGitWorkflow(props.repositoryKey, run.data?.workflow_id || "", {
+    enabled: Boolean(run.data?.workflow_id),
+    headers: props.headers,
+    initialData: props.initialData?.workflow || null,
+  });
+  const steps = useGitWorkflowRunSteps(props.repositoryKey, props.runId, {
+    headers: props.headers,
+    initialData: props.initialData?.workflowRunSteps || null,
+  });
+  const persistedEvents = useGitWorkflowRunEvents(props.repositoryKey, props.runId, {
+    headers: props.headers,
+    initialData: props.initialData?.workflowRunEvents || null,
+  });
+  const cancelRun = useGitCancelWorkflowRun(props.repositoryKey, props.runId, { headers: props.headers });
+  const [events, setEvents] = useState<GitForgeWorkflowRunEvent[]>(props.initialData?.workflowRunEvents || []);
+  const [socketState, setSocketState] = useState<"completed" | "connected" | "connecting" | "disconnected">("disconnected");
+  const [reconnectNonce, setReconnectNonce] = useState(0);
+
+  useEffect(() => {
+    if (!(persistedEvents.data || []).length) return;
+    setEvents((current) => (persistedEvents.data || []).reduce(appendWorkflowEvent, current));
+  }, [persistedEvents.data]);
+
+  useEffect(() => {
+    const currentRun = run.data;
+    if (!currentRun) return;
+    if (["cancelled", "failed", "skipped", "success"].includes(currentRun.status)) {
+      setSocketState("completed");
+      return;
+    }
+
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let disposed = false;
+    setSocketState("connecting");
+    const stream = client.openWorkflowRunSocket(props.repositoryKey, props.runId, {
+      afterSequence: events[events.length - 1]?.sequence,
+      headers: props.headers,
+      onDone() {
+        if (disposed) return;
+        setSocketState("completed");
+        run.reload();
+        steps.reload();
+      },
+      onError() {
+        if (disposed) return;
+        setSocketState("disconnected");
+        reconnectTimer = setTimeout(() => {
+          setReconnectNonce((value) => value + 1);
+        }, 500);
+      },
+      onEvent(nextEvent) {
+        if ("sequence" in nextEvent) {
+          setSocketState("connected");
+          setEvents((current) => appendWorkflowEvent(current, nextEvent));
+          if (nextEvent.type === "run.cancelled" || nextEvent.type === "run.failed" || nextEvent.type === "run.finished") {
+            run.reload();
+            steps.reload();
+          }
+        }
+      },
+    });
+
+    void stream.completed.catch(() => {});
+
+    return () => {
+      disposed = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      stream.close();
+    };
+  }, [client, props.headers, props.repositoryKey, props.runId, reconnectNonce, run.data?.status]);
+
+  const runData = run.data;
+  const terminal = ["cancelled", "failed", "skipped", "success"].includes(text(runData?.status));
+
+  return h(GitRepositoryShell, {
+    actions: h(GitRepositoryActionBar, {
+      children: [
+        h("button", {
+          className: "git-browser-action-button",
+          key: "back",
+          onClick: () => props.navigate?.(routes.actions(props.repositoryKey)),
+          type: "button",
+          children: "Back to Actions",
+        }),
+        props.policy?.canCancelActions === false || !runData || terminal
+          ? null
+          : h("button", {
+            className: "git-browser-action-button",
+            disabled: cancelRun.loading,
+            key: "cancel",
+            onClick: async () => {
+              await cancelRun.mutate();
+              run.reload();
+              steps.reload();
+            },
+            type: "button",
+            children: cancelRun.loading ? "Cancelling…" : "Cancel Run",
+          }),
+      ],
+    }),
+    className: props.className,
+    error: run.error || workflow.error || steps.error || persistedEvents.error,
+    loading: overview.loading || run.loading || workflow.loading || steps.loading || persistedEvents.loading,
+    page: "actions",
+    repositoryKey: props.repositoryKey,
+    social: overview.data?.social,
+    stats: overviewStats(overview.data),
+    subtitle: runData ? `${runData.status} · ${runData.trigger_kind} · ${text(runData.branch, runData.ref)}` : "Workflow run details",
+    title: workflow.data?.name || "Workflow Run",
+    children: runData ? h("div", {
+      className: "git-browser-grid",
+      children: [
+        h("section", {
+          className: "git-browser-card",
+          key: "summary",
+          children: [
+            h("div", { className: "git-browser-card-header", key: "header", children: h("h2", { className: "git-browser-card-title", children: "Run Summary" }) }),
+            h("dl", {
+              className: "git-browser-definition-grid",
+              key: "meta",
+              children: [
+                h("dt", { key: "status:label", children: "Status" }),
+                h("dd", { key: "status:value", children: runData.status }),
+                h("dt", { key: "workflow:label", children: "Workflow" }),
+                h("dd", { key: "workflow:value", children: workflow.data?.name || runData.workflow_id }),
+                h("dt", { key: "trigger:label", children: "Trigger" }),
+                h("dd", { key: "trigger:value", children: runData.trigger_kind }),
+                h("dt", { key: "ref:label", children: "Ref" }),
+                h("dd", { key: "ref:value", children: runData.ref }),
+                h("dt", { key: "branch:label", children: "Branch" }),
+                h("dd", { key: "branch:value", children: text(runData.branch, "n/a") }),
+                h("dt", { key: "commit:label", children: "Commit" }),
+                h("dd", { key: "commit:value", children: runData.commit_hash }),
+                h("dt", { key: "actor:label", children: "Actor" }),
+                h("dd", { key: "actor:value", children: runData.created_by }),
+                h("dt", { key: "runner:label", children: "Runner" }),
+                h("dd", { key: "runner:value", children: runData.runner ? `${runData.runner.kind} @ ${runData.runner.host}` : "Pending assignment" }),
+                h("dt", { key: "started:label", children: "Started" }),
+                h("dd", { key: "started:value", children: formatDateTime(runData.started_at || runData.created_at) }),
+                h("dt", { key: "finished:label", children: "Finished" }),
+                h("dd", { key: "finished:value", children: formatDateTime(runData.finished_at) }),
+                h("dt", { key: "duration:label", children: "Duration" }),
+                h("dd", { key: "duration:value", children: formatDuration(runData.started_at || runData.created_at, runData.finished_at) }),
+                h("dt", { key: "live:label", children: "Live stream" }),
+                h("dd", { key: "live:value", children: terminal ? "completed" : socketState }),
+              ],
+            }),
+            h("p", { className: "git-browser-note", key: "current-step", children: `Current step: ${text(runData.current_step, "Waiting")}` }),
+          ],
+        }),
+        h("section", {
+          className: "git-browser-card git-browser-span-2",
+          key: "steps",
+          children: [
+            h("div", { className: "git-browser-card-header", key: "header", children: h("h2", { className: "git-browser-card-title", children: "Steps" }) }),
+            (steps.data || []).length
+              ? h("ul", {
+                className: "git-browser-list",
+                key: "list",
+                children: (steps.data || []).map((step: GitForgeWorkflowRunStep) => h("li", {
+                  className: "git-browser-list-item",
+                  key: step.id,
+                  children: [
+                    h("div", { className: "git-browser-card-header", key: `${step.id}:header`, children: h("h3", { className: "git-browser-card-title", children: `${step.index + 1}. ${step.name}` }) }),
+                    h("p", { className: "git-browser-note", key: `${step.id}:meta`, children: `${step.status} · exit ${step.exit_code == null ? "n/a" : step.exit_code} · ${formatDuration(step.started_at, step.finished_at)}` }),
+                    h("pre", { className: "git-browser-code-block", key: `${step.id}:command`, children: step.command }),
+                    step.output_preview
+                      ? h("pre", { className: "git-browser-code-block", key: `${step.id}:preview`, children: step.output_preview })
+                      : null,
+                  ],
+                })),
+              })
+              : h("p", { className: "git-browser-note", key: "empty", children: "Step records will appear when the run is expanded." }),
+          ],
+        }),
+        h("section", {
+          className: "git-browser-card git-browser-span-3",
+          key: "logs",
+          children: [
+            h("div", { className: "git-browser-card-header", key: "header", children: h("h2", { className: "git-browser-card-title", children: "Live Logs" }) }),
+            h("p", { className: "git-browser-note", key: "socket", children: `Socket ${socketState}${terminal ? " · run completed" : ""}` }),
+            h("pre", {
+              className: "git-browser-code-block",
+              key: "stream",
+              children: events.length
+                ? events.map((event) => renderWorkflowEventLine(event)).join("\n")
+                : "No persisted output yet.",
+            }),
+          ],
+        }),
+      ],
+    }) : null,
+  });
+}
+
 function GitRepositoryBranchesPageInner(props: GitBrowserPageProps) {
   const overview = useGitOverview(props.repositoryKey, {
     headers: props.headers,
@@ -936,6 +1544,14 @@ function GitRepositoryActivityPage(props: GitBrowserPageProps) {
   return withBrowserProvider(props, () => h(GitRepositoryActivityPageInner, props));
 }
 
+function GitRepositoryActionsPage(props: GitRepositoryActionsPageProps) {
+  return withBrowserProvider(props, () => h(GitRepositoryActionsPageInner, props));
+}
+
+function GitRepositoryActionRunPage(props: GitRepositoryActionRunPageProps) {
+  return withBrowserProvider(props, () => h(GitRepositoryActionRunPageInner, props));
+}
+
 function GitRepositoryBranchesPage(props: GitBrowserPageProps) {
   return withBrowserProvider(props, () => h(GitRepositoryBranchesPageInner, props));
 }
@@ -959,6 +1575,8 @@ function GitRepositoryComparePage(props: GitRepositoryComparePageProps) {
 export {
   GitBrowserProvider,
   GitRepositoryActivityPage,
+  GitRepositoryActionsPage,
+  GitRepositoryActionRunPage,
   GitRepositoryBlamePage,
   GitRepositoryBranchesPage,
   GitRepositoryCodePage,
@@ -976,6 +1594,8 @@ export {
 export type {
   GitBrowserPageProps,
   GitBrowserProviderProps,
+  GitRepositoryActionRunPageProps,
+  GitRepositoryActionsPageProps,
   GitRepositoryBlamePageProps,
   GitRepositoryCodePageProps,
   GitRepositoryCommitPageProps,
