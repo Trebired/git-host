@@ -8,7 +8,7 @@ on:
         required: false
         default: main
       publish_to_npm:
-        description: Publish to npm after testing and building
+        description: Publish to npm after building and verifying the runner matrix
         required: false
         default: false
         type: boolean
@@ -25,8 +25,56 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  build-runner:
+    name: Build runner ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64-gnu
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary: git-host-actions-runner-linux-x64-gnu
+          - name: linux-arm64-gnu
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            binary: git-host-actions-runner-linux-arm64-gnu
+          - name: darwin-arm64
+            os: macos-14
+            target: aarch64-apple-darwin
+            binary: git-host-actions-runner-darwin-arm64
+          - name: darwin-x64
+            os: macos-15-intel
+            target: x86_64-apple-darwin
+            binary: git-host-actions-runner-darwin-x64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build Actions runner
+        run: node ./scripts/build-runner.mjs --target ${{ matrix.target }}
+
+      - name: Upload Actions runner
+        uses: actions/upload-artifact@v4
+        with:
+          name: runner-${{ matrix.name }}
+          path: bin/${{ matrix.binary }}
+          if-no-files-found: error
+
   publish:
     if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_npm == 'true')
+    needs: build-runner
     runs-on: ubuntu-latest
 
     steps:
@@ -63,11 +111,30 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Download Actions runner binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: runner-artifacts
+
+      - name: Collect runner binaries
+        run: |
+          mkdir -p bin
+          find runner-artifacts -type f -exec cp {} bin/ \;
+          chmod +x bin/*
+
+      - name: Verify collected runners
+        run: ls -la bin
+
       - name: Test and build package
         run: |
           bun run typecheck
           bun test
           bun run build
+
+      - name: Verify packed release contents
+        env:
+          GIT_HOST_VERIFY_RUNNER_SCOPE: matrix
+        run: bun run verify:pack
 
       - name: Publish to npm
         env:

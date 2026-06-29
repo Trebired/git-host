@@ -1,60 +1,43 @@
 # @trebired/git-host
 
-Embeddable Git forge for Node.js and Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository inspection APIs, forge features such as releases and forks, and optional React/browser companions.
+Embeddable Git host and forge for Node.js and Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository APIs, normalized repository activity, and repository-owned Actions workflows.
 
-`@trebired/git-host` gives your app real Git repository operations, forge-style repository metadata, and real Git transports without forcing you into a monolithic hosted product. It runs the real Git CLI, helps you resolve repository paths safely, serializes mutations per repository, and exposes reusable APIs for repository initialization, summary reads, content inspection, branch operations, working-tree changes, releases, forks, stars, watching, activity feeds, JSON API handlers, browser-ready pages, and smart HTTP and SSH hosting.
+`@trebired/git-host` is meant for larger self-hosted products that already own users, permissions, storage, and UI, but do not want to keep rebuilding the Git and forge layer underneath them.
 
-It is aimed at platforms and products that already own users, permissions, tokens, repository records, and UI, but want to stop hand-rolling the Git layer underneath all of that.
+It is:
 
-The package keeps auth, permission, and persistence decisions host-owned while giving you reusable Git behavior, forge adapters, and browser integration.
+- a reusable Git host/runtime layer for your app
+- a forge layer with releases, forks, social state, activity, and Actions
+- built on the real `git` binary
 
-It also exposes an optional React companion at `@trebired/git-host/react` for typed API clients, providers, and headless data hooks, plus an optional browser UI entry at `@trebired/git-host/browser` for full repository pages.
+It is not:
 
-In plain terms:
-
-- it is a Git hosting and lightweight forge layer you embed into your app
-- it is not a full hosted SaaS product with built-in accounts, billing, or platform ownership
-- it is not a reimplementation of Git
-- it uses the real `git` binary for the hard parts
+- a hosted SaaS
+- a fake in-memory Git implementation
+- a frontend/UI package
 
 ## Install
 
-Runtime support: Bun 1+ and Node.js 18+.
+Runtime support:
+
+- Node.js 18+
+- Bun 1+
+- `git` available on the host
 
 ```sh
 npm install @trebired/git-host
 ```
 
-```sh
-npm install @trebired/logger
-```
+For the packaged Actions runner binaries, the npm package ships Linux GNU and macOS builds. If you are working locally from source, the runtime can also fall back to the TypeScript runner path when a packaged binary is not present.
 
-Optional React companion:
-
-```sh
-npm install react
-```
-
-Optional browser pages:
-
-```sh
-npm install react
-```
+## Quick Start
 
 ```ts
 import { createGitHost, resolveRepositoryPath } from "@trebired/git-host";
-import { createLog } from "@trebired/logger";
-
-const log = createLog({
-  console: true,
-  quiet: true,
-  save: false,
-});
 
 const repositoriesRoot = "/srv/git-workspaces";
 
 const gitHost = createGitHost({
-  logger: log,
   resolveRepository(repositoryId) {
     return {
       id: repositoryId,
@@ -68,129 +51,165 @@ const gitHost = createGitHost({
 
 await gitHost.ensureRepository("demo", {
   actor: {
-    name: "Alice",
     email: "alice@example.com",
+    name: "Alice",
   },
 });
 
 const summary = await gitHost.readSummary("demo");
 console.log(summary.repository.current_branch);
+```
 
-const linguist = await gitHost.readLinguist("demo", {
-  ref: "main",
-  onProgress(event) {
-    console.log(event.stage, event.percent);
+## Actions Model
+
+Repository Actions are repository-owned. Workflows are discovered from files committed inside the repository itself, not from top-level global records.
+
+Default layout:
+
+```text
+<repository-worktree>/
+  .git-host/
+    workflows/
+      build.yml
+      release.yml
+```
+
+The `workflows/` directory is intentional. It keeps the model familiar and gives you room to add more package-owned repository metadata under the configurable root later.
+
+### Workflow File
+
+Example workflow file:
+
+```yaml
+name: Build and test
+trigger: push
+source:
+  branches:
+    - main
+steps:
+  - name: Install
+    run: bun install
+  - name: Test
+    run: bun test
+  - name: Build
+    run: bun run build
+```
+
+Supported trigger values in v1:
+
+- `push`
+- `release.create`
+- `release.update`
+- `manual`
+
+Each workflow file is exposed through the forge API as a repository-owned workflow record. The stable workflow id is the repository-relative definition path, for example:
+
+```text
+.git-host/workflows/build.yml
+```
+
+### Custom Workflow Root
+
+The root folder is configurable. The folder name does not have to stay `.git-host`.
+
+```ts
+import { createGitForge } from "@trebired/git-host";
+
+const forge = createGitForge({
+  actions: {
+    workflowRoot: ".ci",
   },
-});
-console.log(linguist.languages.results);
-
-const tree = await gitHost.listTree("demo", {
-  ref: "main",
-  recursive: true,
-  linguist: true,
-  icons: true,
-});
-console.log(tree[0]?.language, Boolean(tree[0]?.icon));
-
-const tags = await gitHost.listTags("demo");
-const blame = await gitHost.readBlame("demo", {
-  ref: "main",
-  path: "src/app.ts",
-});
-const search = await gitHost.search("demo", {
-  ref: "main",
-  path: "src",
-  query: "value",
-});
-const archive = await gitHost.readArchive("demo", {
-  ref: "main",
-  format: "tar.gz",
-});
-const archiveLinks = gitHost.resolveArchiveLinks("demo", {
-  basePath: "/api/git",
-  ref: "main",
-});
-console.log(tags.length, blame.lines[0]?.author_name, search.match_count, archive.file_name, archiveLinks.zip.href);
-
-const inspectionTarget = await gitHost.resolveInspectionTarget("demo", {
-  ref: "auto",
-});
-console.log(inspectionTarget.state, inspectionTarget.resolved_ref);
-
-const treeSnapshot = await gitHost.readTree("demo", {
-  ref: "auto",
-  recursive: true,
-  nested: true,
-  ascii: true,
-  icons: true,
-  linguist: true,
-});
-console.log(treeSnapshot.ascii);
-
-const directorySnapshot = await gitHost.readDirectory("demo", {
-  path: "src",
-  ref: "auto",
-  icons: true,
-  linguist: true,
-  includeLineCounts: true,
-});
-console.log(directorySnapshot.kind);
-
-const fileSnapshot = await gitHost.readFile("demo", {
-  path: "src/app.ts",
-  ref: "auto",
-  includeLanguage: true,
-  includeIcon: true,
-});
-console.log(fileSnapshot.language, fileSnapshot.icon?.name);
-
-const repositoryAnalysis = await gitHost.readRepositoryAnalysis("demo", {
-  ref: "auto",
-  icons: true,
-  nested: true,
-  ascii: true,
-  onProgress(event) {
-    console.log(event.phase, event.percent);
+  createForkRepository({ upstreamRepositoryId }) {
+    return {
+      id: `${upstreamRepositoryId}-fork`,
+      path: resolveRepositoryPath({
+        rootDir: repositoriesRoot,
+        repositoryPath: `${upstreamRepositoryId}-fork/workspace`,
+      }),
+    };
   },
-});
-console.log(repositoryAnalysis.linguist.languages.results);
-
-const workingTree = await gitHost.readWorkingTree("demo");
-console.log(workingTree.unstaged_entries);
-
-await gitHost.fetch("demo", {
-  remoteCredentials: {
-    username: "git-user",
-    password: process.env.GIT_TOKEN || "",
-  },
+  gitHost,
+  storage,
 });
 ```
 
-Smart HTTP hosting:
+That makes the workflow layout:
+
+```text
+<repository-worktree>/
+  .ci/
+    workflows/
+      build.yml
+```
+
+You can also resolve the workflow root per repository:
+
+```ts
+actions: {
+  async resolveWorkflowRoot(repositoryId) {
+    return repositoryId.startsWith("legacy-") ? ".ci" : ".git-host";
+  },
+}
+```
+
+## Actions Execution
+
+Workflow runs are persistent and repository-owned:
+
+- workflows are loaded from the triggering ref/commit
+- each run materializes an exact snapshot for that ref/commit
+- steps run sequentially
+- stdout and stderr are captured and persisted
+- live run events are streamed over Socket.IO
+- queued/running runs can be cancelled
+
+The runtime emits persisted run events such as:
+
+- `run.accepted`
+- `run.status`
+- `step.started`
+- `step.output`
+- `step.heartbeat`
+- `step.finished`
+- `run.finished`
+- `run.failed`
+- `run.cancelled`
+
+## Activity Integration
+
+Repository activity is normalized and repository-owned. Activity entries are returned through the repository activity API and can be used to trigger workflows.
+
+Examples of normalized kinds:
+
+- `repository.push`
+- `repository.pull`
+- `repository.fetch`
+- `release.create`
+- `release.update`
+- `release.delete`
+- `repository.fork.create`
+- `repository.fork.sync`
+- `repository.star`
+- `repository.unstar`
+- `repository.watch`
+- `repository.unwatch`
+
+Push-triggered Actions can be created from:
+
+- smart HTTP pushes
+- SSH pushes
+- programmatic host/forge push operations
+
+## Smart HTTP And SSH
+
+### HTTP
 
 ```ts
 import { createServer } from "node:http";
-import { createGitHost, createGitHttpHandler } from "@trebired/git-host";
-import { createLog } from "@trebired/logger";
-
-const log = createLog({
-  console: true,
-  quiet: true,
-  save: false,
-});
-
-const gitHost = createGitHost({
-  resolveRepository(repositoryId) {
-    return {
-      id: repositoryId,
-      path: `/srv/git-workspaces/${repositoryId}/workspace`,
-    };
-  },
-});
+import { createGitHttpHandler } from "@trebired/git-host";
 
 const server = createServer(createGitHttpHandler({
   basePath: "/git",
-  logger: log,
   resolveRepository(repositoryKey) {
     return {
       id: repositoryKey,
@@ -202,38 +221,13 @@ const server = createServer(createGitHttpHandler({
 server.listen(3000);
 ```
 
-Then clients can use:
-
-```sh
-git clone http://127.0.0.1:3000/git/demo.git
-git push
-```
-
-SSH hosting:
+### SSH
 
 ```ts
 import { createGitSshServer } from "@trebired/git-host";
-import { createLog } from "@trebired/logger";
 
-const log = createLog({
-  console: true,
-  quiet: true,
-  save: false,
-});
-
-const sshServer = createGitSshServer({
-  hostKeys: [hostPrivateKeyPem],
-  logger: log,
-  authenticate({ publicKey, username }) {
-    if (username !== "git") return null;
-    const account = findAccountBySshPublicKey(publicKey);
-    if (!account) return null;
-    return {
-      publicKey: account.publicKey,
-      remoteUser: account.username,
-      identity: account,
-    };
-  },
+const server = createGitSshServer({
+  hostKeys: [process.env.GIT_HOST_SSH_KEY || ""],
   resolveRepository(repositoryKey) {
     return {
       id: repositoryKey,
@@ -242,30 +236,28 @@ const sshServer = createGitSshServer({
   },
 });
 
-sshServer.listen(2222, "0.0.0.0");
+server.listen(2222);
 ```
 
-Then clients can use:
+## Forge Layer
 
-```sh
-git clone ssh://git@127.0.0.1:2222/demo.git
-git push
-```
-
-JSON API hosting:
+Use `createGitForge()` when you want repository releases, forks, activity, social state, and Actions on top of the Git host:
 
 ```ts
-import { createServer } from "node:http";
-import { createGitApiHandler, createGitApiSocketServer, createGitHost } from "@trebired/git-host";
-import { createLog } from "@trebired/logger";
+import {
+  createGitForge,
+  createGitForgeActivityRecorder,
+  createInMemoryGitForgeStorageAdapter,
+  createGitHost,
+} from "@trebired/git-host";
 
-const log = createLog({
-  console: true,
-  quiet: true,
-  save: false,
+const storage = createInMemoryGitForgeStorageAdapter();
+const activity = createGitForgeActivityRecorder({
+  storage: storage.activity,
 });
 
 const gitHost = createGitHost({
+  activity,
   resolveRepository(repositoryId) {
     return {
       id: repositoryId,
@@ -274,863 +266,48 @@ const gitHost = createGitHost({
   },
 });
 
-const apiServer = createServer(createGitApiHandler({
-  basePath: "/api/git",
+const forge = createGitForge({
+  actions: {
+    workflowRoot: ".git-host",
+    workspaceRoot: "/srv/git-actions-workspaces",
+  },
+  createForkRepository({ upstreamRepositoryId }) {
+    return {
+      id: `${upstreamRepositoryId}-fork`,
+      path: `/srv/git-workspaces/${upstreamRepositoryId}-fork/workspace`,
+    };
+  },
   gitHost,
-  logger: log,
-  authorize({ action, repositoryId }) {
-    return canReadRepository(repositoryId, action);
-  },
-}));
-
-createGitApiSocketServer({
-  basePath: "/api/git",
-  gitHost,
-  httpServer: apiServer,
-  logger: log,
-  authorize({ action, repositoryId }) {
-    return canReadRepository(repositoryId, action);
-  },
-});
-
-apiServer.listen(3100);
-```
-
-Then apps can use routes like:
-
-```txt
-GET /api/git/repositories/demo/summary
-GET /api/git/repositories/demo/branches
-GET /api/git/repositories/demo/commits?limit=20&ref=main&path=src/app.ts
-GET /api/git/repositories/demo/commits/<commit-ref>
-GET /api/git/repositories/demo/tags
-GET /api/git/repositories/demo/tags/v1
-GET /api/git/repositories/demo/tree?ref=HEAD&path=src&linguist=true&icons=true
-GET /api/git/repositories/demo/linguist?ref=HEAD
-GET /api/git/repositories/demo/blame?ref=HEAD&path=src/app.ts
-GET /api/git/repositories/demo/search?ref=HEAD&path=src&query=value
-GET /api/git/repositories/demo/archive?ref=HEAD&format=zip
-GET /api/git/repositories/demo/archive?ref=HEAD&format=tar.gz
-GET /api/git/repositories/demo/zipball/main
-GET /api/git/repositories/demo/tarball/v1
-GET /api/git/repositories/demo/blob?ref=HEAD&path=README.md
-GET /api/git/repositories/demo/diff?baseRef=main&headRef=feature%2Fx&path=src
-```
-
-## Source Archives
-
-git-host now exposes GitHub-style source archive downloads for branches, tags, commit SHAs, and forge releases.
-
-- `zipball/:ref` streams a `zip` archive.
-- `tarball/:ref` streams a `tar.gz` archive.
-- `readArchive()` still returns a base64 payload for JSON-first consumers.
-- `resolveArchiveLinks()` builds typed download URLs for branches, tags, releases, and commit SHAs.
-
-Archives are always generated from Git objects with `git archive`, never from the checked-out working tree.
-
-- Branch and tag downloads resolve to the current target commit first, then use a SHA-based cache key.
-- Commit SHA downloads are the stable choice when you need predictable contents.
-- The extracted root directory is commit-based, so the inner folder stays stable for a fixed commit even if the request came from a branch or tag name.
-- The outer archive bytes are streamed and cached, but git-host does not promise byte-for-byte identical compression output forever unless you choose to enforce that at the cache/backend layer.
-
-Default behavior:
-
-```ts
-const archive = await gitHost.readArchive("demo", {
-  format: "zip",
-  ref: "main",
-});
-
-console.log(archive.file_name);
-// demo-main.zip
-
-const links = gitHost.resolveArchiveLinks("demo", {
-  basePath: "/api/git",
-  ref: "main",
-});
-
-console.log(links.zip.href);
-// /api/git/repositories/demo/zipball/main
-```
-
-Custom archive filename and root directory behavior:
-
-```ts
-const gitHost = createGitHost({
-  archive: {
-    resolveFileName({ format, ref, repository, resolvedCommit }) {
-      const label = repository.id === "demo" ? "customer-demo" : repository.id;
-      const shortSha = resolvedCommit.slice(0, 8);
-      return format === "zip"
-        ? `${label}-${ref}-${shortSha}.zip`
-        : `${label}-${ref}-${shortSha}.tar.gz`;
-    },
-    resolveRootDirectory({ repository, resolvedCommit }) {
-      return `${repository.id}-src-${resolvedCommit.slice(0, 12)}/`;
-    },
-  },
-  resolveRepository(repositoryId) {
-    return {
-      id: repositoryId,
-      path: `/srv/git-workspaces/${repositoryId}/workspace`,
-    };
-  },
-});
-
-const preview = await gitHost.resolveArchive("demo", {
-  format: "tar.gz",
-  ref: "v1",
-});
-
-console.log(preview.file_name);
-console.log(preview.root_directory);
-```
-
-You can also override the outer filename or root directory per call without changing host defaults:
-
-```ts
-const releaseZip = await gitHost.openArchive("demo", {
-  fileName: "demo-release.zip",
-  format: "zip",
-  ref: "v1",
-  rootDirectory: "demo-release/",
+  storage,
 });
 ```
 
-Custom archive URL generation for host-owned routes:
+## JSON API And Live Sockets
 
-```ts
-const gitHost = createGitHost({
-  archive: {
-    buildUrl({ format, ref, repositoryKey }) {
-      const route = format === "zip" ? "source.zip" : "source.tar.gz";
-      return `/projects/${encodeURIComponent(repositoryKey)}/refs/${encodeURIComponent(ref)}/${route}`;
-    },
-  },
-  resolveRepository(repositoryId) {
-    return {
-      id: repositoryId,
-      path: `/srv/git-workspaces/${repositoryId}/workspace`,
-    };
-  },
-});
+The package exposes backend API helpers:
 
-const links = gitHost.resolveArchiveLinks("acme/demo", {
-  ref: "release/v1",
-});
-
-console.log(links.tar_gz.href);
-// /projects/acme%2Fdemo/refs/release%2Fv1/source.tar.gz
-```
-
-Host-owned download route with the exported response helper:
-
-```ts
-import express from "express";
-import { writeGitArchiveResponse } from "@trebired/git-host";
-
-const app = express();
-
-app.get("/projects/:owner/:repo/archive/:ref.zip", async (req, res, next) => {
-  try {
-    const repositoryId = `${req.params.owner}/${req.params.repo}`;
-    const archive = await gitHost.openArchive(repositoryId, {
-      fileName: `${req.params.repo}-${req.params.ref}.zip`,
-      format: "zip",
-      ref: req.params.ref,
-      repositoryKey: repositoryId,
-    });
-    await writeGitArchiveResponse(req, res, { archive });
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.head("/projects/:owner/:repo/archive/:ref.zip", async (req, res, next) => {
-  try {
-    const repositoryId = `${req.params.owner}/${req.params.repo}`;
-    const archive = await gitHost.openArchive(repositoryId, {
-      fileName: `${req.params.repo}-${req.params.ref}.zip`,
-      format: "zip",
-      ref: req.params.ref,
-      repositoryKey: repositoryId,
-    });
-    await writeGitArchiveResponse(req, res, { archive });
-  } catch (error) {
-    next(error);
-  }
-});
-```
-
-`writeGitArchiveResponse()` applies the correct `content-type`, `content-disposition`, `content-length` when known, redirect handling, and `HEAD` semantics for either `readArchive()` or `openArchive()` results.
-
-### Releases, Tags, and Assets
-
-A forge release is metadata attached to a Git tag. Its automatic source archives are not uploaded assets.
-
-- `release.assets` remains your uploaded files.
-- `release.source_archives.zip` and `release.source_archives.tar_gz` point at the automatic downloads for the tagged source.
-- Tag list/detail responses also expose `source_archives`.
-- If a release points at a missing tag, the forge API returns `release_tag_not_found`.
-
-Uploaded release assets have matching host ergonomics:
-
-- `forge.resolveReleaseAssetLink()` returns typed host-owned metadata for an asset download URL.
-- `forge.openReleaseAsset()` returns a stream or redirect download shape without assuming a storage backend.
-- `writeGitReleaseAssetResponse()` applies headers and `HEAD` behavior for custom host routes.
-
-```ts
-const assetLink = await forge.resolveReleaseAssetLink("demo", release.id, asset.id, {
-  repositoryKey: "acme/demo",
-});
-
-console.log(assetLink.href);
-
-const assetDownload = await forge.openReleaseAsset("demo", release.id, asset.id, {
-  repositoryKey: "acme/demo",
-});
-```
-
-### Cache Behavior
-
-The built-in archive service prefers on-demand generation plus cache.
-
-- Cache keys include repository id, resolved commit SHA, archive format, and the configured archive cache key version.
-- Moving a tag or branch to a different commit produces a new cache key automatically.
-- The default cache backend is filesystem-backed under the system temp directory.
-- You can inject your own `archive.cache` backend, including future object-storage implementations.
-- Cached entries carry TTL metadata and the filesystem backend performs periodic expired-entry cleanup.
-
-### Security Notes
-
-- Public repositories can expose `zipball` and `tarball` routes without auth.
-- Private repositories should authorize before archive generation just like any other read route.
-- The API handlers authorize archive downloads before they resolve refs or touch the cache.
-- Cache backends can optionally mint redirect URLs for object storage, but the default filesystem backend streams directly from git-host.
-
-## Frontend Integration
-
-The package now supports three frontend integration modes.
-
-### 1. Full Browser Pages
-
-Use `@trebired/git-host/browser` when you want git-host to own the whole repository area:
-
-- repository shell
-- tabs and navigation behavior
-- stats, actions, and social controls
-- loading, error, retry, and empty states
-- code browsing, blame, compare, releases, forks, activity, branches, tags, and search pages
-
-Host apps mostly provide:
-
-- auth
-- API base URL
-- repository key
-- route adapter
-- theme tokens
-- optional policy and diagnostics hooks
-
-Default styling is optional.
-
-- If you want the package look, import `@trebired/git-host/browser/styles.css`.
-- If you want package-owned structure with your own design system, skip that stylesheet and pass theme slots/classes.
-
-```ts
-import {
-  GitRepositoryOverviewPage,
-  createGitRepositoryRouteAdapter,
-} from "@trebired/git-host/browser";
-
-const routeAdapter = createGitRepositoryRouteAdapter({
-  repositoryBasePath: "/workspaces",
-});
-
-function RepositoryScreen() {
-  return (
-    <GitRepositoryOverviewPage
-      baseUrl="/api/git"
-      repositoryKey="demo"
-      routeAdapter={routeAdapter}
-      branding={{
-        getCloneUrl(repositoryKey) {
-          return `https://git.example.com/${repositoryKey}.git`;
-        },
-      }}
-      unstyled
-      theme={{
-        classNames: {
-          page: "repo-page",
-          header: "repo-header",
-          title: "repo-title",
-          tabs: "repo-tabs",
-          "tab-link": "repo-tab",
-          card: "repo-card",
-          button: "repo-button",
-        },
-        slots: {
-          page: {
-            attributes: {
-              "data-repository-surface": "git-host",
-            },
-          },
-        },
-        variables: {
-          "--git-browser-accent": "#0a7f5a",
-        },
-      }}
-    />
-  );
-}
-```
-
-### 2. Hybrid Shell + Package Sections
-
-Use `@trebired/git-host/react` when your app owns the outer chrome but git-host should own the repository section UI patterns:
-
-```ts
-import {
-  GitApiClientProvider,
-  GitCommitList,
-  GitRepositoryShell,
-  GitRepositoryUiProvider,
-  createGitApiClient,
-  createGitRepositoryRouteAdapter,
-  useGitCommits,
-  useGitOverview,
-} from "@trebired/git-host/react";
-
-const client = createGitApiClient({ baseUrl: "/api/git" });
-const routes = createGitRepositoryRouteAdapter({
-  repositoryBasePath: "/app/repos",
-});
-
-function RepositoryCommitsSection({ repositoryKey }: { repositoryKey: string }) {
-  const overview = useGitOverview(repositoryKey);
-  const commits = useGitCommits(repositoryKey, {
-    ref: overview.data?.repository.repository.current_branch,
-  });
-
-  return (
-    <GitRepositoryShell
-      page="commits"
-      repositoryKey={repositoryKey}
-      loading={overview.loading || commits.loading}
-      error={overview.error || commits.error}
-      social={overview.data?.social}
-      stats={[
-        { label: "Branch", value: overview.data?.repository.repository.current_branch || "-" },
-        { label: "Forks", value: String(overview.data?.fork_count || 0) },
-      ]}
-    >
-      <GitCommitList commits={commits.data || []} repositoryKey={repositoryKey} />
-    </GitRepositoryShell>
-  );
-}
-
-function App() {
-  return (
-    <GitApiClientProvider client={client}>
-      <GitRepositoryUiProvider
-        routeAdapter={routes}
-        theme={{
-          unstyled: true,
-          classNames: {
-            page: "repo-surface",
-            header: "repo-shell-header",
-            card: "repo-panel",
-            button: "repo-action",
-          },
-        }}
-      >
-        <RepositoryCommitsSection repositoryKey="demo" />
-      </GitRepositoryUiProvider>
-    </GitApiClientProvider>
-  );
-}
-```
-
-### 3. Fully Custom Layout
-
-Use the typed client, hooks, diagnostics, route adapter, and low-level models when you want full control over the page structure:
-
-```ts
-import {
-  GitApiClientProvider,
-  createGitApiClient,
-  useGitOverview,
-  useGitSearch,
-} from "@trebired/git-host/react";
-
-const client = createGitApiClient({ baseUrl: "/api/git" });
-
-function CustomRepositorySearch({ repositoryKey }: { repositoryKey: string }) {
-  const overview = useGitOverview(repositoryKey);
-  const search = useGitSearch(repositoryKey, {
-    query: "value",
-    ref: overview.data?.repository.repository.current_branch,
-  });
-
-  if (search.loading) return "Searching...";
-  if (search.error) return search.error.message;
-  return JSON.stringify(search.data?.files || []);
-}
-```
-
-## Frontend Surface
-
-`@trebired/git-host/browser` ships package-owned repository pages for:
-
-- overview
-- code/tree/blob
-- commits
-- commit detail
-- releases
-- release detail
-- forks
-- activity
-- blame
-- diff/compare
-- branches
-- tags
-- search
-
-`@trebired/git-host/react` now ships reusable repository primitives such as:
-
-- `GitRepositoryUiProvider`
-- `GitRepositoryShell`
-- `GitRepositoryHeader`
-- `GitRepositoryTabs`
-- `GitRepositoryStats`
-- `GitRepositoryActionBar`
-- `GitRepositorySocialButtons`
-- `GitCommitList`
-- `GitReleaseList`
-- `GitForkList`
-- `GitBranchList`
-- `GitTagList`
-- `GitTreeView`
-- `GitBlobView`
-- `GitBlameView`
-- `GitDiffView`
-- `GitSearchResults`
-- `GitBranchSelector`
-- `GitTagSelector`
-- `GitEmptyState`
-- `GitErrorState`
-- `GitLoadingState`
-
-### Styling And Skinning
-
-The package is designed around three frontend ownership levels:
-
-- full package UI: import `@trebired/git-host/browser/styles.css` and use the browser pages directly
-- package structure + app styling: skip the stylesheet and pass `theme.unstyled`, `theme.classNames`, and `theme.slots`
-- package logic + app rendering: use the typed hooks, mutations, diagnostics, and route adapter with fully custom host rendering
-
-The package now treats styling as optional rather than required:
-
-- no browser page requires `@trebired/git-host/browser/styles.css` to function
-- structural components expose stable `data-slot` markers for host CSS targeting
-- `GitRepositoryUiProvider` accepts `theme.classNames` and `theme.slots` for slot-level class and attribute overrides
-- `GitBrowserProvider` and browser pages accept `unstyled` as a shortcut for `theme.unstyled: true`
-- render-state components can be replaced through `components.LoadingState`, `components.ErrorState`, and `components.EmptyState`
-
-```ts
-import {
-  GitRepositoryUiProvider,
-  GitRepositoryShell,
-  GitCommitList,
-} from "@trebired/git-host/react";
-
-<GitRepositoryUiProvider
-  theme={{
-    unstyled: true,
-    classNames: {
-      page: "nativeRepoPage",
-      header: "nativeRepoHeader",
-      card: "nativeCard",
-      list: "nativeList",
-      "list-item": "nativeListItem",
-      button: "nativeButton",
-    },
-    slots: {
-      page: {
-        attributes: {
-          "data-app-surface": "repository",
-        },
-      },
-    },
-  }}
-  components={{
-    EmptyState({ title, message }) {
-      return <section className="nativeEmpty">{title}: {message}</section>;
-    },
-  }}
->
-  <GitRepositoryShell page="commits" repositoryKey="demo">
-    <GitCommitList commits={commits} repositoryKey="demo" />
-  </GitRepositoryShell>
-</GitRepositoryUiProvider>;
-```
-
-### Route Adapter
-
-Both `browser` and `react` use a package-owned route adapter:
-
-```ts
-import { createGitRepositoryRouteAdapter } from "@trebired/git-host/react";
-
-const routes = createGitRepositoryRouteAdapter({
-  repositoryBasePath: "/repos",
-});
-
-routes.overview("demo");
-routes.code("demo", "src/app.ts", "main");
-routes.commit("demo", "abc123");
-routes.release("demo", "release-1");
-routes.compare("demo", "main", "feature/x");
-```
-
-### Diagnostics Hooks
-
-Repository UIs are brittle, so the package also exposes lifecycle diagnostics through `GitRepositoryUiProvider`:
-
-- `onNavigate`
-- `onViewMount`
-- `onFetchStart`
-- `onFetchSuccess`
-- `onFetchError`
-- `onActionStart`
-- `onActionSuccess`
-- `onActionError`
-- `onEmptyState`
-- `onRenderStateChange`
-
-### Initial Data
-
-Browser pages and hybrid sections can take a stable `initialData` shape through `GitRepositoryFrontEndInitialData`, so host apps do not need to invent per-page bootstrap payloads.
-
-For long-running repository scans, the typed client still exposes a live Socket.IO linguist stream:
-
-```ts
-const gitClient = createGitApiClient({
-  baseUrl: "/api/git",
-});
-
-const socket = gitClient.openLinguistSocket("demo", {
-  ref: "main",
-  onProgress(event) {
-    console.log(event.stage, event.percent);
-  },
-  onResult(event) {
-    console.log(event.data.languages.results);
-  },
-});
-
-await socket.completed;
-```
-
-## Current API
-
-The package now exposes three main frontend/backend layers:
-
-- `createGitHost()`
-- `createGitForge()`
-- `resolveRepositoryPath()`
-- `runGit()`
-- `buildGitEnv()`
-- `RepositoryLockManager`
 - `createGitApiHandler()`
 - `createGitForgeApiHandler()`
 - `createGitApiSocketServer()`
-- `createGitHttpHandler()`
-- `generateSshKeyPair()`
-- `normalizeSshPublicKey()`
-- `compareSshPublicKeys()`
-- `fingerprintSshPublicKey()`
-- `createGitSshServer()`
-- `@trebired/git-host/react`
-- `@trebired/git-host/browser`
+- `createGitForgeSocketServer()`
 
-And the main host instance methods:
+The forge socket server supports live workflow run viewing with replay from a sequence cursor so disconnected clients can catch up from persisted events.
 
-- `ensureRepository()`
-- `readSummary()`
-- `listBranches()`
-- `listCommits()`
-- `listTags()`
-- `listTree()`
-- `readLinguist()`
-- `readBlame()`
-- `search()`
-- `readArchive()`
-- `readBlob()`
-- `readCommit()`
-- `readTag()`
-- `diff()`
-- `readWorkingTree()`
-- `readStagedFile()`
-- `readUnstagedFile()`
-- `createBranch()`
-- `createTag()`
-- `checkoutBranch()`
-- `checkoutRef()`
-- `deleteBranch()`
-- `deleteTag()`
-- `stagePaths()`
-- `unstagePaths()`
-- `discardPaths()`
-- `commit()`
-- `merge()`
-- `rebase()`
-- `cherryPick()`
-- `continueOperation()`
-- `abortOperation()`
-- `fetch()`
-- `pull()`
-- `push()`
-- `withRepositoryLock()`
+## Packaging
 
-The React entry now exports:
+The npm package ships:
 
-- `createGitApiClient()`
-- `GitApiClientProvider`
-- `GitRepositoryUiProvider`
-- `createGitRepositoryRouteAdapter()`
-- `openLinguistSocket()` through the typed client instance
-- `useGitRepositorySummary()`
-- `useGitOverview()`
-- `useGitSocialState()`
-- `useGitBranches()`
-- `useGitCommits()`
-- `useGitCommit()`
-- `useGitTags()`
-- `useGitTag()`
-- `useGitTree()`
-- `useGitLinguist()`
-- `useGitBlame()`
-- `useGitSearch()`
-- `useGitArchive()`
-- `useGitBlob()`
-- `useGitDiff()`
-- `useGitApiQuery()`
-- `GitRepositoryShell`
-- `GitRepositoryHeader`
-- `GitRepositoryTabs`
-- `GitRepositoryStats`
-- `GitRepositoryActionBar`
-- `GitRepositorySocialButtons`
-- `GitCommitList`
-- `GitReleaseList`
-- `GitForkList`
-- `GitBranchList`
-- `GitTagList`
-- `GitTreeView`
-- `GitBlobView`
-- `GitBlameView`
-- `GitDiffView`
-- `GitSearchResults`
-- `GitBranchSelector`
-- `GitTagSelector`
-- `GitStarButton`
-- `GitWatchButton`
-- `GitForkButton`
-- `GitSyncForkButton`
-- `GitCreateReleaseButton`
-- `GitDeleteReleaseButton`
-- `GitCopyCloneUrlButton`
-- `GitDownloadArchiveButton`
+- the backend TypeScript runtime
+- packaged Actions runner binaries under `bin/`
+- no browser or React entrypoints
 
-The browser entry exports full-page repository surfaces such as:
+Repository Actions workflow binaries are built in CI for:
 
-- `GitRepositoryOverviewPage`
-- `GitRepositoryCodePage`
-- `GitRepositoryCommitsPage`
-- `GitRepositoryCommitPage`
-- `GitRepositoryReleasesPage`
-- `GitRepositoryReleasePage`
-- `GitRepositoryForksPage`
-- `GitRepositoryActivityPage`
-- `GitRepositoryBranchesPage`
-- `GitRepositoryTagsPage`
-- `GitRepositorySearchPage`
-- `GitRepositoryBlamePage`
-- `GitRepositoryComparePage`
+- Linux x64 GNU
+- Linux arm64 GNU
+- macOS x64
+- macOS arm64
 
-## Repository Model
+## License
 
-This package does not own your app database.
-
-Your app resolves a repository id to an absolute repository path. The package then runs Git operations against that path. This keeps repository metadata, permissions, tokens, SSH keys, and UI decisions inside the host app where they belong.
-
-The repository runtime is still worktree-first, but the frontend surface is intentionally much broader now so host apps can stay thin.
-
-Private remotes are still host-owned. The package now helps with the transport plumbing by supporting:
-
-- `remoteCredentials` for clone, fetch, pull, and push
-- `httpHeaders` for per-command HTTP headers such as bearer auth
-- `sshCommand` for per-command SSH transport overrides
-
-## Why This Package
-
-Most alternatives fall into one of three buckets:
-
-- full forge products such as GitLab, Gitea, or Forgejo
-- Git implementation libraries that reimplement Git behavior in another runtime
-- one-off app code that shells out to `git` without a reusable boundary
-
-`@trebired/git-host` is aiming at the gap between those options.
-
-Use it when you want:
-
-- your app to keep owning users, permissions, tokens, SSH keys, repository records, and UI
-- your app to keep owning users, permissions, tokens, SSH keys, repository records, branding, auth, and top-level route mounting while git-host owns most repository UI
-- real Git behavior from the system `git` binary
-- clone, fetch, pull, and push over smart HTTP and SSH
-- a reusable Git runtime instead of spreading Git shell calls all over your platform code
-- full browser-ready repository pages or reusable React repository primitives without rebuilding the same repository shell in every host app
-
-Do not use it when you want:
-
-- a ready-made Git product with issues, pull requests, teams, admin screens, and built-in account management
-- a pure JavaScript Git implementation with no `git` binary dependency
-
-That makes it useful for internal developer platforms, product-specific source management, deployment systems, controlled automation environments, and apps that need Git as a capability rather than Git hosting as a separate product.
-
-## Path Safety
-
-Repository paths should never come straight from request input.
-
-The intended flow is:
-
-```txt
-request repo id -> host app record lookup -> absolute repository path -> git-host
-```
-
-`resolveRepositoryPath()` is provided as a safe join helper when your host app stores repository-relative paths under one known root.
-
-## Hosted Transport Hooks
-
-Hosted transports keep identity and permission policy in your app.
-
-- `createGitHttpHandler()` supports host-owned repository resolution, optional identity resolution, permission checks, and request audit events.
-- `createGitSshServer()` supports host-owned public key authentication, permission checks, and command audit events.
-- `createGitApiHandler()` supports host-owned repository id mapping and per-route authorization.
-- `createGitApiSocketServer()` supports host-owned Socket.IO progress delivery for long-running linguist scans with the same repository mapping and authorization hooks.
-- `generateSshKeyPair()`, `normalizeSshPublicKey()`, `compareSshPublicKeys()`, and `fingerprintSshPublicKey()` help host apps manage SSH transport setup without owning the parsing details themselves.
-
-## Platform Fit
-
-`@trebired/git-host` is a good fit when a larger platform already owns users, permissions, repository records, tokens, SSH keys, and UI, but wants to stop hand-rolling the reusable Git layer.
-
-The package is meant to replace or simplify:
-
-- Git CLI execution and environment shaping
-- repository locking and mutation coordination
-- repository summary, tree, linguist, blame, search, archive, blob, commit, diff, and working-tree reads
-- branch, tag, checkout, commit, merge, rebase, cherry-pick, fetch, pull, and push operations
-- smart HTTP and SSH Git transport handling
-- thin JSON API route internals around those Git operations
-
-The host platform should still own:
-
-- repository and source metadata persistence
-- permission checks and route authorization policy
-- access token issuance, revocation, and storage
-- SSH key ownership, private key storage, and known-host persistence
-- top-level product chrome, auth flows, branding decisions, and any product-specific features outside the repository area
-
-That boundary is where the package simplifies a platform the most without turning into a forge product of its own.
-
-## Logger Support
-
-`@trebired/git-host` works best with `@trebired/logger`, and that is the recommended logger.
-
-Why we recommend it:
-
-- it is simple
-- it already matches git-host's expected method shape
-- it keeps application logs and git-host diagnostics in one consistent format
-
-The logger style:
-
-```ts
-log.info("git-host", "initializing repository", { repositoryId: "demo" });
-```
-
-comes from `@trebired/logger`.
-
-The runtime adaptation behind `logger` and `loggerAdapter` is powered by `@trebired/logger-adapter`.
-
-You can pass that same `log` object into `createGitHost()`, `createGitHttpHandler()`, `createGitSshServer()`, `createGitApiHandler()`, and `createGitApiSocketServer()` through their `logger` option.
-
-If you do not pass a logger and `@trebired/logger` is installed in the host app, git-host will create a quiet console-only logger automatically before falling back to raw `console`.
-
-If you also set `verbose: true`, git-host will emit successful lifecycle and transport diagnostics through that logger. Without `verbose`, it stays much quieter and mainly reports rejected or failed operations.
-
-Custom loggers can also use one of these shapes:
-
-```ts
-type Logger = {
-  info(group: string, message: string, metadata?: unknown): void;
-  warn(group: string, message: string, metadata?: unknown): void;
-  error(group: string, message: string, metadata?: unknown): void;
-  fail(group: string, message: string, metadata?: unknown): void;
-};
-
-type Event = {
-  level: "info" | "warn" | "error" | "fail";
-  group: string;
-  message: string;
-  metadata?: unknown;
-};
-
-type EventLogger = (event: Event) => void;
-
-type SinkLogger = {
-  log?(event: Event): void;
-  write?(event: Event): void;
-  fatal?(message: string, metadata?: unknown): void;
-};
-```
-
-Common logger objects such as `console`, pino-style level methods, or Winston-style sinks are also adapted as sensibly as possible.
-
-If you want exact control over the emitted structure, pass `logger` plus `loggerAdapter`:
-
-```ts
-const rows: unknown[] = [];
-
-const host = createGitHost({
-  logger: rows,
-  loggerAdapter(logger, event) {
-    logger.push({
-      when: event.timestamp,
-      scope: event.group,
-      severity: event.level,
-      text: event.message,
-      extra: event.metadata,
-    });
-  },
-  resolveRepository(repositoryId) {
-    return {
-      id: repositoryId,
-      path: `/srv/repos/${repositoryId}`,
-    };
-  },
-});
-```
-
-If no logger is provided and `@trebired/logger` is not installed, git-host falls back to plain `console` output for its own diagnostics.
-
-## Roadmap
-
-The remaining package work is mostly convenience and hardening:
-
-- thin Express wrappers when they stay truly thin
-- broader examples for host-app integration patterns
-
-## Contributing
-
-See `CONTRIBUTING.md` for development commands and package guidelines.
+MIT

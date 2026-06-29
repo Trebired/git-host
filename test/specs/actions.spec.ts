@@ -1,8 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
-import { createElement } from "react";
-import { act, create as createRenderer } from "react-test-renderer";
+import { io as connectSocket } from "socket.io-client";
 
 import {
   createGitForge,
@@ -13,11 +12,16 @@ import {
   createInMemoryGitForgeStorageAdapter,
   resolveRepositoryPath,
 } from "#rfvjfxzebkbs";
-import { createGitApiClient } from "#qrrrat6gjo0q";
+import type {
+  CreateGitForgeActionsOptions,
+  GitForgeWorkflowRunEvent,
+} from "#1mbdfxwwqqpa";
 import {
-  GitRepositoryActionRunPage,
-  GitRepositoryActionsPage,
-} from "#udv18x1zuger";
+  ACTIONS_RUN_DONE_EVENT,
+  ACTIONS_RUN_ERROR_EVENT,
+  ACTIONS_RUN_EVENT,
+  ACTIONS_RUN_SUBSCRIBE_EVENT,
+} from "#e1ead083c558";
 import {
   closeServer,
   createServer,
@@ -28,7 +32,6 @@ import {
   tempDir,
   writeFile,
 } from "./helpers.js";
-import type { GitForgeWorkflowRunEvent } from "#1mbdfxwwqqpa";
 
 const actor = {
   email: "alice@example.com",
@@ -62,11 +65,13 @@ function createActionsForge(
   repositoriesRoot: string,
   host: ReturnType<typeof createHostWithActivity>,
   storage: ReturnType<typeof createInMemoryGitForgeStorageAdapter>,
+  actions: CreateGitForgeActionsOptions = {},
 ) {
   return createGitForge({
     actions: {
       heartbeatIntervalMs: 50,
       workspaceRoot: path.join(repositoriesRoot, ".actions"),
+      ...actions,
     },
     createForkRepository({ upstreamRepositoryId }) {
       return {
@@ -80,6 +85,37 @@ function createActionsForge(
     gitHost: host,
     storage,
   });
+}
+
+function workflowYaml(input: {
+  name: string;
+  steps: Array<{ name: string; run: string }>;
+  trigger: string;
+  branches?: string[];
+}) {
+  const branchBlock = input.branches?.length
+    ? `source:\n  branches:\n${input.branches.map((branch) => `    - ${branch}`).join("\n")}\n`
+    : "";
+  return [
+    `name: ${input.name}`,
+    `trigger: ${input.trigger}`,
+    branchBlock.trimEnd(),
+    "steps:",
+    ...input.steps.flatMap((step) => [
+      `  - name: ${step.name}`,
+      `    run: |`,
+      ...String(step.run).split("\n").map((line) => `      ${line}`),
+    ]),
+    "",
+  ].filter(Boolean).join("\n");
+}
+
+function writeWorkflowFile(workspace: string, fileName: string, content: string, workflowRoot = ".git-host") {
+  writeFile(workspace, `${workflowRoot}/workflows/${fileName}`, `${content.trim()}\n`);
+}
+
+function workflowDefinitionId(fileName: string, workflowRoot = ".git-host") {
+  return `${workflowRoot}/workflows/${fileName}`;
 }
 
 async function waitForRun(
@@ -112,35 +148,95 @@ async function waitForRunCount(
   throw new Error(`Repository "${repositoryId}" did not reach ${count} workflow runs.`);
 }
 
-async function waitFor(check: () => boolean, attempts = 60) {
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    if (check()) return;
-    await act(async () => {
-      await sleep(25);
+function openWorkflowRunSocket(input: {
+  afterSequence?: number;
+  baseUrl: string;
+  headers?: Record<string, string>;
+  onDone?: (payload: Record<string, unknown>) => void | Promise<void>;
+  onError?: (payload: Record<string, unknown>) => void | Promise<void>;
+  onEvent?: (event: GitForgeWorkflowRunEvent) => void | Promise<void>;
+  repositoryKey: string;
+  runId: string;
+}) {
+  const base = new URL(input.baseUrl);
+  const pathName = `${base.pathname.replace(/\/+$/g, "") || ""}/socket.io`;
+  const socket = connectSocket(`${base.protocol}//${base.host}`, {
+    autoConnect: false,
+    extraHeaders: input.headers,
+    path: pathName.startsWith("/") ? pathName : `/${pathName}`,
+    transports: ["websocket"],
+  });
+
+  let settled = false;
+  let resolveCompleted: (() => void) | null = null;
+  let rejectCompleted: ((reason?: unknown) => void) | null = null;
+
+  const cleanup = () => {
+    socket.off("connect");
+    socket.off("connect_error");
+    socket.off(ACTIONS_RUN_EVENT);
+    socket.off(ACTIONS_RUN_DONE_EVENT);
+    socket.off(ACTIONS_RUN_ERROR_EVENT);
+  };
+
+  const completed = new Promise<void>((resolve, reject) => {
+    resolveCompleted = resolve;
+    rejectCompleted = reject;
+  });
+
+  const finish = (kind: "resolve" | "reject", value?: unknown) => {
+    if (settled) return;
+    settled = true;
+    cleanup();
+    socket.disconnect();
+    if (kind === "resolve") resolveCompleted?.();
+    else rejectCompleted?.(value);
+  };
+
+  socket.on("connect", () => {
+    socket.emit(ACTIONS_RUN_SUBSCRIBE_EVENT, {
+      afterSequence: input.afterSequence,
+      repositoryKey: input.repositoryKey,
+      runId: input.runId,
     });
-  }
-  throw new Error("Condition did not become true in time.");
+  });
+  socket.on("connect_error", (error) => {
+    finish("reject", error);
+  });
+  socket.on(ACTIONS_RUN_EVENT, async (event: GitForgeWorkflowRunEvent) => {
+    await input.onEvent?.(event);
+  });
+  socket.on(ACTIONS_RUN_DONE_EVENT, async (payload: Record<string, unknown>) => {
+    await input.onDone?.(payload);
+    finish(payload.ok === false ? "reject" : "resolve", payload);
+  });
+  socket.on(ACTIONS_RUN_ERROR_EVENT, async (payload: Record<string, unknown>) => {
+    await input.onError?.(payload);
+    finish("reject", payload);
+  });
+  socket.connect();
+
+  return {
+    close() {
+      finish("reject", new Error("Socket closed by test."));
+    },
+    completed,
+  };
 }
 
 describe("@trebired/git-host actions", () => {
-  test("creates manual workflow runs, executes sequential shell steps, and uses the exact requested snapshot", async () => {
+  test("loads workflow files from a configurable root and executes against the requested snapshot", async () => {
     const root = tempDir();
     const repositoriesRoot = path.join(root, "repos");
     const storage = createInMemoryGitForgeStorageAdapter();
     const host = createHostWithActivity(repositoriesRoot);
-    const forge = createActionsForge(repositoriesRoot, host, storage);
+    const forge = createActionsForge(repositoriesRoot, host, storage, {
+      workflowRoot: ".ci",
+    });
     const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
 
     fs.mkdirSync(workspace, { recursive: true });
-    writeFile(workspace, "snapshot.txt", "first snapshot\n");
-    await host.ensureRepository("demo", { actor });
-    const firstCommit = git(["rev-parse", "HEAD"], workspace);
-
-    writeFile(workspace, "snapshot.txt", "second snapshot\n");
-    gitCommit(workspace, "Second snapshot");
-
-    const workflow = await forge.createWorkflow("demo", {
-      actor,
+    writeWorkflowFile(workspace, "build-and-test.yml", workflowYaml({
       name: "Build and Test",
       steps: [
         { name: "Snapshot", run: "cat snapshot.txt" },
@@ -148,9 +244,21 @@ describe("@trebired/git-host actions", () => {
         { name: "Stderr", run: "printf 'beta\\n' 1>&2" },
       ],
       trigger: "manual",
-    });
+    }), ".ci");
+    writeFile(workspace, "snapshot.txt", "first snapshot\n");
+    await host.ensureRepository("demo", { actor });
+    const firstCommit = git(["rev-parse", "HEAD"], workspace);
 
-    const firstRun = await forge.runWorkflow("demo", workflow.id, {
+    writeFile(workspace, "snapshot.txt", "second snapshot\n");
+    gitCommit(workspace, "Second snapshot");
+
+    const workflows = await forge.listWorkflows("demo");
+    expect(workflows).toHaveLength(1);
+    expect(workflows[0]?.id).toBe(workflowDefinitionId("build-and-test.yml", ".ci"));
+    expect(workflows[0]?.definition_path).toBe(workflowDefinitionId("build-and-test.yml", ".ci"));
+    expect(workflows[0]?.origin).toBe("file");
+
+    const firstRun = await forge.runWorkflow("demo", workflowDefinitionId("build-and-test.yml", ".ci"), {
       actor,
       commitHash: firstCommit,
       ref: firstCommit,
@@ -164,7 +272,7 @@ describe("@trebired/git-host actions", () => {
 
     expect(completed.status).toBe("success");
     expect(completed.created_by).toBe("alice");
-    expect(completed.runner?.kind).toBe("local-host");
+    expect(completed.runner?.kind).toBe("go-runner");
     expect(steps.map((step) => step.status)).toEqual(["success", "success", "success"]);
     expect(events.filter((event) => event.type === "step.started").map((event) => event.step_name)).toEqual(["Snapshot", "Stdout", "Stderr"]);
     expect(events.some((event) => event.type === "step.output" && String(event.chunk || "").includes("first snapshot"))).toBe(true);
@@ -174,7 +282,7 @@ describe("@trebired/git-host actions", () => {
 
     writeFile(workspace, "snapshot.txt", "third snapshot\n");
     gitCommit(workspace, "Third snapshot");
-    const secondRun = await forge.runWorkflow("demo", workflow.id, {
+    const secondRun = await forge.runWorkflow("demo", workflowDefinitionId("build-and-test.yml", ".ci"), {
       actor,
       ref: "HEAD",
     });
@@ -183,7 +291,7 @@ describe("@trebired/git-host actions", () => {
     expect(runs.map((entry) => entry.id).slice(0, 2)).toEqual([secondRun.id, firstRun.id]);
   }, { timeout: 20_000 });
 
-  test("enqueues push-triggered and release-triggered workflows exactly once", async () => {
+  test("enqueues push-triggered and release-triggered workflow files exactly once", async () => {
     const root = tempDir();
     const repositoriesRoot = path.join(root, "repos");
     const remoteRepo = path.join(root, "remote", "origin.git");
@@ -212,25 +320,22 @@ describe("@trebired/git-host actions", () => {
       setUpstream: true,
     });
 
-    const pushWorkflow = await forge.createWorkflow("demo", {
-      actor,
+    writeWorkflowFile(workspace, "on-push.yml", workflowYaml({
+      branches: ["main"],
       name: "On Push",
-      source: { branches: ["main"] },
       steps: [{ name: "Push step", run: "printf 'push\\n'" }],
       trigger: "push",
-    });
-    await forge.createWorkflow("demo", {
-      actor,
+    }));
+    writeWorkflowFile(workspace, "on-release.yml", workflowYaml({
       name: "On Release",
       steps: [{ name: "Release step", run: "printf 'release\\n'" }],
       trigger: "release.create",
-    });
-
+    }));
     writeFile(workspace, "README.md", "# Actions v2\n");
     await host.stagePaths("demo");
     await host.commit("demo", {
       actor,
-      message: "Push trigger commit",
+      message: "Add workflow files",
     });
     await host.push("demo", {
       actor,
@@ -240,10 +345,10 @@ describe("@trebired/git-host actions", () => {
     await waitForRunCount(forge, "demo", 1);
     const pushRuns = await forge.listWorkflowRuns("demo", {
       triggerKind: "push",
-      workflowId: pushWorkflow.id,
+      workflowId: workflowDefinitionId("on-push.yml"),
     });
     expect(pushRuns).toHaveLength(1);
-    expect((await waitForRun(forge, "demo", pushRuns[0].id)).status).toBe("success");
+    expect((await waitForRun(forge, "demo", pushRuns[0]!.id)).status).toBe("success");
 
     await host.createTag("demo", {
       actor,
@@ -261,9 +366,10 @@ describe("@trebired/git-host actions", () => {
     await waitForRunCount(forge, "demo", 2);
     const releaseRuns = await forge.listWorkflowRuns("demo", {
       triggerKind: "release.create",
+      workflowId: workflowDefinitionId("on-release.yml"),
     });
     expect(releaseRuns).toHaveLength(1);
-    expect((await waitForRun(forge, "demo", releaseRuns[0].id)).status).toBe("success");
+    expect((await waitForRun(forge, "demo", releaseRuns[0]!.id)).status).toBe("success");
   }, { timeout: 20_000 });
 
   test("streams workflow run events over the live socket and replays from a sequence cursor", async () => {
@@ -275,15 +381,13 @@ describe("@trebired/git-host actions", () => {
     const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
 
     fs.mkdirSync(workspace, { recursive: true });
-    writeFile(workspace, "README.md", "# Streaming\n");
-    await host.ensureRepository("demo", { actor });
-
-    const workflow = await forge.createWorkflow("demo", {
-      actor,
+    writeWorkflowFile(workspace, "stream-logs.yml", workflowYaml({
       name: "Stream Logs",
       steps: [{ name: "Log step", run: "printf 'one\\n'; sleep 1; printf 'two\\n'; sleep 1" }],
       trigger: "manual",
-    });
+    }));
+    writeFile(workspace, "README.md", "# Streaming\n");
+    await host.ensureRepository("demo", { actor });
 
     const server = createServer(createGitForgeApiHandler({
       basePath: "/api/git",
@@ -305,22 +409,19 @@ describe("@trebired/git-host actions", () => {
       },
     });
     const port = await listen(server);
-    const client = createGitApiClient({
-      baseUrl: `http://127.0.0.1:${port}/api/git`,
-      headers: actorHeaders(),
-    });
-    const run = await forge.runWorkflow("demo", workflow.id, { actor, ref: "HEAD" });
+    const run = await forge.runWorkflow("demo", workflowDefinitionId("stream-logs.yml"), { actor, ref: "HEAD" });
 
     const firstEvents: Array<GitForgeWorkflowRunEvent> = [];
     const replayedEvents: Array<GitForgeWorkflowRunEvent> = [];
     let firstOutputSequence = 0;
 
     try {
-      let firstStream: ReturnType<typeof client.openWorkflowRunSocket> | null = null;
+      let firstStream: ReturnType<typeof openWorkflowRunSocket> | null = null;
       const firstOutput = new Promise<void>((resolve) => {
-        firstStream = client.openWorkflowRunSocket("demo", run.id, {
+        firstStream = openWorkflowRunSocket({
+          baseUrl: `http://127.0.0.1:${port}/api/git`,
+          headers: actorHeaders(),
           onEvent(event) {
-            if (!("sequence" in event)) return;
             firstEvents.push(event);
             if (event.type === "step.output" && !firstOutputSequence) {
               firstOutputSequence = event.sequence;
@@ -328,6 +429,8 @@ describe("@trebired/git-host actions", () => {
               resolve();
             }
           },
+          repositoryKey: "demo",
+          runId: run.id,
         });
         void firstStream.completed.catch(() => {});
       });
@@ -336,16 +439,19 @@ describe("@trebired/git-host actions", () => {
       await sleep(100);
 
       const replayedOutput = new Promise<void>((resolve) => {
-        const secondStream = client.openWorkflowRunSocket("demo", run.id, {
+        const secondStream = openWorkflowRunSocket({
           afterSequence: firstOutputSequence,
+          baseUrl: `http://127.0.0.1:${port}/api/git`,
+          headers: actorHeaders(),
           onEvent(event) {
-            if (!("sequence" in event)) return;
             replayedEvents.push(event);
             if (event.sequence > firstOutputSequence && (event.type === "step.output" || event.type === "run.finished")) {
               secondStream.close();
               resolve();
             }
           },
+          repositoryKey: "demo",
+          runId: run.id,
         });
         void secondStream.completed.catch(() => {});
       });
@@ -375,19 +481,18 @@ describe("@trebired/git-host actions", () => {
     const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
 
     fs.mkdirSync(workspace, { recursive: true });
-    writeFile(workspace, "README.md", "# Cancel\n");
-    await host.ensureRepository("demo", { actor });
-
-    const workflow = await forge.createWorkflow("demo", {
-      actor,
+    writeWorkflowFile(workspace, "cancelable.yml", workflowYaml({
       name: "Cancelable",
       steps: [
         { name: "Long step", run: "printf 'start\\n'; sleep 3; printf 'late\\n'" },
         { name: "Never step", run: "printf 'after\\n'" },
       ],
       trigger: "manual",
-    });
-    const run = await forge.runWorkflow("demo", workflow.id, { actor, ref: "HEAD" });
+    }));
+    writeFile(workspace, "README.md", "# Cancel\n");
+    await host.ensureRepository("demo", { actor });
+
+    const run = await forge.runWorkflow("demo", workflowDefinitionId("cancelable.yml"), { actor, ref: "HEAD" });
 
     for (let attempt = 0; attempt < 120; attempt += 1) {
       const events = await forge.listWorkflowRunEvents("demo", run.id);
@@ -410,7 +515,7 @@ describe("@trebired/git-host actions", () => {
     expect(steps[1]?.status).toBe("cancelled");
   }, { timeout: 20_000 });
 
-  test("enforces actions permissions and renders repository Actions pages", async () => {
+  test("enforces actions run/socket permissions and repositories without workflow files stay empty", async () => {
     const root = tempDir();
     const repositoriesRoot = path.join(root, "repos");
     const storage = createInMemoryGitForgeStorageAdapter();
@@ -419,21 +524,24 @@ describe("@trebired/git-host actions", () => {
     const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
 
     fs.mkdirSync(workspace, { recursive: true });
-    writeFile(workspace, "README.md", "# Browser Actions\n");
-    await host.ensureRepository("demo", { actor });
-
-    const workflow = await forge.createWorkflow("demo", {
-      actor,
-      name: "Browser Workflow",
-      steps: [{ name: "Build", run: "printf 'browser\\n'" }],
+    writeWorkflowFile(workspace, "secured.yml", workflowYaml({
+      name: "Secured Workflow",
+      steps: [{ name: "Build", run: "printf 'secure\\n'" }],
       trigger: "manual",
-    });
-    const run = await forge.runWorkflow("demo", workflow.id, { actor, ref: "HEAD" });
+    }));
+    writeFile(workspace, "README.md", "# Secure Actions\n");
+    await host.ensureRepository("demo", { actor });
+    await host.ensureRepository("empty", { actor });
+
+    const run = await forge.runWorkflow("demo", workflowDefinitionId("secured.yml"), { actor, ref: "HEAD" });
     await waitForRun(forge, "demo", run.id);
+
+    expect(await forge.listWorkflows("empty")).toEqual([]);
+    expect(await forge.listWorkflowRuns("empty")).toEqual([]);
 
     const server = createServer(createGitForgeApiHandler({
       authorize({ operation, resource }) {
-        if (operation === "create" && resource === "actions") return { allowed: false, message: "No configure access.", status: 403 };
+        if (operation === "run" && resource === "actions") return { allowed: false, message: "No run access.", status: 403 };
         return true;
       },
       basePath: "/api/git",
@@ -458,67 +566,38 @@ describe("@trebired/git-host actions", () => {
       },
     });
     const port = await listen(server);
-    const client = createGitApiClient({
-      baseUrl: `http://127.0.0.1:${port}/api/git`,
-      headers: actorHeaders(),
-    });
-
-    let actionsRenderer: ReturnType<typeof createRenderer> | null = null;
-    let runRenderer: ReturnType<typeof createRenderer> | null = null;
 
     try {
-      const denied = await fetch(`http://127.0.0.1:${port}/api/git/repositories/demo/actions`, {
+      const denied = await fetch(`http://127.0.0.1:${port}/api/git/repositories/demo/actions/runs`, {
         body: JSON.stringify({
-          name: "Denied",
-          steps: [{ name: "Nope", run: "true" }],
-          trigger: "manual",
+          ref: "HEAD",
+          workflowId: workflowDefinitionId("secured.yml"),
         }),
         headers: actorHeaders(),
         method: "POST",
       });
       expect(denied.status).toBe(403);
 
-      await expect(async () => {
-        const stream = client.openWorkflowRunSocket("demo", run.id, {});
-        await stream.completed;
-      }).toThrow();
+      const listed = await fetch(`http://127.0.0.1:${port}/api/git/repositories/demo/actions`, {
+        headers: actorHeaders(),
+      });
+      expect(listed.status).toBe(200);
+      expect(await listed.json()).toMatchObject({
+        ok: true,
+      });
 
-      const originalConsoleError = console.error;
-      console.error = (...args: unknown[]) => {
-        if (!String(args[0] || "").includes("react-test-renderer is deprecated")) {
-          originalConsoleError(...args as Parameters<typeof console.error>);
-        }
-      };
-
-      try {
-        await act(async () => {
-          actionsRenderer = createRenderer(createElement(GitRepositoryActionsPage, {
-            baseUrl: `http://127.0.0.1:${port}/api/git`,
-            headers: actorHeaders(),
-            repositoryKey: "demo",
-          }));
-        });
-        await waitFor(() => JSON.stringify(actionsRenderer?.toJSON()).includes("Browser Workflow"));
-
-        await act(async () => {
-          runRenderer = createRenderer(createElement(GitRepositoryActionRunPage, {
-            baseUrl: `http://127.0.0.1:${port}/api/git`,
-            headers: actorHeaders(),
-            repositoryKey: "demo",
-            runId: run.id,
-          }));
-        });
-        await waitFor(() => JSON.stringify(runRenderer?.toJSON()).includes("Live Logs"));
-
-        expect(JSON.stringify(actionsRenderer?.toJSON())).toContain("Workflow Runs");
-        expect(JSON.stringify(runRenderer?.toJSON())).toContain("Live Logs");
-      } finally {
-        console.error = originalConsoleError;
-        await act(async () => {
-          actionsRenderer?.unmount();
-          runRenderer?.unmount();
-        });
-      }
+      const stream = openWorkflowRunSocket({
+        baseUrl: `http://127.0.0.1:${port}/api/git`,
+        headers: actorHeaders(),
+        repositoryKey: "demo",
+        runId: run.id,
+      });
+      await expect(stream.completed).rejects.toMatchObject({
+        error: {
+          code: "permission_denied",
+        },
+        status: 403,
+      });
     } finally {
       socketServer.disconnectSockets(true);
       await closeServer(server);

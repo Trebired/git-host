@@ -1,1 +1,16 @@
-export * from "#8b0f4b678e79";
+export {
+  abortRepositoryOperation,
+  cherryPickRepository,
+  commitRepository,
+  continueRepositoryOperation,
+  discardRepositoryPaths,
+  mergeRepository,
+  rebaseRepository,
+  stageRepositoryPaths,
+  unstageRepositoryPaths,
+} from "./working_tree/mutate.js";
+export {
+  readRepositoryStagedFile,
+  readRepositoryUnstagedFile,
+  readRepositoryWorkingTree,
+} from "./working_tree/read.js";

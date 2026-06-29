@@ -31,11 +31,11 @@ export default {
     dry: {
       helpers: [
         {
-          from: "./internal/utils/text.ts",
+          from: "./src/utils/text.ts",
           exportName: "text",
         },
         {
-          from: "./internal/utils/text.ts",
+          from: "./src/utils/text.ts",
           exportName: "isTruthy",
         },
       ],

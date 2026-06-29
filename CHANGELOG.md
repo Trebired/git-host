@@ -4,13 +4,24 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.1.0
+
+- Promoted the repository activity expansion from release-only timelines to normalized repository-owned lifecycle events, including HTTP/SSH/API push coverage plus fetch, pull, release, fork, and social activity hooks with persisted actor, source, summary, and metadata fields.
+- Added a first-class repository Actions platform with repository-owned workflows, persistent workflow runs and step records, sequential shell-step execution, runner metadata, cancellation support, exact ref/commit snapshot materialization, and live Socket.IO run streaming with replayable persisted logs.
+- Moved the package source layout from `internal/` to a standard `src/` tree, updated build/export/packaging scripts to emit a flat `dist/` surface, and kept published package behavior compatible while removing the old internal source directory.
+- Added a packaged Go-based Actions runner path plus npm-distributed runner binaries for Linux GNU and macOS targets, with publish automation that builds and verifies the binary matrix in GitHub Actions.
+- Updated forge/runtime APIs, workflow discovery, configurable workflow-root handling, tests, and release documentation to match the fuller backend/runtime ownership model.
+
 ## 2.0.0
 
 - Added a first-class repository Actions platform with repository-owned workflows, persistent workflow runs and step records, sequential shell-step execution, runner metadata, cancellation support, and exact ref/commit snapshot materialization for each run.
-- Added live workflow run streaming over Socket.IO with persisted run events, stdout/stderr chunk capture, step lifecycle events, reconnect replay through sequence cursors, typed client helpers, React hooks, and repository Actions browser pages including run detail views.
+- Switched Actions workflow definitions to repository files discovered from `<workflowRoot>/workflows/*.yml`, with `.git-host` as the default root and configurable per-platform or per-repository overrides.
+- Added a packaged Go-based Actions runner path plus npm-distributed runner binaries for Linux GNU and macOS targets, with CI automation for building and verifying the binary matrix before publish.
+- Added live workflow run streaming over Socket.IO with persisted run events, stdout/stderr chunk capture, step lifecycle events, and reconnect replay through sequence cursors.
 - Expanded repository activity into reusable infrastructure that records normalized repository lifecycle events beyond releases, including push, pull, fetch, fork, social, and release activity with actor, source, summary, and event-specific metadata.
 - Wired repository activity triggers into Actions so matching workflows can auto-enqueue from events such as `repository.push`, `release.create`, and `release.update`, while keeping workflow queueing and execution outside request handlers.
-- Reorganized shared type surfaces, forge/API runtime modules, and tests to cover the broader platform model including transport-triggered activity, manual and automatic workflow runs, live sockets, replay, cancellation, sorting, permissions, and no-duplicate guarantees.
+- Removed the published browser and React entrypoints from `@trebired/git-host` so the package ships as backend/runtime infrastructure rather than a frontend surface.
+- Reorganized shared type surfaces, forge/API runtime modules, packaging scripts, publish workflow, and tests to cover the broader platform model including file-backed workflows, live sockets, replay, cancellation, sorting, permissions, and repository-level root customization.
 
 ## 1.8.0
 
