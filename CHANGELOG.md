@@ -4,6 +4,14 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 2.0.0
+
+- Added a first-class repository Actions platform with repository-owned workflows, persistent workflow runs and step records, sequential shell-step execution, runner metadata, cancellation support, and exact ref/commit snapshot materialization for each run.
+- Added live workflow run streaming over Socket.IO with persisted run events, stdout/stderr chunk capture, step lifecycle events, reconnect replay through sequence cursors, typed client helpers, React hooks, and repository Actions browser pages including run detail views.
+- Expanded repository activity into reusable infrastructure that records normalized repository lifecycle events beyond releases, including push, pull, fetch, fork, social, and release activity with actor, source, summary, and event-specific metadata.
+- Wired repository activity triggers into Actions so matching workflows can auto-enqueue from events such as `repository.push`, `release.create`, and `release.update`, while keeping workflow queueing and execution outside request handlers.
+- Reorganized shared type surfaces, forge/API runtime modules, and tests to cover the broader platform model including transport-triggered activity, manual and automatic workflow runs, live sockets, replay, cancellation, sorting, permissions, and no-duplicate guarantees.
+
 ## 1.8.0
 
 - Added host-owned archive ergonomics so callers can customize source archive filenames, outer root-directory naming, and generated archive URLs without changing repository identity or cache behavior.
