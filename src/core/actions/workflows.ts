@@ -8,13 +8,12 @@ import type {
   CreateGitForgeActionsOptions,
   GitForgeWorkflow,
   GitForgeWorkflowFilters,
-  GitForgeWorkflowSource,
-  GitForgeWorkflowStep,
   GitForgeWorkflowTriggerKind,
 } from "#1mbdfxwwqqpa";
 import { runGit } from "#96b00569f1f4";
 import { normalizeRepositoryRelativePath } from "#390741ebf5ab";
 import { text } from "#62f869522d1f";
+import { normalizeWorkflowRecord } from "./normalize.js";
 
 type ListRepositoryWorkflowsOptions = {
   filters?: GitForgeWorkflowFilters;
@@ -34,98 +33,13 @@ type ReadRepositoryWorkflowOptions = {
 
 const WORKFLOW_FILE_PATTERN = /\.ya?ml$/i;
 
-function slugify(value: string): string {
-  const next = text(value)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return next || "workflow";
-}
-
-function normalizeEnv(value: unknown): Record<string, string> | undefined {
-  if (!value || typeof value !== "object") return undefined;
-  const next = Object.fromEntries(
-    Object.entries(value as Record<string, unknown>)
-      .map(([key, entry]) => [text(key), text(entry)] as const)
-      .filter(([key, entry]) => key && entry),
-  );
-  return Object.keys(next).length ? next : undefined;
-}
-
-function normalizeWorkflowSource(value: unknown): GitForgeWorkflowSource | undefined {
-  if (!value || typeof value !== "object") return undefined;
-  const input = value as Record<string, unknown>;
-  const branches = Array.isArray(input.branches) ? input.branches.map((entry) => text(entry)).filter(Boolean) : undefined;
-  const tags = Array.isArray(input.tags) ? input.tags.map((entry) => text(entry)).filter(Boolean) : undefined;
-  const env = normalizeEnv(input.env);
-  if (!branches?.length && !tags?.length && !env) return undefined;
-  return {
-    ...(branches?.length ? { branches } : {}),
-    ...(env ? { env } : {}),
-    ...(tags?.length ? { tags } : {}),
-  };
-}
-
-function normalizeWorkflowSteps(value: unknown): GitForgeWorkflowStep[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((entry, index) => {
-      if (!entry || typeof entry !== "object") return null;
-      const step = entry as Record<string, unknown>;
-      const run = text(step.run);
-      if (!run) return null;
-      return {
-        env: normalizeEnv(step.env),
-        id: text(step.id, `step-${index + 1}`),
-        kind: "shell" as const,
-        name: text(step.name, `Step ${index + 1}`),
-        run,
-        shell: text(step.shell),
-      };
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
-}
-
-function normalizeWorkflowRecord(
-  repositoryId: string,
-  definitionPath: string,
-  raw: unknown,
-): GitForgeWorkflow {
-  if (!raw || typeof raw !== "object") {
-    throw new GitHostError("forge_invalid_workflow_definition", `Workflow definition "${definitionPath}" must contain an object root.`, {
-      definitionPath,
-      repositoryId,
-    });
-  }
-  const record = raw as Record<string, unknown>;
-  const steps = normalizeWorkflowSteps(record.steps);
-  if (!steps.length) {
-    throw new GitHostError("forge_invalid_workflow_definition", `Workflow definition "${definitionPath}" must define at least one step.`, {
-      definitionPath,
-      repositoryId,
-    });
-  }
-  const name = text(record.name, path.basename(definitionPath, path.extname(definitionPath)));
-  const trigger = text(record.trigger) as GitForgeWorkflowTriggerKind;
-  if (!trigger) {
-    throw new GitHostError("forge_invalid_workflow_definition", `Workflow definition "${definitionPath}" must define a trigger.`, {
-      definitionPath,
-      repositoryId,
-    });
-  }
-  return {
-    definition_path: definitionPath,
-    enabled: record.enabled !== false,
-    env: normalizeEnv(record.env),
-    id: definitionPath,
-    name,
-    origin: "file",
-    repository_id: repositoryId,
-    slug: slugify(text(record.slug, name) || path.basename(definitionPath, path.extname(definitionPath))),
-    source: normalizeWorkflowSource(record.source),
-    steps,
-    trigger,
-  };
+function matchRefPattern(value: string, pattern: string) {
+  const normalizedValue = text(value);
+  const normalizedPattern = text(pattern);
+  if (!normalizedPattern) return false;
+  if (!normalizedPattern.includes("*")) return normalizedValue === normalizedPattern;
+  const regex = new RegExp(`^${normalizedPattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*")}$`);
+  return regex.test(normalizedValue);
 }
 
 function matchesWorkflowFilters(entry: GitForgeWorkflow, filters: GitForgeWorkflowFilters = {}) {
@@ -160,10 +74,6 @@ async function resolveRepositoryWorkflowRoot(
 
 function workflowDirectoryFromRoot(workflowRoot: string) {
   return normalizeRepositoryRelativePath(path.posix.join(workflowRoot, "workflows"));
-}
-
-function workflowFileDefinitionPath(workflowRoot: string, relativeFilePath: string) {
-  return normalizeRepositoryRelativePath(path.posix.join(workflowDirectoryFromRoot(workflowRoot), relativeFilePath));
 }
 
 async function listWorkflowDefinitionPaths(
@@ -245,7 +155,6 @@ async function readWorkflowDefinitionContent(
 async function readWorkflowDefinition(
   repositoryId: string,
   repositoryPath: string,
-  workflowRoot: string,
   definitionPath: string,
   ref?: string,
 ): Promise<GitForgeWorkflow> {
@@ -257,7 +166,7 @@ async function readWorkflowDefinition(
 async function listRepositoryWorkflows(options: ListRepositoryWorkflowsOptions): Promise<GitForgeWorkflow[]> {
   const definitionPaths = await listWorkflowDefinitionPaths(options.repositoryPath, options.workflowRoot, options.ref);
   const workflows = await Promise.all(definitionPaths.map(async (definitionPath) => (
-    await readWorkflowDefinition(options.repositoryId, options.repositoryPath, options.workflowRoot, definitionPath, options.ref)
+    await readWorkflowDefinition(options.repositoryId, options.repositoryPath, definitionPath, options.ref)
   )));
   return sortWorkflows(workflows.filter((entry) => matchesWorkflowFilters(entry, options.filters)));
 }
@@ -275,16 +184,33 @@ async function readRepositoryWorkflow(options: ReadRepositoryWorkflowOptions): P
   return await readWorkflowDefinition(
     options.repositoryId,
     options.repositoryPath,
-    options.workflowRoot,
     definitionPath,
     options.ref,
   );
 }
 
+function matchesWorkflowTrigger(workflow: GitForgeWorkflow, triggerKind: GitForgeWorkflowTriggerKind, context: Record<string, unknown>) {
+  if (!workflow.enabled) return false;
+  if (triggerKind === "manual") {
+    return workflow.on?.workflow_dispatch != null || text(workflow.trigger) === "manual";
+  }
+  if (triggerKind === "push") {
+    if (!workflow.on?.push && text(workflow.trigger) !== "push") return false;
+    const branch = text(context.branch);
+    const tag = text(context.tag_name, text(context.tag));
+    const branches = workflow.on?.push?.branches || workflow.source?.branches || [];
+    const tags = workflow.on?.push?.tags || workflow.source?.tags || [];
+    if (branches.length && !branches.some((pattern) => matchRefPattern(branch, pattern))) return false;
+    if (tags.length && !tags.some((pattern) => matchRefPattern(tag, pattern))) return false;
+    return true;
+  }
+  return text(workflow.trigger) === text(triggerKind);
+}
+
 export {
   listRepositoryWorkflows,
+  matchesWorkflowTrigger,
   readRepositoryWorkflow,
   resolveRepositoryWorkflowRoot,
   workflowDirectoryFromRoot,
-  workflowFileDefinitionPath,
 };

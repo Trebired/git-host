@@ -8,10 +8,15 @@ import type {
   GitForgeRelease,
   GitForgeStorageAdapter,
   GitForgeWorkflowRun,
+  GitForgeWorkflowRunArtifact,
+  GitForgeWorkflowRunArtifactFilters,
   GitForgeWorkflowRunEvent,
   GitForgeWorkflowRunEventFilters,
   GitForgeWorkflowRunFilters,
+  GitForgeWorkflowRunJob,
+  GitForgeWorkflowRunJobFilters,
   GitForgeWorkflowRunStep,
+  GitForgeWorkflowRunStepFilters,
 } from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
 import { matchesActivityFilters, sortActivityEntries } from "#yotdvtav6ika";
@@ -24,7 +29,9 @@ function createInMemoryGitForgeStorageAdapter(): GitForgeStorageAdapter {
   const forksByUpstream = new Map<string, Set<string>>();
   const activity = new Map<string, GitForgeActivityEntry[]>();
   const runs = new Map<string, Map<string, GitForgeWorkflowRun>>();
+  const runJobs = new Map<string, Map<string, GitForgeWorkflowRunJob>>();
   const runSteps = new Map<string, Map<string, GitForgeWorkflowRunStep>>();
+  const runArtifacts = new Map<string, Map<string, GitForgeWorkflowRunArtifact>>();
   const runEvents = new Map<string, GitForgeWorkflowRunEvent[]>();
 
   function releaseMap(repositoryId: string) {
@@ -77,6 +84,26 @@ function createInMemoryGitForgeStorageAdapter(): GitForgeStorageAdapter {
     return current;
   }
 
+  function runJobMap(runId: string) {
+    const key = text(runId);
+    let current = runJobs.get(key);
+    if (!current) {
+      current = new Map();
+      runJobs.set(key, current);
+    }
+    return current;
+  }
+
+  function runArtifactMap(runId: string) {
+    const key = text(runId);
+    let current = runArtifacts.get(key);
+    if (!current) {
+      current = new Map();
+      runArtifacts.set(key, current);
+    }
+    return current;
+  }
+
   function runEventList(runId: string) {
     const key = text(runId);
     let current = runEvents.get(key);
@@ -121,6 +148,14 @@ function createInMemoryGitForgeStorageAdapter(): GitForgeStorageAdapter {
     return Array.from(entries).sort((left, right) => left.index - right.index || text(left.id).localeCompare(text(right.id)));
   }
 
+  function sortWorkflowRunJobs(entries: GitForgeWorkflowRunJob[]) {
+    return Array.from(entries).sort((left, right) => left.index - right.index || text(left.id).localeCompare(text(right.id)));
+  }
+
+  function sortWorkflowRunArtifacts(entries: GitForgeWorkflowRunArtifact[]) {
+    return Array.from(entries).sort((left, right) => text(right.created_at).localeCompare(text(left.created_at)) || text(right.id).localeCompare(text(left.id)));
+  }
+
   function sortWorkflowRunEvents(entries: GitForgeWorkflowRunEvent[]) {
     return Array.from(entries).sort((left, right) => left.sequence - right.sequence || text(left.id).localeCompare(text(right.id)));
   }
@@ -160,8 +195,44 @@ function createInMemoryGitForgeStorageAdapter(): GitForgeStorageAdapter {
       runStepMap(step.run_id).set(step.id, step);
       return step;
     },
-    async listWorkflowRunSteps(runId: string) {
-      return sortWorkflowRunSteps(Array.from(runStepMap(runId).values()));
+    async createWorkflowRunJob(input: GitForgeWorkflowRunJob) {
+      const job = {
+        ...input,
+        id: text(input.id) || randomUUID(),
+      };
+      runJobMap(job.run_id).set(job.id, job);
+      return job;
+    },
+    async readWorkflowRunJob(runId: string, jobRunId: string) {
+      return runJobMap(runId).get(text(jobRunId)) || null;
+    },
+    async listWorkflowRunJobs(runId: string, filters: GitForgeWorkflowRunJobFilters = {}) {
+      const statuses = Array.isArray(filters.status) ? filters.status : (filters.status ? [filters.status] : []);
+      return sortWorkflowRunJobs(
+        Array.from(runJobMap(runId).values()).filter((entry) => (
+          (!text(filters.jobId) || text(entry.job_id) === text(filters.jobId))
+          && (!statuses.length || statuses.map((value) => text(value)).includes(text(entry.status)))
+        )),
+      );
+    },
+    async updateWorkflowRunJob(runId: string, jobRunId: string, input) {
+      const current = runJobMap(runId).get(text(jobRunId));
+      if (!current) return null;
+      const next = {
+        ...current,
+        ...input,
+      };
+      runJobMap(runId).set(text(jobRunId), next);
+      return next;
+    },
+    async listWorkflowRunSteps(runId: string, filters: GitForgeWorkflowRunStepFilters = {}) {
+      const statuses = Array.isArray(filters.status) ? filters.status : (filters.status ? [filters.status] : []);
+      return sortWorkflowRunSteps(
+        Array.from(runStepMap(runId).values()).filter((entry) => (
+          (!text(filters.jobRunId) || text(entry.job_run_id) === text(filters.jobRunId))
+          && (!statuses.length || statuses.map((value) => text(value)).includes(text(entry.status)))
+        )),
+      );
     },
     async updateWorkflowRunStep(runId: string, stepId: string, input) {
       const current = runStepMap(runId).get(text(stepId));
@@ -190,6 +261,25 @@ function createInMemoryGitForgeStorageAdapter(): GitForgeStorageAdapter {
         runEventList(runId).filter((entry) => entry.sequence > afterSequence),
       );
       return limit > 0 ? entries.slice(-limit) : entries;
+    },
+    async createWorkflowRunArtifact(input: GitForgeWorkflowRunArtifact) {
+      const artifact = {
+        ...input,
+        id: text(input.id) || randomUUID(),
+      };
+      runArtifactMap(artifact.run_id).set(artifact.id, artifact);
+      return artifact;
+    },
+    async readWorkflowRunArtifact(runId: string, artifactId: string) {
+      return runArtifactMap(runId).get(text(artifactId)) || null;
+    },
+    async listWorkflowRunArtifacts(runId: string, filters: GitForgeWorkflowRunArtifactFilters = {}) {
+      return sortWorkflowRunArtifacts(
+        Array.from(runArtifactMap(runId).values()).filter((entry) => (
+          (!text(filters.jobRunId) || text(entry.job_run_id) === text(filters.jobRunId))
+          && (!text(filters.name) || text(entry.name) === text(filters.name))
+        )),
+      );
     },
   };
 

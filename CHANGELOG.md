@@ -6,8 +6,14 @@ This project follows semantic versioning once published.
 
 ## 2.2.0
 
+- Added a GitHub-Actions-inspired workflow schema (`gha-subset-v1`) alongside the existing flat shell-step format: `on.workflow_dispatch.inputs`, `on.push.branches`/`tags`, top-level `env`/`permissions`/`concurrency`, and multiple `jobs` with `runs-on`, `needs`, `if`, `env`, and `strategy.matrix`, normalized and validated against an explicit supported subset. Old flat workflow files keep running unchanged.
+- Added a scoped `${{ ... }}` expression engine covering `github.ref`/`ref_name`/`event_name`/`event.inputs.<name>`, `matrix.<name>`, `secrets.<name>`, `env.<name>`, `job.status`, and `needs.<job>.result`, usable in env values, `if`, shell commands, concurrency groups, and built-in `uses:` `with` values.
+- Added multi-job scheduling with `needs` dependency ordering, matrix expansion into per-instance child jobs, and persisted job/step status per matrix instance, plus workflow `concurrency.group`/`cancel-in-progress` to block or cancel overlapping runs in the same group.
+- Added named artifacts: `actions/upload-artifact@v4` and `actions/download-artifact@v4` store/retrieve files across jobs in the same run, with `artifact.uploaded`/`artifact.downloaded` run events for live UIs.
+- Added `actions/publish-release-asset@v1`, a built-in step (no GitHub equivalent) that compresses a workspace path into a real `.tar.gz`/`.zip` and attaches it to an existing release as a downloadable `GitForgeReleaseAsset`, resolving the target release from `with.tag`, the run's `release_id`, or `github.ref_name`, and failing clearly if no release exists yet. Emits `release_asset.published`. Configurable via `actions.releaseAssetsRoot`, kept separate from per-run workspace storage so assets outlive run cleanup.
+- Added built-in `uses:` adapters for `actions/checkout@v4`, `actions/setup-node@v4`, and `oven-sh/setup-bun@v2`, plus host-provided secrets that are merged into runtime env and expressions and redacted from streamed/persisted step output.
 - Added repo-local `code-discipline` enforcement config with `.gitignore`-driven directory exclusion and explicit TypeScript, JavaScript, MJS, and Go source coverage for the git-host codebase.
-- Refactored Actions runner internals into smaller `src/core/actions/*` modules plus focused Go runner helpers, and split live linguist and workflow-run socket subscription handling into dedicated API modules.
+- Refactored Actions runner internals into smaller `src/core/actions/*` modules (planner, expressions, normalize, redaction, artifacts, release assets, workspace) plus focused Go runner helpers, and split live linguist and workflow-run socket subscription handling into dedicated API modules.
 - Moved build runner utilities under `scripts/build/`, refreshed package import metadata, and split shared type surfaces into smaller forge and React client modules while preserving the published backend/runtime package surface.
 
 ## 2.1.0

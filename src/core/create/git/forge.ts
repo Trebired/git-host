@@ -319,9 +319,19 @@ function createGitForge(options: CreateGitForgeOptions): GitForge {
       return await actions.readWorkflowRun(repositoryId, runId);
     },
 
-    async listWorkflowRunSteps(repositoryId: string, runId: string) {
+    async listWorkflowRunSteps(repositoryId: string, runId: string, filters = {}) {
       if (!actions) return [];
-      return await actions.listWorkflowRunSteps(repositoryId, runId);
+      return await actions.listWorkflowRunSteps(repositoryId, runId, filters);
+    },
+
+    async listWorkflowRunJobs(repositoryId: string, runId: string, filters = {}) {
+      if (!actions || !actions.listWorkflowRunJobs) return [];
+      return await actions.listWorkflowRunJobs(repositoryId, runId, filters);
+    },
+
+    async listWorkflowRunArtifacts(repositoryId: string, runId: string, filters = {}) {
+      if (!actions || !actions.listWorkflowRunArtifacts) return [];
+      return await actions.listWorkflowRunArtifacts(repositoryId, runId, filters);
     },
 
     async listWorkflowRunEvents(repositoryId: string, runId: string, filters: GitForgeWorkflowRunEventFilters = {}) {

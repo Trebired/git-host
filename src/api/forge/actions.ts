@@ -9,8 +9,11 @@ import type {
   GitForgeOperation,
   GitForgeRelease,
   GitForgeWorkflowFilters,
+  GitForgeWorkflowRunArtifactFilters,
   GitForgeWorkflowRunFilters,
+  GitForgeWorkflowRunJobFilters,
   GitForgeWorkflowRunEventFilters,
+  GitForgeWorkflowRunStepFilters,
 } from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
 import { runGitApiAction } from "#t13y2bx0ygbf";
@@ -28,7 +31,9 @@ function routeOperation(route: GitForgeApiRoute, method: string): GitForgeOperat
     case "action_run_cancel":
       return "cancel";
     case "action_run":
+    case "action_run_artifacts":
     case "action_run_events":
+    case "action_run_jobs":
     case "action_run_steps":
     case "asset":
       return "read";
@@ -60,7 +65,9 @@ function allowedMethodsForRoute(route: GitForgeApiRoute): string[] {
     case "action_runs":
       return ["GET", "HEAD", "POST"];
     case "action_run":
+    case "action_run_artifacts":
     case "action_run_events":
+    case "action_run_jobs":
     case "action_run_steps":
       return ["GET", "HEAD"];
     case "action_run_cancel":
@@ -110,8 +117,12 @@ async function runForgeAction(
       return await runWorkflowRunCollectionAction(options, repositoryId, actor, body, searchParams);
     case "action_run":
       return await options.forge.readWorkflowRun(repositoryId, route.runId);
+    case "action_run_artifacts":
+      return await options.forge.listWorkflowRunArtifacts(repositoryId, route.runId, readWorkflowRunArtifactFilters(searchParams));
     case "action_run_steps":
-      return await options.forge.listWorkflowRunSteps(repositoryId, route.runId);
+      return await options.forge.listWorkflowRunSteps(repositoryId, route.runId, readWorkflowRunStepFilters(searchParams));
+    case "action_run_jobs":
+      return await options.forge.listWorkflowRunJobs(repositoryId, route.runId, readWorkflowRunJobFilters(searchParams));
     case "action_run_events":
       return await options.forge.listWorkflowRunEvents(repositoryId, route.runId, readWorkflowRunEventFilters(searchParams));
     case "action_run_cancel":
@@ -185,6 +196,29 @@ function readWorkflowRunEventFilters(searchParams: URLSearchParams): GitForgeWor
   return {
     afterSequence: searchParams.has("afterSequence") ? Number(searchParams.get("afterSequence")) || 0 : undefined,
     limit: searchParams.has("limit") ? Number(searchParams.get("limit")) || undefined : undefined,
+  };
+}
+
+function readWorkflowRunJobFilters(searchParams: URLSearchParams): GitForgeWorkflowRunJobFilters {
+  const status = text(searchParams.get("status"));
+  return {
+    jobId: text(searchParams.get("jobId")),
+    ...(status ? { status: status.split(",").map((entry) => text(entry)).filter(Boolean) as GitForgeWorkflowRunJobFilters["status"] } : {}),
+  };
+}
+
+function readWorkflowRunStepFilters(searchParams: URLSearchParams): GitForgeWorkflowRunStepFilters {
+  const status = text(searchParams.get("status"));
+  return {
+    jobRunId: text(searchParams.get("jobRunId")),
+    ...(status ? { status: status.split(",").map((entry) => text(entry)).filter(Boolean) as GitForgeWorkflowRunStepFilters["status"] } : {}),
+  };
+}
+
+function readWorkflowRunArtifactFilters(searchParams: URLSearchParams): GitForgeWorkflowRunArtifactFilters {
+  return {
+    jobRunId: text(searchParams.get("jobRunId")),
+    name: text(searchParams.get("name")),
   };
 }
 
@@ -320,7 +354,27 @@ async function runWorkflowRunCollectionAction(
       actor: actor as GitForgeActor,
       branch: text(body.branch),
       commitHash: text(body.commitHash),
+      env: body.env && typeof body.env === "object"
+        ? Object.fromEntries(
+          Object.entries(body.env as Record<string, unknown>)
+            .map(([key, value]) => [text(key), text(value)] as const)
+            .filter(([key, value]) => key && value),
+        )
+        : undefined,
+      executionContext: body.executionContext && typeof body.executionContext === "object"
+        ? body.executionContext as any
+        : undefined,
+      inputs: body.inputs && typeof body.inputs === "object"
+        ? body.inputs as Record<string, boolean | string>
+        : undefined,
       ref: text(body.ref),
+      secrets: body.secrets && typeof body.secrets === "object"
+        ? Object.fromEntries(
+          Object.entries(body.secrets as Record<string, unknown>)
+            .map(([key, value]) => [text(key), text(value)] as const)
+            .filter(([key, value]) => key && value),
+        )
+        : undefined,
       triggerContext: body.triggerContext && typeof body.triggerContext === "object"
         ? body.triggerContext as Record<string, unknown>
         : undefined,
@@ -339,4 +393,17 @@ function buildCreateTagInput(value: unknown) {
   };
 }
 
-export { allowedMethodsForRoute, isForgeReleasePayload, readActivityFilters, readJsonBody, readWorkflowFilters, readWorkflowRunEventFilters, readWorkflowRunFilters, routeOperation, runForgeAction };
+export {
+  allowedMethodsForRoute,
+  isForgeReleasePayload,
+  readActivityFilters,
+  readJsonBody,
+  readWorkflowFilters,
+  readWorkflowRunArtifactFilters,
+  readWorkflowRunEventFilters,
+  readWorkflowRunFilters,
+  readWorkflowRunJobFilters,
+  readWorkflowRunStepFilters,
+  routeOperation,
+  runForgeAction,
+};

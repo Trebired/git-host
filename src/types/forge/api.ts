@@ -36,11 +36,17 @@ import type {
   GitForgeRepositoryOverview,
   GitForgeWorkflow,
   GitForgeWorkflowFilters,
+  GitForgeWorkflowRunArtifact,
+  GitForgeWorkflowRunArtifactFilters,
   GitForgeWorkflowRun,
   GitForgeWorkflowRunEvent,
   GitForgeWorkflowRunEventFilters,
   GitForgeWorkflowRunFilters,
+  GitForgeWorkflowRunJob,
+  GitForgeWorkflowRunJobFilters,
   GitForgeWorkflowRunSocketSubscription,
+  GitForgeWorkflowRunStep,
+  GitForgeWorkflowRunStepFilters,
   RunGitForgeWorkflowInput,
 } from "./workflows.js";
 
@@ -79,8 +85,10 @@ type GitForge = {
   listActivity(repositoryId: string, filters?: GitForgeActivityFilters): Promise<GitForgeActivityEntry[]>;
   listForks(repositoryId: string): Promise<GitForgeFork[]>;
   listReleases(repositoryId: string): Promise<GitForgeRelease[]>;
+  listWorkflowRunArtifacts(repositoryId: string, runId: string, filters?: GitForgeWorkflowRunArtifactFilters): Promise<GitForgeWorkflowRunArtifact[]>;
   listWorkflowRunEvents(repositoryId: string, runId: string, filters?: GitForgeWorkflowRunEventFilters): Promise<GitForgeWorkflowRunEvent[]>;
-  listWorkflowRunSteps(repositoryId: string, runId: string): Promise<import("./workflows.js").GitForgeWorkflowRunStep[]>;
+  listWorkflowRunJobs(repositoryId: string, runId: string, filters?: GitForgeWorkflowRunJobFilters): Promise<GitForgeWorkflowRunJob[]>;
+  listWorkflowRunSteps(repositoryId: string, runId: string, filters?: GitForgeWorkflowRunStepFilters): Promise<GitForgeWorkflowRunStep[]>;
   listWorkflowRuns(repositoryId: string, filters?: GitForgeWorkflowRunFilters): Promise<GitForgeWorkflowRun[]>;
   listWorkflows(repositoryId: string, filters?: GitForgeWorkflowFilters): Promise<GitForgeWorkflow[]>;
   readOverview(repositoryId: string, input?: ReadGitForgeRepositoryInput): Promise<GitForgeRepositoryOverview>;

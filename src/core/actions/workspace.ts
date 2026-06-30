@@ -47,7 +47,15 @@ function resolveActionsWorkspaceRoot(options: CreateGitForgeActionsOptions | und
   return path.join(root, repositoryId, runId);
 }
 
+// Deliberately a separate root from the per-run workspace above: release assets must
+// outlive the run that produced them, so they can't live under a path any run-cleanup
+// logic is allowed to delete.
+function resolveReleaseAssetsRoot(options: CreateGitForgeActionsOptions | undefined): string {
+  return text(options?.releaseAssetsRoot, path.join(os.tmpdir(), "@trebired-git-host-release-assets"));
+}
+
 export {
   materializeWorkspace,
   resolveActionsWorkspaceRoot,
+  resolveReleaseAssetsRoot,
 };

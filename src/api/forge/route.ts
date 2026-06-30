@@ -33,6 +33,18 @@ type GitForgeApiRoute =
       runId: string;
     }
   | {
+      action: "action_run_artifacts";
+      repositoryKey: string;
+      resource: "action_run";
+      runId: string;
+    }
+  | {
+      action: "action_run_jobs";
+      repositoryKey: string;
+      resource: "action_run";
+      runId: string;
+    }
+  | {
       action: "action_run_steps";
       repositoryKey: string;
       resource: "action_run";
@@ -173,6 +185,12 @@ function buildActionsRoute(repositoryKey: string, segments: string[]): GitForgeA
     }
     if (segments.length === 6 && segments[5] === "events") {
       return { action: "action_run_events", repositoryKey, resource: "action_run", runId };
+    }
+    if (segments.length === 6 && segments[5] === "jobs") {
+      return { action: "action_run_jobs", repositoryKey, resource: "action_run", runId };
+    }
+    if (segments.length === 6 && segments[5] === "artifacts") {
+      return { action: "action_run_artifacts", repositoryKey, resource: "action_run", runId };
     }
     if (segments.length === 6 && segments[5] === "steps") {
       return { action: "action_run_steps", repositoryKey, resource: "action_run", runId };

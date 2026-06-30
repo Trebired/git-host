@@ -272,7 +272,7 @@ describe("@trebired/git-host actions", () => {
 
     expect(completed.status).toBe("success");
     expect(completed.created_by).toBe("alice");
-    expect(completed.runner?.kind).toBe("go-runner");
+    expect(completed.runner?.kind).toBe("local");
     expect(steps.map((step) => step.status)).toEqual(["success", "success", "success"]);
     expect(events.filter((event) => event.type === "step.started").map((event) => event.step_name)).toEqual(["Snapshot", "Stdout", "Stderr"]);
     expect(events.some((event) => event.type === "step.output" && String(event.chunk || "").includes("first snapshot"))).toBe(true);
@@ -603,5 +603,336 @@ describe("@trebired/git-host actions", () => {
       await closeServer(server);
       socketServer.close();
     }
+  }, { timeout: 20_000 });
+
+  test("normalizes github-actions-inspired workflows, validates dispatch inputs, merges env in order, and redacts secrets", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const storage = createInMemoryGitForgeStorageAdapter();
+    const host = createHostWithActivity(repositoriesRoot);
+    const forge = createActionsForge(repositoriesRoot, host, storage, {
+      resolveExecutionContext() {
+        return {
+          env: {
+            TOP: "host",
+          },
+          secrets: {
+            PUBLISH_TOKEN: "super-secret-token",
+          },
+        };
+      },
+    });
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeWorkflowFile(workspace, "publish.yml", `
+name: Publish
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        type: string
+        required: true
+      dry_run:
+        type: boolean
+        default: false
+env:
+  TOP: workflow
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      LEVEL: \${{ env.TOP }}-job
+    steps:
+      - name: Echo values
+        env:
+          STEP_LEVEL: \${{ env.LEVEL }}-step
+        run: |
+          printf '%s\\n' "\${TOP}"
+          printf '%s\\n' "\${LEVEL}"
+          printf '%s\\n' "\${STEP_LEVEL}"
+          printf '%s\\n' "\${PUBLISH_TOKEN}"
+          printf '%s\\n' "\${EXTRA_SECRET}"
+          printf '%s\\n' "\${{ github.event_name }}"
+          printf '%s\\n' "\${{ github.event.inputs.target }}"
+          printf '%s\\n' "\${{ github.event.inputs.dry_run }}"
+`, ".git-host");
+    writeFile(workspace, "README.md", "# Publish\n");
+    await host.ensureRepository("demo", { actor });
+
+    const workflow = await forge.readWorkflow("demo", workflowDefinitionId("publish.yml"));
+    expect(workflow.schema).toBe("gha-subset-v1");
+    expect(workflow.jobs).toHaveLength(1);
+    expect(workflow.on?.workflow_dispatch?.inputs?.map((entry) => entry.name)).toEqual(["target", "dry_run"]);
+
+    await expect(forge.runWorkflow("demo", workflowDefinitionId("publish.yml"), {
+      actor,
+      ref: "HEAD",
+    })).rejects.toThrow(/target/i);
+
+    const run = await forge.runWorkflow("demo", workflowDefinitionId("publish.yml"), {
+      actor,
+      inputs: {
+        dry_run: true,
+        target: "pkg-a",
+      },
+      ref: "HEAD",
+      secrets: {
+        EXTRA_SECRET: "other-secret-token",
+      },
+    });
+    const completed = await waitForRun(forge, "demo", run.id);
+    const events = await forge.listWorkflowRunEvents("demo", run.id);
+
+    expect(completed.status).toBe("success");
+    expect(completed.trigger_context?.inputs).toEqual({
+      dry_run: true,
+      target: "pkg-a",
+    });
+    expect(events.some((event) => event.type === "step.output" && String(event.chunk || "").includes("workflow"))).toBe(true);
+    expect(events.some((event) => event.type === "step.output" && String(event.chunk || "").includes("workflow-job"))).toBe(true);
+    expect(events.some((event) => event.type === "step.output" && String(event.chunk || "").includes("workflow-job-step"))).toBe(true);
+    expect(events.some((event) => event.type === "step.output" && String(event.chunk || "").includes("workflow_dispatch"))).toBe(true);
+    expect(events.some((event) => event.type === "step.output" && String(event.chunk || "").includes("pkg-a"))).toBe(true);
+    expect(events.some((event) => event.type === "step.output" && String(event.chunk || "").includes("true"))).toBe(true);
+    expect(events.some((event) => String(event.chunk || "").includes("***"))).toBe(true);
+    expect(events.some((event) => String(event.chunk || "").includes("super-secret-token"))).toBe(false);
+    expect(events.some((event) => String(event.chunk || "").includes("other-secret-token"))).toBe(false);
+  }, { timeout: 20_000 });
+
+  test("expands matrix jobs, enforces needs ordering, and moves artifacts across jobs", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const storage = createInMemoryGitForgeStorageAdapter();
+    const host = createHostWithActivity(repositoriesRoot);
+    const forge = createActionsForge(repositoriesRoot, host, storage);
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeWorkflowFile(workspace, "matrix.yml", `
+name: Matrix Build
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - linux
+          - darwin
+    steps:
+      - name: Write build artifact
+        run: |
+          mkdir -p dist
+          printf '%s\\n' "\${{ matrix.target }}" > "dist/\${{ matrix.target }}.txt"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-\${{ matrix.target }}
+          path: dist/\${{ matrix.target }}.txt
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: \${{ needs.build.result == 'success' }}
+    steps:
+      - name: Download linux build
+        uses: actions/download-artifact@v4
+        with:
+          name: build-linux
+          path: gathered
+      - name: Show linux build
+        run: cat gathered/dist/linux.txt
+`, ".git-host");
+    writeFile(workspace, "README.md", "# Matrix\n");
+    await host.ensureRepository("demo", { actor });
+
+    const run = await forge.runWorkflow("demo", workflowDefinitionId("matrix.yml"), {
+      actor,
+      ref: "HEAD",
+    });
+    const completed = await waitForRun(forge, "demo", run.id);
+    const jobs = await forge.listWorkflowRunJobs("demo", run.id);
+    const steps = await forge.listWorkflowRunSteps("demo", run.id);
+    const artifacts = await forge.listWorkflowRunArtifacts("demo", run.id);
+    const events = await forge.listWorkflowRunEvents("demo", run.id);
+
+    expect(completed.status).toBe("success");
+    expect(jobs).toHaveLength(3);
+    expect(jobs.filter((job) => job.job_id === "build")).toHaveLength(2);
+    expect(jobs.every((job) => job.status === "success")).toBe(true);
+    expect(artifacts.map((artifact) => artifact.name).sort()).toEqual(["build-darwin", "build-linux"]);
+    expect(events.some((event) => event.type === "artifact.uploaded" && event.artifact_name === "build-linux")).toBe(true);
+    expect(events.some((event) => event.type === "artifact.downloaded" && event.artifact_name === "build-linux")).toBe(true);
+    expect(events.some((event) => event.type === "step.output" && String(event.chunk || "").includes("linux"))).toBe(true);
+    const publishStarted = events.find((event) => event.type === "job.started" && event.job_id === "publish");
+    const lastBuildFinished = [...events].reverse().find((event) => event.type === "job.finished" && event.job_id === "build");
+    expect(Number(publishStarted?.sequence || 0)).toBeGreaterThan(Number(lastBuildFinished?.sequence || 0));
+    expect(steps.some((step) => step.kind === "uses")).toBe(true);
+  }, { timeout: 20_000 });
+
+  test("cancels in-progress runs in the same concurrency group", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const storage = createInMemoryGitForgeStorageAdapter();
+    const host = createHostWithActivity(repositoriesRoot);
+    const forge = createActionsForge(repositoriesRoot, host, storage);
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeWorkflowFile(workspace, "concurrency.yml", `
+name: Publish
+on:
+  workflow_dispatch:
+concurrency:
+  group: publish-\${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait
+        run: |
+          printf 'start\\n'
+          sleep 2
+          printf 'done\\n'
+`, ".git-host");
+    writeFile(workspace, "README.md", "# Concurrency\n");
+    await host.ensureRepository("demo", { actor });
+
+    const firstRun = await forge.runWorkflow("demo", workflowDefinitionId("concurrency.yml"), { actor, ref: "HEAD" });
+    for (let attempt = 0; attempt < 120; attempt += 1) {
+      const current = await forge.readWorkflowRun("demo", firstRun.id);
+      if (["running", "starting"].includes(current.status)) break;
+      await sleep(25);
+    }
+    const secondRun = await forge.runWorkflow("demo", workflowDefinitionId("concurrency.yml"), { actor, ref: "HEAD" });
+    const firstCompleted = await waitForRun(forge, "demo", firstRun.id);
+    const secondCompleted = await waitForRun(forge, "demo", secondRun.id);
+    const firstEvents = await forge.listWorkflowRunEvents("demo", firstRun.id);
+
+    expect(firstCompleted.status).toBe("cancelled");
+    expect(secondCompleted.status).toBe("success");
+    expect(firstEvents.some((event) => event.type === "run.cancellation_requested")).toBe(true);
+    expect(firstEvents.some((event) => event.type === "run.cancelled")).toBe(true);
+  }, { timeout: 20_000 });
+
+  test("matches new push branch and tag filters from activity triggers", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const storage = createInMemoryGitForgeStorageAdapter();
+    const host = createHostWithActivity(repositoriesRoot);
+    const forge = createActionsForge(repositoriesRoot, host, storage);
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeWorkflowFile(workspace, "branch.yml", `
+name: Branch Trigger
+on:
+  push:
+    branches:
+      - main
+jobs:
+  branch:
+    runs-on: ubuntu-latest
+    steps:
+      - run: printf 'branch\\n'
+`, ".git-host");
+    writeWorkflowFile(workspace, "tag.yml", `
+name: Tag Trigger
+on:
+  push:
+    tags:
+      - v*
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - run: printf 'tag\\n'
+`, ".git-host");
+    writeFile(workspace, "README.md", "# Triggers\n");
+    await host.ensureRepository("demo", { actor });
+    await host.createTag("demo", {
+      actor,
+      name: "v1.2.3",
+      ref: "main",
+    });
+
+    await storage.activity.createActivity({
+      actor_id: actor.id,
+      actor_label: actor.name,
+      created_at: new Date().toISOString(),
+      id: "push-main",
+      kind: "repository.push",
+      metadata: {
+        branch: "main",
+        head_commit: git(["rev-parse", "HEAD"], workspace),
+        ref: "main",
+      },
+      repository_id: "demo",
+      source: "forge",
+      summary: "Push main",
+    });
+    await storage.activity.createActivity({
+      actor_id: actor.id,
+      actor_label: actor.name,
+      created_at: new Date().toISOString(),
+      id: "push-tag",
+      kind: "repository.push",
+      metadata: {
+        head_commit: git(["rev-parse", "HEAD"], workspace),
+        ref: "refs/tags/v1.2.3",
+        tag_name: "v1.2.3",
+      },
+      repository_id: "demo",
+      source: "forge",
+      summary: "Push tag",
+    });
+
+    await waitForRunCount(forge, "demo", 2);
+    const branchRuns = await forge.listWorkflowRuns("demo", { workflowId: workflowDefinitionId("branch.yml"), triggerKind: "push" });
+    const tagRuns = await forge.listWorkflowRuns("demo", { workflowId: workflowDefinitionId("tag.yml"), triggerKind: "push" });
+
+    expect(branchRuns).toHaveLength(1);
+    expect(tagRuns).toHaveLength(1);
+    expect((await waitForRun(forge, "demo", branchRuns[0]!.id)).status).toBe("success");
+    expect((await waitForRun(forge, "demo", tagRuns[0]!.id)).status).toBe("success");
+  }, { timeout: 20_000 });
+
+  test("fails unsupported runner labels clearly", async () => {
+    const root = tempDir();
+    const repositoriesRoot = path.join(root, "repos");
+    const storage = createInMemoryGitForgeStorageAdapter();
+    const host = createHostWithActivity(repositoriesRoot);
+    const forge = createActionsForge(repositoriesRoot, host, storage);
+    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+
+    fs.mkdirSync(workspace, { recursive: true });
+    writeWorkflowFile(workspace, "unsupported-runner.yml", `
+name: Unsupported Runner
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on:
+      - windows-latest
+    steps:
+      - run: printf 'never\\n'
+`, ".git-host");
+    writeFile(workspace, "README.md", "# Unsupported Runner\n");
+    await host.ensureRepository("demo", { actor });
+
+    const run = await forge.runWorkflow("demo", workflowDefinitionId("unsupported-runner.yml"), {
+      actor,
+      ref: "HEAD",
+    });
+    const completed = await waitForRun(forge, "demo", run.id);
+    const jobs = await forge.listWorkflowRunJobs("demo", run.id);
+    const steps = await forge.listWorkflowRunSteps("demo", run.id);
+
+    expect(completed.status).toBe("failed");
+    expect(completed.summary.toLowerCase()).toContain("unsupported runner");
+    expect(jobs[0]?.status).toBe("failed");
+    expect(steps[0]?.status).toBe("skipped");
   }, { timeout: 20_000 });
 });

@@ -1,0 +1,9 @@
+name: Legacy build
+trigger: manual
+steps:
+  - name: Install
+    run: bun install
+  - name: Test
+    run: bun test
+  - name: Build
+    run: bun run build
