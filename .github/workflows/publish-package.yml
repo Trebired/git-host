@@ -63,7 +63,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Build Actions runner
-        run: node ./scripts/build-runner.mjs --target ${{ matrix.target }}
+        run: node ./scripts/build/runner.mjs --target ${{ matrix.target }}
 
       - name: Upload Actions runner
         uses: actions/upload-artifact@v4
