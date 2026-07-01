@@ -209,8 +209,8 @@ Supported subset:
 download time — the same asset shape and download path the release API already
 serves. GitHub Actions has no built-in equivalent for this (you'd reach for a
 marketplace action like `softprops/action-gh-release`); this is an intentional
-Operlorn-only addition, not an attempt to mirror GitHub syntax for something GitHub
-doesn't ship itself.
+first-party addition to git-host's Actions, not an attempt to mirror GitHub syntax
+for something GitHub doesn't ship itself.
 
 ```yaml
 - uses: actions/publish-release-asset@v1

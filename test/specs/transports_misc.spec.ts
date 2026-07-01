@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { utils as sshUtils } from "ssh2";
 
 import {
@@ -13,6 +14,16 @@ import {
   normalizeSshPublicKey,
 } from "#rfvjfxzebkbs";
 import { closeServer, createHost, createServer, git, gitAsync, gitCommit, listen, normalizePublicKey, resolveRepositoryPath, sleep, tempDir, writeFile } from "./helpers.js";
+
+// The SSH round-trip test drives git through the system `ssh` client. Skip it
+// gracefully where that client is unavailable instead of failing the build.
+function sshClientAvailable() {
+  try {
+    return spawnSync("ssh", ["-V"], { stdio: "ignore" }).status === 0;
+  } catch {
+    return false;
+  }
+}
 
 describe("@trebired/git-host", () => {
   test("applies HTTP identity, permission, and audit hooks", async () => {
@@ -63,7 +74,8 @@ describe("@trebired/git-host", () => {
     }
   });
 
-  test("serves clone and push over SSH", async () => {
+  const sshTest = sshClientAvailable() ? test : test.skip;
+  sshTest("serves clone and push over SSH", async () => {
     const root = tempDir();
     const host = createHost(path.join(root, "repos"));
     const workspace = resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: "demo/workspace" });
@@ -94,7 +106,7 @@ describe("@trebired/git-host", () => {
     });
 
     const port = await listen(sshServer);
-    const sshCommand = `ssh -i ${clientKeyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o LogLevel=ERROR -p ${port}`;
+    const sshCommand = `ssh -i ${clientKeyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 -o LogLevel=ERROR -p ${port}`;
     const clientRepo = path.join(root, "ssh-client");
 
     try {
