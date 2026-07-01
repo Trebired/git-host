@@ -1,4 +1,4 @@
-import type { GitForgeActionsEnvironmentOptions } from "#1mbdfxwwqqpa";
+import type { GitForgeActionsEnvironmentOptions, GitForgeLocalRunnerOptions } from "#1mbdfxwwqqpa";
 
 // Minimal set of variables that generic tooling (shells, git, common CLIs) needs
 // to function. Everything else is opt-in so host process secrets never leak into
@@ -56,7 +56,21 @@ function buildStepBaseEnv(policy: GitForgeActionsEnvironmentOptions | undefined)
   };
 }
 
+// True when the local runner would execute steps as root without any privilege
+// drop or sandbox, which means workflow code runs as root on the host.
+function runnerNeedsPrivilegeWarning(input: {
+  localRunner: GitForgeLocalRunnerOptions | undefined;
+  uid: number | null;
+}) {
+  if (input.uid !== 0) return false;
+  const { localRunner } = input;
+  const dropsPrivileges = localRunner?.uid !== undefined && localRunner.uid !== 0;
+  const sandboxed = typeof localRunner?.beforeSpawn === "function";
+  return !dropsPrivileges && !sandboxed;
+}
+
 export {
   buildStepBaseEnv,
   defaultPassthroughKeys,
+  runnerNeedsPrivilegeWarning,
 };
