@@ -406,9 +406,34 @@ type GitForgeActionsStorage = {
   ): MaybePromise<GitForgeWorkflowRunStep | null>;
 };
 
+type GitForgeActionsEnvironmentOptions = {
+  baseEnv?: Record<string, string>;
+  inheritProcessEnv?: boolean;
+  passthrough?: string[];
+  sensitiveKeys?: string[];
+};
+
+type GitForgeLocalRunnerChildSpec = {
+  args: string[];
+  command: string;
+  cwd?: string;
+  env: Record<string, string>;
+  gid?: number;
+  uid?: number;
+};
+
+type GitForgeLocalRunnerOptions = {
+  beforeSpawn?: (child: GitForgeLocalRunnerChildSpec) => MaybePromise<GitForgeLocalRunnerChildSpec | void>;
+  execTimeoutMs?: number;
+  gid?: number;
+  uid?: number;
+};
+
 type CreateGitForgeActionsOptions = {
   env?: Record<string, string>;
+  environment?: GitForgeActionsEnvironmentOptions;
   heartbeatIntervalMs?: number;
+  localRunner?: GitForgeLocalRunnerOptions;
   localRunnerLabels?: string[];
   redactOutput?: (input: {
     chunk: string;
@@ -430,8 +455,11 @@ export type {
   CancelGitForgeWorkflowRunInput,
   CreateGitForgeActionsOptions,
   CreateGitForgeWorkflowInput,
+  GitForgeActionsEnvironmentOptions,
   GitForgeActionsExecutionContextResolver,
   GitForgeActionsStorage,
+  GitForgeLocalRunnerChildSpec,
+  GitForgeLocalRunnerOptions,
   GitForgeRepositoryOverview,
   GitForgeWorkflow,
   GitForgeWorkflowConcurrency,

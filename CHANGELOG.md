@@ -4,6 +4,17 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.0.0
+
+- **Security (breaking):** the Actions execution engine no longer spreads the embedding process's full `process.env` into workflow steps. Previously every step inherited the entire host environment, so any caller who could trigger a run could read (and echo) host process secrets, and those inherited values were not redacted from logs. Steps now run with a minimal, clean base env.
+- Added a documented default passthrough allowlist needed for tooling to work — `PATH`, `HOME`, `LANG`, `LC_ALL`, `TZ`, `TERM` (plus the platform equivalents on Windows) — with everything else opt-in.
+- Added `actions.environment` configuration: `passthrough` (additive allowlist of `process.env` keys), `baseEnv` (explicit key/value pairs), `sensitiveKeys` (key names whose resolved values are always masked), and `inheritProcessEnv` (explicit, warning-logged opt-in that reproduces the pre-3.0 full-inheritance behavior exactly).
+- Extended output redaction so all values from the secrets map plus any `environment.sensitiveKeys` are masked in `step.output`/`job.output` event chunks, step output previews, and step summaries derived from step/action errors.
+- Added off-by-default local-runner isolation hooks under `actions.localRunner`: `uid`/`gid` privilege drop (passed to `spawn` where supported), `execTimeoutMs` per-step wall-clock kill (SIGTERM → SIGKILL), and a `beforeSpawn(childSpec)` hook so callers can wrap the step shell in their own sandbox (bwrap/nsjail/container) without forking. Documented the local-runner trust boundary: it executes arbitrary code as the host user, so only trusted workflows should run on it.
+- Corrected the published package `license` metadata to `AGPL-3.0-only` to match the bundled `LICENSE`.
+
+  **Migration:** if a workflow relied on an inherited host env variable, add it to `actions.environment.passthrough` (or `actions.environment.baseEnv`), or set `actions.environment.inheritProcessEnv: true` to restore the previous behavior.
+
 ## 2.2.0
 
 - Added a GitHub-Actions-inspired workflow schema (`gha-subset-v1`) alongside the existing flat shell-step format: `on.workflow_dispatch.inputs`, `on.push.branches`/`tags`, top-level `env`/`permissions`/`concurrency`, and multiple `jobs` with `runs-on`, `needs`, `if`, `env`, and `strategy.matrix`, normalized and validated against an explicit supported subset. Old flat workflow files keep running unchanged.
