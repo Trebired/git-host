@@ -118,6 +118,56 @@ function workflowDefinitionId(fileName: string, workflowRoot = ".git-host") {
   return `${workflowRoot}/workflows/${fileName}`;
 }
 
+function stepOutputText(events: GitForgeWorkflowRunEvent[]) {
+  return events
+    .filter((event) => event.type === "step.output")
+    .map((event) => String(event.chunk || ""))
+    .join("");
+}
+
+async function runProbeWorkflow(input: {
+  actions?: CreateGitForgeActionsOptions;
+  runInput?: Parameters<ReturnType<typeof createActionsForge>["runWorkflow"]>[2];
+  script: string[];
+}) {
+  const root = tempDir();
+  const repositoriesRoot = path.join(root, "repos");
+  const storage = createInMemoryGitForgeStorageAdapter();
+  const host = createHostWithActivity(repositoriesRoot);
+  const forge = createActionsForge(repositoriesRoot, host, storage, input.actions || {});
+  const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo/workspace" });
+
+  fs.mkdirSync(workspace, { recursive: true });
+  const runBody = input.script.map((line) => `          ${line}`).join("\n");
+  writeWorkflowFile(workspace, "env-probe.yml", `
+name: Env Probe
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe
+        run: |
+${runBody}
+`, ".git-host");
+  writeFile(workspace, "README.md", "# Env Probe\n");
+  await host.ensureRepository("demo", { actor });
+
+  const run = await forge.runWorkflow("demo", workflowDefinitionId("env-probe.yml"), {
+    actor,
+    ref: "HEAD",
+    ...(input.runInput || {}),
+  });
+  const completed = await waitForRun(forge, "demo", run.id);
+  const events = await forge.listWorkflowRunEvents("demo", run.id);
+  return {
+    completed,
+    events,
+    output: stepOutputText(events),
+  };
+}
+
 async function waitForRun(
   forge: ReturnType<typeof createActionsForge>,
   repositoryId: string,
@@ -698,6 +748,99 @@ jobs:
     expect(events.some((event) => String(event.chunk || "").includes("***"))).toBe(true);
     expect(events.some((event) => String(event.chunk || "").includes("super-secret-token"))).toBe(false);
     expect(events.some((event) => String(event.chunk || "").includes("other-secret-token"))).toBe(false);
+  }, { timeout: 20_000 });
+
+  test("does not leak the host process environment into workflow steps by default", async () => {
+    process.env.HOSTLEAK_SENTINEL = "should-not-be-visible";
+    try {
+      const { completed, output } = await runProbeWorkflow({
+        script: [
+          `printf 'sentinel=%s\\n' "\${HOSTLEAK_SENTINEL:-<unset>}"`,
+          `printf 'path=%s\\n' "\${PATH:+present}"`,
+          `printf 'home=%s\\n' "\${HOME:+present}"`,
+        ],
+      });
+      expect(completed.status).toBe("success");
+      expect(output).toContain("sentinel=<unset>");
+      expect(output).not.toContain("should-not-be-visible");
+      expect(output).toContain("path=present");
+      expect(output).toContain("home=present");
+    } finally {
+      delete process.env.HOSTLEAK_SENTINEL;
+    }
+  }, { timeout: 20_000 });
+
+  test("exposes only allowlisted process env keys via environment.passthrough", async () => {
+    process.env.HOSTLEAK_ALLOWED = "allowed-value";
+    process.env.HOSTLEAK_HIDDEN = "hidden-value";
+    try {
+      const { completed, output } = await runProbeWorkflow({
+        actions: {
+          environment: {
+            passthrough: ["HOSTLEAK_ALLOWED"],
+          },
+        },
+        script: [
+          `printf 'allowed=%s\\n' "\${HOSTLEAK_ALLOWED:-<unset>}"`,
+          `printf 'hidden=%s\\n' "\${HOSTLEAK_HIDDEN:-<unset>}"`,
+        ],
+      });
+      expect(completed.status).toBe("success");
+      expect(output).toContain("allowed=allowed-value");
+      expect(output).toContain("hidden=<unset>");
+      expect(output).not.toContain("hidden-value");
+    } finally {
+      delete process.env.HOSTLEAK_ALLOWED;
+      delete process.env.HOSTLEAK_HIDDEN;
+    }
+  }, { timeout: 20_000 });
+
+  test("restores full host env inheritance with environment.inheritProcessEnv", async () => {
+    process.env.HOSTLEAK_SENTINEL = "should-be-visible-when-opted-in";
+    try {
+      const { completed, output } = await runProbeWorkflow({
+        actions: {
+          environment: {
+            inheritProcessEnv: true,
+          },
+        },
+        script: [
+          `printf 'sentinel=%s\\n' "\${HOSTLEAK_SENTINEL:-<unset>}"`,
+        ],
+      });
+      expect(completed.status).toBe("success");
+      expect(output).toContain("sentinel=should-be-visible-when-opted-in");
+    } finally {
+      delete process.env.HOSTLEAK_SENTINEL;
+    }
+  }, { timeout: 20_000 });
+
+  test("redacts declared secrets and environment.sensitiveKeys from streamed output", async () => {
+    const { completed, events, output } = await runProbeWorkflow({
+      actions: {
+        env: {
+          DEPLOY_KEY: "top-secret-deploy-key",
+        },
+        environment: {
+          sensitiveKeys: ["DEPLOY_KEY"],
+        },
+      },
+      runInput: {
+        actor,
+        ref: "HEAD",
+        secrets: {
+          RUN_SECRET: "run-scoped-secret",
+        },
+      },
+      script: [
+        `printf 'secret=%s\\n' "\${RUN_SECRET}"`,
+        `printf 'key=%s\\n' "\${DEPLOY_KEY}"`,
+      ],
+    });
+    expect(completed.status).toBe("success");
+    expect(output).toContain("***");
+    expect(events.some((event) => String(event.chunk || "").includes("run-scoped-secret"))).toBe(false);
+    expect(events.some((event) => String(event.chunk || "").includes("top-secret-deploy-key"))).toBe(false);
   }, { timeout: 20_000 });
 
   test("expands matrix jobs, enforces needs ordering, and moves artifacts across jobs", async () => {

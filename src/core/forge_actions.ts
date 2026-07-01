@@ -28,6 +28,7 @@ import type {
 } from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
 import { uploadArtifact, downloadArtifact } from "./actions/artifacts.js";
+import { buildStepBaseEnv } from "./actions/environment.js";
 import { resolveWorkflowBoolean, resolveWorkflowString, type WorkflowExpressionContext } from "./actions/expressions.js";
 import { materializeJobWorkspace, runShellCommand, setupRuntime } from "./actions/local_runner.js";
 import { normalizeEnv } from "./actions/normalize.js";
@@ -201,7 +202,7 @@ function mergeRuntimeEnv(input: {
   workflow: GitForgeWorkflow;
 }) {
   let env = {
-    ...process.env,
+    ...buildStepBaseEnv(input.actions?.environment),
     ...(input.actions?.env || {}),
     ...(input.execution.env || {}),
   } as Record<string, string>;
@@ -283,6 +284,12 @@ function createGitForgeActionsRuntime(options: CreateGitForgeActionsRuntimeOptio
   const activeRuns = new Map<string, ActiveRunState>();
   const runner = normalizeRunner(options.actions);
   let processing = false;
+
+  if (options.actions?.environment?.inheritProcessEnv) {
+    console.warn(
+      "[git-host] actions.environment.inheritProcessEnv is enabled: the entire host process environment is exposed to every workflow step and is not redacted. Only enable this for fully trusted workflows.",
+    );
+  }
 
   async function nextRunSequence(runId: string): Promise<number> {
     const current = runSequences.get(runId);
@@ -1076,7 +1083,13 @@ function createGitForgeActionsRuntime(options: CreateGitForgeActionsRuntimeOptio
         });
         continue;
       }
-      const redactor = createRunRedactor(options.actions, input.run, stepRun, input.execution.secrets);
+      const redactor = createRunRedactor({
+        actions: options.actions,
+        env: stepContext.env,
+        run: input.run,
+        secrets: input.execution.secrets,
+        step: stepRun,
+      });
       const resolvedCommand = stepRun.kind === "shell"
         ? resolveWorkflowString(stepRun.command, stepContext)
         : resolveWorkflowString(text(stepRun.uses), stepContext);
@@ -1159,7 +1172,7 @@ function createGitForgeActionsRuntime(options: CreateGitForgeActionsRuntimeOptio
           });
           continue;
         } catch (error) {
-          const summary = error instanceof Error ? error.message : "Action step failed.";
+          const summary = await redactor(error instanceof Error ? error.message : "Action step failed.");
           await finishStep(input.run, jobRun, startedStep, {
             outputPreview: summary,
             status: input.activeState.cancelRequested ? "cancelled" : "failed",
@@ -1190,10 +1203,14 @@ function createGitForgeActionsRuntime(options: CreateGitForgeActionsRuntimeOptio
         workflow: input.workflow,
       });
       const result = await runShellCommand({
+        ...(options.actions?.localRunner?.beforeSpawn ? { beforeSpawn: options.actions.localRunner.beforeSpawn } : {}),
         command: resolvedCommand,
         cwd: workspacePath,
         env: runtimeEnv,
+        ...(options.actions?.localRunner?.execTimeoutMs === undefined ? {} : { execTimeoutMs: options.actions.localRunner.execTimeoutMs }),
+        ...(options.actions?.localRunner?.gid === undefined ? {} : { gid: options.actions.localRunner.gid }),
         heartbeatIntervalMs: Math.max(250, Number(options.actions?.heartbeatIntervalMs) || DEFAULT_HEARTBEAT_INTERVAL_MS),
+        ...(options.actions?.localRunner?.uid === undefined ? {} : { uid: options.actions.localRunner.uid }),
         onHeartbeat: async () => {
           await emitRunEvent(input.run, {
             job_id: jobRun.job_id,

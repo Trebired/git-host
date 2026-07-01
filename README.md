@@ -364,20 +364,90 @@ const forge = createGitForge({
 });
 ```
 
-Runtime env merge order:
+Runtime env merge order (later layers win):
 
-- base process env
+- clean base env (see below — **not** the full host `process.env` by default)
 - static `actions.env`
 - host-provided execution env
 - workflow `env`
 - job `env`
 - step `env`
+- host-provided secrets
 
-Secrets are available to expressions and the runtime env, but their values are redacted from:
+#### Step environment isolation
+
+By default the runtime does **not** spread the embedding process's `process.env`
+into workflow steps, so host process secrets can never leak into (or be echoed
+by) a workflow. Instead it builds a minimal base env from a small passthrough
+allowlist needed for tooling to work: `PATH`, `HOME`, `LANG`, `LC_ALL`, `TZ`,
+`TERM` (plus the platform equivalents on Windows). Everything else is opt-in via
+`actions.environment`:
+
+```ts
+const forge = createGitForge({
+  actions: {
+    environment: {
+      // Additive allowlist of extra process.env keys to expose to steps.
+      passthrough: ["NODE_EXTRA_CA_CERTS"],
+      // Explicit key/value pairs injected into the clean base env.
+      baseEnv: { CI: "true" },
+      // Key names whose resolved values are always masked from logs/output.
+      sensitiveKeys: ["DEPLOY_KEY"],
+      // Escape hatch: restore the pre-2.x behavior of inheriting the ENTIRE host
+      // process env. Explicit opt-in, logged with a warning. Not redacted.
+      inheritProcessEnv: false,
+    },
+  },
+  gitHost,
+  storage,
+});
+```
+
+> **Migration note (breaking):** before this release every step inherited the
+> full host `process.env`. If a workflow relied on an inherited variable, add it
+> to `environment.passthrough` (or `environment.baseEnv`), or set
+> `environment.inheritProcessEnv: true` to reproduce the old behavior exactly.
+
+Secrets are available to expressions and the runtime env, but their values —
+along with the resolved values of any `environment.sensitiveKeys` — are redacted
+from:
 
 - live socket output
-- persisted event payloads
+- persisted event payloads (`step.output`/`job.output` chunks)
 - step output previews
+- step summaries derived from step/action errors
+
+#### Local runner trust boundary and isolation hooks
+
+The local runner executes each step as `spawn(shell, ["-lc", command])` **as the
+host user, unsandboxed**, with full filesystem reach; only the per-job git
+workspace is scratch. **Only run trusted workflows on the local runner.**
+
+For callers that need to harden execution without forking, `actions.localRunner`
+exposes off-by-default knobs:
+
+```ts
+const forge = createGitForge({
+  actions: {
+    localRunner: {
+      uid: 65534,              // drop privileges (passed to spawn where supported)
+      gid: 65534,
+      execTimeoutMs: 600_000,  // per-step wall-clock kill (SIGTERM -> SIGKILL)
+      // Wrap the shell in your own sandbox (bwrap/nsjail/container). Return a
+      // modified child spec, or nothing to keep the default.
+      beforeSpawn(child) {
+        return {
+          ...child,
+          command: "bwrap",
+          args: ["--unshare-all", "--", child.command, ...child.args],
+        };
+      },
+    },
+  },
+  gitHost,
+  storage,
+});
+```
 
 ### Workflow APIs
 
@@ -536,7 +606,3 @@ Repository Actions workflow binaries are built in CI for:
 - Linux arm64 GNU
 - macOS x64
 - macOS arm64
-
-## License
-
-MIT

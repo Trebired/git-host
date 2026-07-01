@@ -258,7 +258,7 @@
     "node",
     "bun"
   ],
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "main": "./dist/index.js",
   "name": "@trebired/git-host",
   "packageManager": "bun@1.3.12",
@@ -287,5 +287,5 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "2.2.0"
+  "version": "3.0.0"
 }

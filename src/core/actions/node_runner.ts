@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 
 import { text } from "#62f869522d1f";
 
+import { buildStepBaseEnv } from "./environment.js";
 import { appendPreview, normalizeRunnerInput } from "./runner/protocol.js";
 import type {
   ActionsRunnerExecution,
@@ -23,7 +24,7 @@ function buildStepEnv(
   step: ReturnType<typeof normalizeRunnerInput>["steps"][number],
 ) {
   return {
-    ...process.env,
+    ...buildStepBaseEnv(input.actions?.environment),
     ...(input.actions?.env || {}),
     ...(step.env || {}),
   };
