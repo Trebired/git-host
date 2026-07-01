@@ -413,6 +413,14 @@ type GitForgeActionsEnvironmentOptions = {
   sensitiveKeys?: string[];
 };
 
+type GitForgeBubblewrapSandboxOptions = {
+  allowNetwork?: boolean;
+  bind?: string[];
+  bwrapPath?: string;
+  roBind?: string[];
+  systemPaths?: string[];
+};
+
 type GitForgeLocalRunnerChildSpec = {
   args: string[];
   command: string;
@@ -458,6 +466,7 @@ export type {
   GitForgeActionsEnvironmentOptions,
   GitForgeActionsExecutionContextResolver,
   GitForgeActionsStorage,
+  GitForgeBubblewrapSandboxOptions,
   GitForgeLocalRunnerChildSpec,
   GitForgeLocalRunnerOptions,
   GitForgeRepositoryOverview,

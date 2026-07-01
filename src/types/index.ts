@@ -123,6 +123,7 @@ export type {
   CreateGitForgeApiHandlerOptions,
   CreateGitForgeActionsOptions,
   GitForgeActionsEnvironmentOptions,
+  GitForgeBubblewrapSandboxOptions,
   GitForgeLocalRunnerChildSpec,
   GitForgeLocalRunnerOptions,
   CreateGitForgeSocketServerOptions,

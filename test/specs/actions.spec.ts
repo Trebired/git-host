@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
+import { spawnSync } from "node:child_process";
 import { io as connectSocket } from "socket.io-client";
 
 import {
+  createBubblewrapSandbox,
   createGitForge,
   createGitForgeActivityRecorder,
   createGitForgeApiHandler,
@@ -38,6 +40,21 @@ const actor = {
   id: "alice",
   name: "Alice",
 };
+
+function bubblewrapWorks() {
+  try {
+    const spec = createBubblewrapSandbox()({
+      args: [],
+      command: "true",
+      cwd: process.cwd(),
+      env: { PATH: process.env.PATH || "" },
+    });
+    const result = spawnSync(spec.command, spec.args, { stdio: "ignore" });
+    return result.status === 0;
+  } catch {
+    return false;
+  }
+}
 
 function actorHeaders(actorId = actor.id) {
   return {
@@ -841,6 +858,53 @@ jobs:
     expect(output).toContain("***");
     expect(events.some((event) => String(event.chunk || "").includes("run-scoped-secret"))).toBe(false);
     expect(events.some((event) => String(event.chunk || "").includes("top-secret-deploy-key"))).toBe(false);
+  }, { timeout: 20_000 });
+
+  test("createBubblewrapSandbox wraps the step shell in a bwrap invocation", () => {
+    const beforeSpawn = createBubblewrapSandbox();
+    const spec = beforeSpawn({
+      args: ["-lc", "echo hi"],
+      command: "bash",
+      cwd: "/work/space",
+      env: { PATH: "/usr/bin" },
+    });
+    expect(spec.command).toBe("bwrap");
+    expect(spec.args).toContain("--unshare-all");
+    expect(spec.args).not.toContain("--share-net");
+    expect(spec.args.join(" ")).toContain("--bind /work/space /work/space");
+    expect(spec.args.slice(-4)).toEqual(["--", "bash", "-lc", "echo hi"]);
+
+    const networked = createBubblewrapSandbox({ allowNetwork: true })({
+      args: ["-lc", "echo hi"],
+      command: "bash",
+      cwd: "/work/space",
+      env: {},
+    });
+    expect(networked.args).toContain("--share-net");
+  });
+
+  const sandboxTest = bubblewrapWorks() ? test : test.skip;
+  sandboxTest("runs steps inside a bubblewrap sandbox that hides host files from the step", async () => {
+    const secretDir = tempDir();
+    const secretFile = path.join(secretDir, "host-secret.txt");
+    fs.writeFileSync(secretFile, "sandbox-should-hide-this\n");
+
+    const { completed, output } = await runProbeWorkflow({
+      actions: {
+        localRunner: {
+          beforeSpawn: createBubblewrapSandbox(),
+        },
+      },
+      script: [
+        `printf 'inside=%s\\n' "sandbox-ok"`,
+        `if cat ${secretFile} 2>/dev/null; then printf 'leaked\\n'; else printf 'blocked\\n'; fi`,
+      ],
+    });
+
+    expect(completed.status).toBe("success");
+    expect(output).toContain("inside=sandbox-ok");
+    expect(output).toContain("blocked");
+    expect(output).not.toContain("sandbox-should-hide-this");
   }, { timeout: 20_000 });
 
   test("expands matrix jobs, enforces needs ordering, and moves artifacts across jobs", async () => {

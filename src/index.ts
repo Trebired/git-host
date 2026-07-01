@@ -23,6 +23,7 @@ export { createGitApiSocketServer } from "./api/socket/server.js";
 export { createGitForge } from "./core/create/git/forge.js";
 export { createGitForgeActivityRecorder } from "./core/activity.js";
 export { createGitForgeActionsRuntime, isTerminalRunStatus } from "./core/forge_actions.js";
+export { createBubblewrapSandbox } from "./core/actions/sandbox.js";
 export { createInMemoryGitForgeStorageAdapter } from "./core/git_forge/storage_memory.js";
 export { fetchRepository, pullRepository, pushRepository } from "./core/remote.js";
 export { createGitHttpHandler, parseGitHttpRoute } from "./http/handler.js";
@@ -91,6 +92,7 @@ export type {
   ContinueOperationInput,
   CreateGitForgeActionsOptions,
   GitForgeActionsEnvironmentOptions,
+  GitForgeBubblewrapSandboxOptions,
   GitForgeLocalRunnerChildSpec,
   GitForgeLocalRunnerOptions,
   CreateBranchInput,

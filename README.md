@@ -420,11 +420,37 @@ from:
 #### Local runner trust boundary and isolation hooks
 
 The local runner executes each step as `spawn(shell, ["-lc", command])` **as the
-host user, unsandboxed**, with full filesystem reach; only the per-job git
-workspace is scratch. **Only run trusted workflows on the local runner.**
+host user, unsandboxed by default**, with full filesystem reach; only the per-job
+git workspace is scratch. **Only run untrusted workflows behind a sandbox.** If
+the runtime detects it is running as root with no `localRunner.uid` drop and no
+`beforeSpawn` sandbox, it logs a warning at startup.
 
-For callers that need to harden execution without forking, `actions.localRunner`
-exposes off-by-default knobs:
+For a batteries-included sandbox on Linux, pass `createBubblewrapSandbox()` as the
+`beforeSpawn` hook. It wraps each step in [bubblewrap](https://github.com/containers/bubblewrap)
+(`bwrap` must be on `PATH`) with an isolated filesystem view (read-only system
+paths plus a writable job workspace), no network, and fresh pid/ipc/uts/user
+namespaces:
+
+```ts
+import { createBubblewrapSandbox, createGitForge } from "@trebired/git-host";
+
+const forge = createGitForge({
+  actions: {
+    localRunner: {
+      beforeSpawn: createBubblewrapSandbox({
+        allowNetwork: false,          // default: no network for steps
+        roBind: ["/opt/toolchain"],   // extra read-only host paths
+        bind: [],                     // extra writable host paths
+      }),
+    },
+  },
+  gitHost,
+  storage,
+});
+```
+
+For finer control (or a different sandbox such as nsjail or a container),
+`actions.localRunner` also exposes lower-level off-by-default knobs:
 
 ```ts
 const forge = createGitForge({

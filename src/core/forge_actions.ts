@@ -28,7 +28,7 @@ import type {
 } from "#1mbdfxwwqqpa";
 import { text } from "#sy81xkgkmoa0";
 import { uploadArtifact, downloadArtifact } from "./actions/artifacts.js";
-import { buildStepBaseEnv } from "./actions/environment.js";
+import { buildStepBaseEnv, runnerNeedsPrivilegeWarning } from "./actions/environment.js";
 import { resolveWorkflowBoolean, resolveWorkflowString, type WorkflowExpressionContext } from "./actions/expressions.js";
 import { materializeJobWorkspace, runShellCommand, setupRuntime } from "./actions/local_runner.js";
 import { normalizeEnv } from "./actions/normalize.js";
@@ -288,6 +288,14 @@ function createGitForgeActionsRuntime(options: CreateGitForgeActionsRuntimeOptio
   if (options.actions?.environment?.inheritProcessEnv) {
     console.warn(
       "[git-host] actions.environment.inheritProcessEnv is enabled: the entire host process environment is exposed to every workflow step and is not redacted. Only enable this for fully trusted workflows.",
+    );
+  }
+  if (runnerNeedsPrivilegeWarning({
+    localRunner: options.actions?.localRunner,
+    uid: typeof process.getuid === "function" ? process.getuid() : null,
+  })) {
+    console.warn(
+      "[git-host] the local Actions runner is executing as root with no actions.localRunner.uid drop or beforeSpawn sandbox: workflow steps run as root on the host. Configure a uid/gid drop or a sandbox (see createBubblewrapSandbox), or only run trusted workflows.",
     );
   }
 
