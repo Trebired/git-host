@@ -3,7 +3,8 @@
     "url": "https://github.com/Trebired/git-host/issues"
   },
   "dependencies": {
-    "@trebired/logger-adapter": "^0.2.0",
+    "@trebired/logger-adapter": "^0.2.2",
+    "@trebired/result": "^0.2.0",
     "js-yaml": "^4.1.1",
     "linguist-js": "^3.0.0",
     "material-icon-theme": "^5.35.0",
@@ -12,7 +13,7 @@
   },
   "description": "Embeddable Git host and forge for Node.js and Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository automation, and backend APIs.",
   "devDependencies": {
-    "@trebired/code-discipline": "^2.1.1",
+    "@trebired/code-discipline": "^3.1.1",
     "@types/bun": "^1.3.4",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.2",
