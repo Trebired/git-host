@@ -17,6 +17,8 @@ const RUNNER_BINARY_NAMES = {
   "linux-x64": "git-host-actions-runner-linux-x64-gnu",
 } satisfies Record<string, string>;
 
+const RUNNER_BINARY_DIRECTORIES = ["runners", "bin"] as const;
+
 let sourceCheckoutGoRunnerPath: string | null | undefined;
 
 function findPackageRoot(startPath: string): string {
@@ -30,25 +32,27 @@ function findPackageRoot(startPath: string): string {
   throw new GitHostError("forge_actions_runner_not_found", "Unable to resolve the package root for the actions runner.");
 }
 
-function packageRootIsSourceCheckout(packageRoot: string) {
-  return fs.existsSync(path.join(packageRoot, ".git"));
+function packagedRunnerCandidatePaths(binaryName: string): string[] {
+  const currentDir = path.dirname(fileURLToPath(import.meta.url));
+  return RUNNER_BINARY_DIRECTORIES.flatMap((directory) => [
+    path.resolve(currentDir, `../../../../${directory}`, binaryName),
+    path.resolve(process.cwd(), directory, binaryName),
+  ]);
 }
 
 function resolvePackagedRunnerPath(options: CreateGitForgeActionsOptions | undefined): string | null {
   const explicit = text(options?.runnerBinaryPath);
   if (explicit) return explicit;
 
-  const packageRoot = findPackageRoot(path.dirname(fileURLToPath(import.meta.url)));
-  if (packageRootIsSourceCheckout(packageRoot)) {
-    return null;
-  }
-
   const key = `${process.platform}-${process.arch}`;
   const binary = RUNNER_BINARY_NAMES[key as keyof typeof RUNNER_BINARY_NAMES];
   if (!binary) return null;
 
-  const candidate = path.join(packageRoot, "bin", binary);
-  return fs.existsSync(candidate) ? candidate : null;
+  for (const candidate of packagedRunnerCandidatePaths(binary)) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+
+  return null;
 }
 
 function resolveGoFallbackCommand(): { args: string[]; command: string; cwd?: string } | null {

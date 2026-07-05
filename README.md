@@ -623,7 +623,7 @@ The forge socket server supports live workflow run viewing with replay from a se
 The npm package ships:
 
 - the backend TypeScript runtime
-- packaged Actions runner binaries under `bin/`
+- packaged Actions runner binaries under `runners/`
 - no browser or React entrypoints
 
 Repository Actions workflow binaries are built in CI for:

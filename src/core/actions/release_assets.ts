@@ -2,13 +2,13 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
-import { GitHostError } from "../../errors.js";
+import { GitHostError } from "#8974ac53d713";
 import type {
   GitForgeRelease,
   GitForgeReleaseAsset,
   GitForgeReleaseStorage,
-} from "../../types/forge/releases.js";
-import { text } from "../../utils/text.js";
+} from "#g3n8cscehpt3";
+import { text } from "#62f869522d1f";
 
 type ReleaseAssetArchiveFormat = "tar.gz" | "zip";
 
