@@ -6,6 +6,8 @@ dist/
 coverage/
 bin/*
 !bin/.gitkeep
+runners/*
+!runners/.gitkeep
 
 # Package artifacts
 *.tgz
@@ -14,6 +16,7 @@ bin/*
 *.log
 logs/
 .runtime/
+.tmp/
 tmp/
 
 # OS and editor noise

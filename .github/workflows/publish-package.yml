@@ -69,7 +69,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: runner-${{ matrix.name }}
-          path: bin/${{ matrix.binary }}
+          path: runners/${{ matrix.binary }}
           if-no-files-found: error
 
   publish:
@@ -118,12 +118,12 @@ jobs:
 
       - name: Collect runner binaries
         run: |
-          mkdir -p bin
-          find runner-artifacts -type f -exec cp {} bin/ \;
-          chmod +x bin/*
+          mkdir -p runners
+          find runner-artifacts -type f -exec cp {} runners/ \;
+          chmod +x runners/*
 
       - name: Verify collected runners
-        run: ls -la bin
+        run: ls -la runners
 
       - name: Test and build package
         run: |

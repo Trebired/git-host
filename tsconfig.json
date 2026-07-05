@@ -26,6 +26,9 @@
       "#0oaw38rbda0b": [
         "./test/specs/transports_misc.spec.ts"
       ],
+      "#0v8uzq2zukc8": [
+        "./src/core/actions/normalize.ts"
+      ],
       "#115ffae16859": [
         "./src/core/repository/parsers.ts"
       ],
@@ -62,6 +65,9 @@
       "#1mbdfxwwqqpa": [
         "./src/types.ts"
       ],
+      "#1swsn9dzexiq": [
+        "./test/specs/release_assets.spec.ts"
+      ],
       "#1uaqd3hnpa5k": [
         "./src/api/handler/archive.ts"
       ],
@@ -73,6 +79,9 @@
       ],
       "#291out94ajgp": [
         "./test/specs/forge.spec.ts"
+      ],
+      "#29rwdliqdi93": [
+        "./src/core/actions/release_assets.ts"
       ],
       "#2c9e26f53461": [
         "./src/types/transports.ts"
@@ -170,6 +179,9 @@
       "#68c5a1845ad6": [
         "./src/core/working_tree/shared.ts"
       ],
+      "#6fxc5ur8a90x": [
+        "./src/core/actions/expressions.ts"
+      ],
       "#7852a9866044": [
         "./src/react/client/types.ts"
       ],
@@ -187,6 +199,9 @@
       ],
       "#8b0f4b678e79": [
         "./src/core/working_tree.ts"
+      ],
+      "#8o3yz0lxs93r": [
+        "./src/core/actions/sandbox.ts"
       ],
       "#8v2pew0bulz2": [
         "./test/specs/api_react.spec.ts"
@@ -223,6 +238,9 @@
       ],
       "#a9f1d698c0aa": [
         "./src/core/create_git_host/remote_methods.ts"
+      ],
+      "#atvdoorwcqy9": [
+        "./src/core/actions/redaction.ts"
       ],
       "#b2abc9887206": [
         "./src/ssh/server/audit.ts"
@@ -278,6 +296,9 @@
       "#em04rd6pxc0h": [
         "./src/api/forge/socket_subscription.ts"
       ],
+      "#evdr4zn4ntk5": [
+        "./src/core/actions/planner.ts"
+      ],
       "#f6968f8cf46f": [
         "./src/react/client/helpers.ts"
       ],
@@ -332,11 +353,17 @@
       "#rifbqbjmjgxy": [
         "./src/types/forge/activity.ts"
       ],
+      "#rl6fo497d2h3": [
+        "./src/core/actions/artifacts.ts"
+      ],
       "#sobhnglw5uqi": [
         "./src/core/actions/runner/launch.ts"
       ],
       "#swop6c7l95hf": [
         "./src/types/host/options.ts"
+      ],
+      "#tda3gxsxcw11": [
+        "./src/core/actions/environment.ts"
       ],
       "#tn00pgmqt7n3": [
         "./src/types/forge/api.ts"
@@ -361,6 +388,9 @@
       ],
       "#w6vp8thgngst": [
         "./test/specs/activity.spec.ts"
+      ],
+      "#x2bn6ub493ck": [
+        "./src/core/actions/local_runner.ts"
       ],
       "#x6b5p1ok5pxd": [
         "./src/react/client/types/shared.ts"

@@ -4,6 +4,12 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.0.1
+
+- Added `@trebired/result` as the touched backend API response outcome surface so internal host communication uses the shared Trebired result contract instead of package-local result wrappers.
+- Enforced the current `@trebired/code-discipline` policy on the touched integration and packaging paths while keeping the public Git host runtime and APIs stable.
+- Moved packaged Actions runner binaries into a package-owned `runners/` sibling alongside `dist/`, matching the published binary layout pattern used by `@trebired/logger` and keeping runtime lookup aligned with the packed folder structure.
+
 ## 3.0.0
 
 - **Security (breaking):** the Actions execution engine no longer spreads the embedding process's full `process.env` into workflow steps. Previously every step inherited the entire host environment, so any caller who could trigger a run could read (and echo) host process secrets, and those inherited values were not redacted from logs. Steps now run with a minimal, clean base env.
