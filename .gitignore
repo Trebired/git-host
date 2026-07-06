@@ -4,10 +4,8 @@ node_modules/
 # Build output
 dist/
 coverage/
-bin/*
-!bin/.gitkeep
-runners/*
-!runners/.gitkeep
+native/*
+!native/.gitkeep
 
 # Package artifacts
 *.tgz

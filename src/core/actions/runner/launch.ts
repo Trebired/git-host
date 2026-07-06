@@ -17,7 +17,7 @@ const RUNNER_BINARY_NAMES = {
   "linux-x64": "git-host-actions-runner-linux-x64-gnu",
 } satisfies Record<string, string>;
 
-const RUNNER_BINARY_DIRECTORIES = ["runners", "bin"] as const;
+const RUNNER_BINARY_DIRECTORIES = ["native"] as const;
 
 let sourceCheckoutGoRunnerPath: string | null | undefined;
 

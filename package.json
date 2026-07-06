@@ -32,7 +32,7 @@
   },
   "files": [
     "dist",
-    "runners/*",
+    "native/*",
     "CHANGELOG.md",
     "LICENSE",
     "README.md"
