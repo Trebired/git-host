@@ -156,12 +156,12 @@ function validateRunnerEntries(tarballEntries, scope) {
 
 function expectedRunnerPackPaths(scope) {
   if (scope === "matrix") {
-    return RELEASE_RUNNER_TARGETS.map((target) => `./runners/${runnerBinaryNameForTarget(target)}`);
+    return RELEASE_RUNNER_TARGETS.map((target) => `./native/${runnerBinaryNameForTarget(target)}`);
   }
 
   if (scope === "host") {
     const hostBinary = expectedHostRunnerName();
-    return hostBinary ? [`./runners/${hostBinary}`] : [];
+    return hostBinary ? [`./native/${hostBinary}`] : [];
   }
 
   return [];

@@ -13,7 +13,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..",
 const requestedTarget = readTarget() || hostRunnerTarget();
 const binaryName = runnerBinaryNameForTarget(requestedTarget);
 const buildConfig = runnerBuildConfigForTarget(requestedTarget);
-const outputPath = path.join(rootDir, "runners", binaryName);
+const outputPath = path.join(rootDir, "native", binaryName);
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
