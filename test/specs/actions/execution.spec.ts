@@ -177,6 +177,11 @@ jobs:
     steps:
       - run: printf 'tag\\n'
 `, ".git-host");
+  await fixture.host.stagePaths("demo");
+  await fixture.host.commit("demo", {
+    actor,
+    message: "Add tag trigger workflow",
+  });
   await fixture.host.createTag("demo", {
     actor,
     name: "v1.2.3",

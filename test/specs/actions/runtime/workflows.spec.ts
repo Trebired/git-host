@@ -24,9 +24,9 @@ function createWorkflowFixture(
   workflowRoot = ".git-host",
   activity = undefined as ReturnType<typeof createGitForgeActivityRecorder> | undefined,
   root = tempDir(),
+  storage = createInMemoryGitForgeStorageAdapter(),
 ) {
   const repositoriesRoot = path.join(root, "repos");
-  const storage = createInMemoryGitForgeStorageAdapter();
   const host = createHostWithActivity(repositoriesRoot, activity);
   const forge = createActionsForge(repositoriesRoot, host, storage, {
     workflowRoot,
@@ -154,7 +154,7 @@ test("enqueues push-triggered and release-triggered workflow files exactly once"
   const remoteRepo = path.join(root, "remote", "origin.git");
   const storage = createInMemoryGitForgeStorageAdapter();
   const activity = createGitForgeActivityRecorder({ storage: storage.activity });
-  const { forge, host, workspace } = createWorkflowFixture(".git-host", activity, root);
+  const { forge, host, workspace } = createWorkflowFixture(".git-host", activity, root, storage);
 
   fs.mkdirSync(path.dirname(remoteRepo), { recursive: true });
   git(["init", "--bare", "--initial-branch", "main", remoteRepo]);
