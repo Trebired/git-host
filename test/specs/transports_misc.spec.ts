@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -25,8 +25,7 @@ function sshClientAvailable() {
   }
 }
 
-describe("@trebired/git-host", () => {
-  test("applies HTTP identity, permission, and audit hooks", async () => {
+test("applies HTTP identity, permission, and audit hooks", async () => {
     const root = tempDir();
     const host = createHost(path.join(root, "repos"));
     const workspace = resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: "demo/workspace" });
@@ -72,10 +71,10 @@ describe("@trebired/git-host", () => {
     } finally {
       await closeServer(server);
     }
-  });
+});
 
-  const sshTest = sshClientAvailable() ? test : test.skip;
-  sshTest("serves clone and push over SSH", async () => {
+const sshTest = sshClientAvailable() ? test : test.skip;
+sshTest("serves clone and push over SSH", async () => {
     const root = tempDir();
     const host = createHost(path.join(root, "repos"));
     const workspace = resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: "demo/workspace" });
@@ -121,17 +120,17 @@ describe("@trebired/git-host", () => {
     } finally {
       await closeServer(sshServer);
     }
-  }, { timeout: 15_000 });
+}, { timeout: 15_000 });
 
-  test("generates and compares SSH public keys", () => {
+test("generates and compares SSH public keys", () => {
     const keyPair = generateSshKeyPair({ algorithm: "ed25519", comment: "git-host-test" });
     const normalized = normalizeSshPublicKey(keyPair.publicKey);
     expect(normalized.split(/\s+/)).toHaveLength(2);
     expect(compareSshPublicKeys(keyPair.publicKey, `${normalized} different-comment`)).toBe(true);
     expect(fingerprintSshPublicKey(keyPair.publicKey).startsWith("SHA256:")).toBe(true);
-  });
+});
 
-  test("clones from a real remote and preserves origin metadata", async () => {
+test("clones from a real remote and preserves origin metadata", async () => {
     const root = tempDir();
     const remoteRepo = path.join(root, "remote", "origin.git");
     const seedRepo = path.join(root, "seed", "seed");
@@ -149,9 +148,9 @@ describe("@trebired/git-host", () => {
     const summary = await host.ensureRepository("demo", { cloneUrl: remoteRepo, remoteUrl: remoteRepo });
     expect(summary.repository.remote_origin_url).toBe(remoteRepo);
     expect(summary.commits[0].subject).toBe("Seed commit");
-  });
+});
 
-  test("serializes repository locks", async () => {
+test("serializes repository locks", async () => {
     const root = tempDir();
     const host = createHost(path.join(root, "repos"));
     const order: string[] = [];
@@ -172,10 +171,9 @@ describe("@trebired/git-host", () => {
 
     expect(values).toEqual(["first", "second"]);
     expect(order).toEqual(["first-start", "first-end", "second-start", "second-end"]);
-  });
+});
 
-  test("rejects repository path traversal", () => {
-    expect(() => resolveRepositoryPath({ rootDir: "/srv/git", repositoryPath: "../escape" })).toThrow(GitHostError);
-    expect(() => resolveRepositoryPath({ rootDir: "/srv/git", repositoryPath: "/absolute/path" })).toThrow(GitHostError);
-  });
+test("rejects repository path traversal", () => {
+  expect(() => resolveRepositoryPath({ rootDir: "/srv/git", repositoryPath: "../escape" })).toThrow(GitHostError);
+  expect(() => resolveRepositoryPath({ rootDir: "/srv/git", repositoryPath: "/absolute/path" })).toThrow(GitHostError);
 });

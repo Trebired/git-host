@@ -4,122 +4,118 @@ import { readRepositoryActivityContext } from "#yotdvtav6ika";
 import { fetchRepository, pullRepository, pushRepository } from "#6qp108ftbm6e";
 import type { GitHostMethodContext } from "./shared.js";
 
-function createRemoteMethods(context: GitHostMethodContext): Pick<GitHost, "fetch" | "pull" | "push"> {
-  const { ensureRepositoryInner, lockManager, logGroup, logger, readSummaryForRepository, verbose } = context;
+function compactMetadata(metadata: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(metadata).filter(([, value]) => {
+      if (value === undefined) return false;
+      return typeof value !== "string" || value.trim() !== "";
+    }),
+  );
+}
 
-  function compactMetadata(metadata: Record<string, unknown>) {
-    return Object.fromEntries(
-      Object.entries(metadata).filter(([, value]) => {
-        if (value === undefined) return false;
-        return typeof value !== "string" || value.trim() !== "";
-      }),
-    );
-  }
-
-  async function recordRemoteActivity(
-    repository: GitRepositoryHandle,
-    input: {
-      actor?: {
-        id?: string;
-        name?: string;
-      };
-      kind: "repository.fetch" | "repository.pull" | "repository.push";
-      metadata: Record<string, unknown>;
+async function recordRemoteActivity(
+  context: GitHostMethodContext,
+  repository: GitRepositoryHandle,
+  input: {
+    actor?: {
+      id?: string;
+      name?: string;
+    };
+    kind: "repository.fetch" | "repository.pull" | "repository.push";
+    metadata: Record<string, unknown>;
+  },
+) {
+  if (!context.options.activity) return;
+  const repositoryContext = await readRepositoryActivityContext(repository);
+  await context.options.activity.recordActivity({
+    actor_id: text(input.actor?.id),
+    actor_label: text(input.actor?.name, input.actor?.id),
+    kind: input.kind,
+    metadata: {
+      ...repositoryContext,
+      ...compactMetadata(input.metadata),
     },
-  ) {
-    if (!context.options.activity) return;
-    const repositoryContext = await readRepositoryActivityContext(repository);
-    await context.options.activity.recordActivity({
-      actor_id: text(input.actor?.id),
-      actor_label: text(input.actor?.name, input.actor?.id),
-      kind: input.kind,
+    repository_id: repository.id,
+    source: "api",
+  });
+}
+
+function logRemoteOperation(context: GitHostMethodContext, repositoryId: string, action: string, remote: unknown) {
+  if (!context.verbose) return;
+  context.logger.info(context.logGroup, `${action} repository remote`, {
+    remote: text(remote, "origin"),
+    repositoryId,
+  });
+}
+
+function createFetchMethod(context: GitHostMethodContext) {
+  return async (repositoryId: string, options: FetchOptions = {}) => await context.lockManager.withLock(text(repositoryId), async () => {
+    const repository = await context.ensureRepositoryInner(repositoryId);
+    logRemoteOperation(context, repository.id, "fetching", options.remote);
+    await fetchRepository(repository, options);
+    await recordRemoteActivity(context, repository, {
+      kind: "repository.fetch",
       metadata: {
-        ...repositoryContext,
-        ...compactMetadata(input.metadata),
+        operation: "fetch",
+        prune: options.prune === true,
+        remote: text(options.remote, "origin"),
+        remote_url: text(options.remoteUrl),
+        remote_username: text(options.remoteCredentials?.username),
+        tags: options.tags === true,
       },
-      repository_id: repository.id,
-      source: "api",
     });
-  }
+    return await context.readSummaryForRepository(repository);
+  });
+}
 
+function createPullMethod(context: GitHostMethodContext) {
+  return async (repositoryId: string, options: PullOptions = {}) => await context.lockManager.withLock(text(repositoryId), async () => {
+    const repository = await context.ensureRepositoryInner(repositoryId);
+    logRemoteOperation(context, repository.id, "pulling", options.remote);
+    await pullRepository(repository, options);
+    await recordRemoteActivity(context, repository, {
+      actor: options.actor,
+      kind: "repository.pull",
+      metadata: {
+        branch: text(options.branch),
+        ff_only: options.ffOnly !== false,
+        operation: "pull",
+        rebase: options.rebase === true,
+        remote: text(options.remote, "origin"),
+        remote_url: text(options.remoteUrl),
+        remote_username: text(options.remoteCredentials?.username),
+      },
+    });
+    return await context.readSummaryForRepository(repository);
+  });
+}
+
+function createPushMethod(context: GitHostMethodContext) {
+  return async (repositoryId: string, options: PushOptions = {}) => await context.lockManager.withLock(text(repositoryId), async () => {
+    const repository = await context.ensureRepositoryInner(repositoryId);
+    logRemoteOperation(context, repository.id, "pushing", options.remote);
+    await pushRepository(repository, options);
+    await recordRemoteActivity(context, repository, {
+      actor: options.actor,
+      kind: "repository.push",
+      metadata: {
+        branch: text(options.branch),
+        operation: "push",
+        remote: text(options.remote, "origin"),
+        remote_url: text(options.remoteUrl),
+        remote_username: text(options.remoteCredentials?.username),
+        set_upstream: options.setUpstream === true,
+      },
+    });
+    return await context.readSummaryForRepository(repository);
+  });
+}
+
+function createRemoteMethods(context: GitHostMethodContext): Pick<GitHost, "fetch" | "pull" | "push"> {
   return {
-    async fetch(repositoryId: string, options: FetchOptions = {}) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        if (verbose) {
-          logger.info(logGroup, "fetching repository remote", {
-            remote: text(options.remote, "origin"),
-            repositoryId: repository.id,
-          });
-        }
-        await fetchRepository(repository, options);
-        await recordRemoteActivity(repository, {
-          kind: "repository.fetch",
-          metadata: {
-            operation: "fetch",
-            prune: options.prune === true,
-            remote: text(options.remote, "origin"),
-            remote_url: text(options.remoteUrl),
-            remote_username: text(options.remoteCredentials?.username),
-            tags: options.tags === true,
-          },
-        });
-        return await readSummaryForRepository(repository);
-      });
-    },
-
-    async pull(repositoryId: string, options: PullOptions = {}) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        if (verbose) {
-          logger.info(logGroup, "pulling repository remote", {
-            remote: text(options.remote, "origin"),
-            repositoryId: repository.id,
-          });
-        }
-        await pullRepository(repository, options);
-        await recordRemoteActivity(repository, {
-          actor: options.actor,
-          kind: "repository.pull",
-          metadata: {
-            branch: text(options.branch),
-            ff_only: options.ffOnly !== false,
-            operation: "pull",
-            rebase: options.rebase === true,
-            remote: text(options.remote, "origin"),
-            remote_url: text(options.remoteUrl),
-            remote_username: text(options.remoteCredentials?.username),
-          },
-        });
-        return await readSummaryForRepository(repository);
-      });
-    },
-
-    async push(repositoryId: string, options: PushOptions = {}) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        if (verbose) {
-          logger.info(logGroup, "pushing repository remote", {
-            remote: text(options.remote, "origin"),
-            repositoryId: repository.id,
-          });
-        }
-        await pushRepository(repository, options);
-        await recordRemoteActivity(repository, {
-          actor: options.actor,
-          kind: "repository.push",
-          metadata: {
-            branch: text(options.branch),
-            operation: "push",
-            remote: text(options.remote, "origin"),
-            remote_url: text(options.remoteUrl),
-            remote_username: text(options.remoteCredentials?.username),
-            set_upstream: options.setUpstream === true,
-          },
-        });
-        return await readSummaryForRepository(repository);
-      });
-    },
+    fetch: createFetchMethod(context),
+    pull: createPullMethod(context),
+    push: createPushMethod(context),
   };
 }
 
