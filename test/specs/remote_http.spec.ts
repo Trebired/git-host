@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -18,77 +18,83 @@ import {
   writeFile,
 } from "./helpers.js";
 
-describe("@trebired/git-host", () => {
-  test("clones, pushes, fetches, and pulls against an authenticated smart HTTP remote", async () => {
-    const root = tempDir();
-    const username = "alice";
-    const password = "secret";
-    const authHeader = basicAuthHeader(username, password);
+function createAuthenticatedRemoteServer(workspace: string, authHeader: string) {
+  return createServer(createGitHttpHandler({
+    basePath: "/git",
+    authenticate({ request }) {
+      return String(request.headers.authorization || "") === authHeader ? { remoteUser: "alice" } : null;
+    },
+    authorize({ remoteUser }) {
+      if (remoteUser !== "alice") {
+        return {
+          allowed: false,
+          headers: { "www-authenticate": 'Basic realm="git-host"' },
+          message: "Auth required.",
+          status: 401,
+        };
+      }
+      return true;
+    },
+    resolveRepository(repositoryKey) {
+      return repositoryKey === "demo" ? { id: "demo", path: workspace } : null;
+    },
+  }));
+}
 
-    const remoteHost = createHost(path.join(root, "remote-repos"));
-    const remoteWorkspace = resolveRepositoryPath({ rootDir: path.join(root, "remote-repos"), repositoryPath: "demo/workspace" });
+async function updateExternalAuthenticatedClone(
+  externalCloneUrl: string,
+  externalClone: string,
+) {
+  await gitAsync(["clone", externalCloneUrl, externalClone]);
+  writeFile(externalClone, "README.md", "# Private v3\n");
+  gitCommit(externalClone, "External auth update");
+  await gitAsync(["push", "origin", "main"], externalClone);
+}
 
-    fs.mkdirSync(remoteWorkspace, { recursive: true });
-    writeFile(remoteWorkspace, "README.md", "# Private\n");
-    await remoteHost.ensureRepository("demo");
+test("clones, pushes, fetches, and pulls against an authenticated smart HTTP remote", async () => {
+  const root = tempDir();
+  const username = "alice";
+  const password = "secret";
+  const authHeader = basicAuthHeader(username, password);
+  const remoteHost = createHost(path.join(root, "remote-repos"));
+  const remoteWorkspace = resolveRepositoryPath({ rootDir: path.join(root, "remote-repos"), repositoryPath: "demo/workspace" });
+  const clientHost = createHost(path.join(root, "client-repos"));
+  const clientWorkspace = resolveRepositoryPath({ rootDir: path.join(root, "client-repos"), repositoryPath: "client/workspace" });
 
-    const server = createServer(createGitHttpHandler({
-      basePath: "/git",
-      authenticate({ request }) {
-        return String(request.headers.authorization || "") === authHeader ? { remoteUser: username } : null;
-      },
-      authorize({ remoteUser }) {
-        if (remoteUser !== username) {
-          return {
-            allowed: false,
-            headers: { "www-authenticate": 'Basic realm="git-host"' },
-            message: "Auth required.",
-            status: 401,
-          };
-        }
-        return true;
-      },
-      resolveRepository(repositoryKey) {
-        return repositoryKey === "demo" ? { id: "demo", path: remoteWorkspace } : null;
-      },
-    }));
+  fs.mkdirSync(remoteWorkspace, { recursive: true });
+  writeFile(remoteWorkspace, "README.md", "# Private\n");
+  await remoteHost.ensureRepository("demo");
 
-    const port = await listen(server);
-    const remoteUrl = `http://127.0.0.1:${port}/git/demo.git`;
-    const externalCloneUrl = `http://${encodeURIComponent(username)}:${encodeURIComponent(password)}@127.0.0.1:${port}/git/demo.git`;
-    const clientHost = createHost(path.join(root, "client-repos"));
-    const clientWorkspace = resolveRepositoryPath({ rootDir: path.join(root, "client-repos"), repositoryPath: "client/workspace" });
+  const server = createAuthenticatedRemoteServer(remoteWorkspace, authHeader);
+  const port = await listen(server);
+  const remoteUrl = `http://127.0.0.1:${port}/git/demo.git`;
+  const externalCloneUrl = `http://${encodeURIComponent(username)}:${encodeURIComponent(password)}@127.0.0.1:${port}/git/demo.git`;
 
-    try {
-      await clientHost.ensureRepository("client", {
-        cloneUrl: remoteUrl,
-        remoteCredentials: { password, username },
-        remoteUrl,
-      });
+  try {
+    await clientHost.ensureRepository("client", {
+      cloneUrl: remoteUrl,
+      remoteCredentials: { password, username },
+      remoteUrl,
+    });
 
-      writeFile(clientWorkspace, "README.md", "# Private v2\n");
-      await clientHost.stagePaths("client");
-      await clientHost.commit("client", { message: "Authenticated update" });
-      await clientHost.push("client", { remoteCredentials: { password, username } });
-      expect((await remoteHost.readSummary("demo")).commits[0].subject).toBe("Authenticated update");
+    writeFile(clientWorkspace, "README.md", "# Private v2\n");
+    await clientHost.stagePaths("client");
+    await clientHost.commit("client", { message: "Authenticated update" });
+    await clientHost.push("client", { remoteCredentials: { password, username } });
+    expect((await remoteHost.readSummary("demo")).commits[0].subject).toBe("Authenticated update");
 
-      const externalClone = path.join(root, "external-auth");
-      await gitAsync(["clone", externalCloneUrl, externalClone]);
-      writeFile(externalClone, "README.md", "# Private v3\n");
-      gitCommit(externalClone, "External auth update");
-      await gitAsync(["push", "origin", "main"], externalClone);
+    await updateExternalAuthenticatedClone(externalCloneUrl, path.join(root, "external-auth"));
+    await clientHost.fetch("client", { remoteCredentials: { password, username } });
+    expect((await clientHost.diff("client", { baseRef: "main", headRef: "origin/main" })).commits[0].subject).toBe("External auth update");
 
-      await clientHost.fetch("client", { remoteCredentials: { password, username } });
-      expect((await clientHost.diff("client", { baseRef: "main", headRef: "origin/main" })).commits[0].subject).toBe("External auth update");
+    await clientHost.pull("client", { remoteCredentials: { password, username } });
+    expect(fs.readFileSync(path.join(clientWorkspace, "README.md"), "utf8")).toBe("# Private v3\n");
+  } finally {
+    await closeServer(server);
+  }
+});
 
-      await clientHost.pull("client", { remoteCredentials: { password, username } });
-      expect(fs.readFileSync(path.join(clientWorkspace, "README.md"), "utf8")).toBe("# Private v3\n");
-    } finally {
-      await closeServer(server);
-    }
-  });
-
-  test("pushes to a remote with host-managed git helpers", async () => {
+test("pushes to a remote with host-managed git helpers", async () => {
     const root = tempDir();
     const remoteRepo = path.join(root, "remote", "origin.git");
     const host = createHost(path.join(root, "repos"));
@@ -105,9 +111,9 @@ describe("@trebired/git-host", () => {
     const remoteClone = path.join(root, "remote-clone");
     git(["clone", remoteRepo, remoteClone]);
     expect(fs.readFileSync(path.join(remoteClone, "README.md"), "utf8")).toBe("# Push\n");
-  });
+});
 
-  test("continues and aborts repository operations", async () => {
+test("continues and aborts repository operations", async () => {
     const root = tempDir();
     const host = createHost(path.join(root, "repos"));
     const workspace = resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: "demo/workspace" });
@@ -149,9 +155,9 @@ describe("@trebired/git-host", () => {
     await host.stagePaths("demo", { paths: ["README.md"] });
     await host.continueOperation("demo", { actor: { name: "Alice", email: "alice@example.com" } });
     expect((await host.readSummary("demo")).commits[0].subject).toContain("Merge");
-  });
+});
 
-  test("serves clone and push over smart HTTP", async () => {
+test("serves clone and push over smart HTTP", async () => {
     const root = tempDir();
     const host = createHost(path.join(root, "repos"));
     const workspace = resolveRepositoryPath({ rootDir: path.join(root, "repos"), repositoryPath: "demo/workspace" });
@@ -181,5 +187,4 @@ describe("@trebired/git-host", () => {
     } finally {
       await closeServer(server);
     }
-  });
 });

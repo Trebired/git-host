@@ -4,11 +4,12 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
-## 3.0.1
+## 3.1.0
 
 - Added `@trebired/result` as the touched backend API response outcome surface so internal host communication uses the shared Trebired result contract instead of package-local result wrappers.
 - Enforced the current `@trebired/code-discipline` policy on the touched integration and packaging paths while keeping the public Git host runtime and APIs stable.
 - Moved packaged Actions runner binaries into a package-owned `runners/` sibling alongside `dist/`, matching the published binary layout pattern used by `@trebired/logger` and keeping runtime lookup aligned with the packed folder structure.
+- Removed the unused browser and React integration layer so `@trebired/git-host` stays a backend/runtime package instead of carrying an internal frontend surface.
 
 ## 3.0.0
 

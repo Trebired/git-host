@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -22,6 +22,52 @@ const actor = {
   id: "alice",
   name: "Alice",
 };
+
+const releaseMatrixWorkflow = `
+name: Release dummy product binaries
+on:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [server-svc, worker-svc]
+    steps:
+      - name: Pretend to build a binary
+        run: |
+          mkdir -p out/bin
+          printf 'fake binary for %s\\n' "\${{ matrix.component }}" > out/bin/\${{ matrix.component }}
+          printf 'build metadata\\n' > out/bin/BUILD_INFO
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-\${{ matrix.component }}
+          path: out
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-server-svc
+          path: gathered/server
+      - uses: actions/publish-release-asset@v1
+        with:
+          name: demo-product-server-svc-linux-x64
+          path: gathered/server
+          format: tar.gz
+          tag: v1.0.0
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-worker-svc
+          path: gathered/worker
+      - uses: actions/publish-release-asset@v1
+        with:
+          name: demo-product-worker-svc-linux-x64
+          path: gathered/worker
+          format: zip
+          tag: v1.0.0
+`;
 
 function createHost(rootDir: string) {
   return createGitHost({
@@ -83,115 +129,98 @@ function zipEntries(archivePath: string) {
   return result.stdout;
 }
 
-describe("@trebired/git-host release asset publishing", () => {
-  test("compresses build matrix artifacts and attaches them to an existing release as real downloadable files", async () => {
-    const root = tempDir();
-    const repositoriesRoot = path.join(root, "repos");
-    const storage = createInMemoryGitForgeStorageAdapter();
-    const host = createHost(repositoriesRoot);
-    const forge = createActionsForge(repositoriesRoot, host, storage);
-    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "demo-product/workspace" });
+async function createTaggedRelease(
+  forge: ReturnType<typeof createActionsForge>,
+  repositoryId: string,
+  tagName: string,
+) {
+  return forge.createRelease(repositoryId, {
+    actor,
+    existingTagName: tagName,
+    notes: tagName === "v1.0.0" ? "First release" : "",
+    title: tagName,
+  });
+}
 
-    fs.mkdirSync(workspace, { recursive: true });
-    writeWorkflowFile(workspace, "release.yml", `
-name: Release dummy product binaries
-on:
-  workflow_dispatch:
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        component: [server-svc, worker-svc]
-    steps:
-      - name: Pretend to build a binary
-        run: |
-          mkdir -p out/bin
-          printf 'fake binary for %s\\n' "\${{ matrix.component }}" > out/bin/\${{ matrix.component }}
-          printf 'build metadata\\n' > out/bin/BUILD_INFO
-      - uses: actions/upload-artifact@v4
-        with:
-          name: build-\${{ matrix.component }}
-          path: out
-  publish:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-server-svc
-          path: gathered/server
-      - uses: actions/publish-release-asset@v1
-        with:
-          name: demo-product-server-svc-linux-x64
-          path: gathered/server
-          format: tar.gz
-          tag: v1.0.0
-      - uses: actions/download-artifact@v4
-        with:
-          name: build-worker-svc
-          path: gathered/worker
-      - uses: actions/publish-release-asset@v1
-        with:
-          name: demo-product-worker-svc-linux-x64
-          path: gathered/worker
-          format: zip
-          tag: v1.0.0
-`);
-    writeFile(workspace, "README.md", "# Demo product\n");
-    await host.ensureRepository("demo-product", { actor });
-    git(["tag", "v1.0.0"], workspace);
+async function runReleaseWorkflow(
+  forge: ReturnType<typeof createActionsForge>,
+  repositoryId: string,
+  ref: string,
+) {
+  const run = await forge.runWorkflow(repositoryId, ".git-host/workflows/release.yml", {
+    actor,
+    ref,
+  });
+  return waitForRun(forge, repositoryId, run.id);
+}
 
-    const release = await forge.createRelease("demo-product", {
-      actor,
-      existingTagName: "v1.0.0",
-      notes: "First release",
-      title: "v1.0.0",
-    });
+function expectPublishedAssetEvents(events: Awaited<ReturnType<ReturnType<typeof createActionsForge>["listWorkflowRunEvents"]>>) {
+  const publishEvents = events.filter((event) => event.type === "release_asset.published");
+  expect(publishEvents).toHaveLength(2);
+  expect(publishEvents.map((event) => event.metadata?.asset_name).sort()).toEqual([
+    "demo-product-server-svc-linux-x64.tar.gz",
+    "demo-product-worker-svc-linux-x64.zip",
+  ]);
+}
 
-    const run = await forge.runWorkflow("demo-product", ".git-host/workflows/release.yml", { actor, ref: "HEAD" });
-    const completed = await waitForRun(forge, "demo-product", run.id);
-    expect(completed.status).toBe("success");
+function expectStoredReleaseAssets(updatedRelease: Awaited<ReturnType<ReturnType<typeof createActionsForge>["readRelease"]>>) {
+  expect(updatedRelease.assets).toHaveLength(2);
 
-    const events = await forge.listWorkflowRunEvents("demo-product", run.id);
-    const publishEvents = events.filter((event) => event.type === "release_asset.published");
-    expect(publishEvents).toHaveLength(2);
-    expect(publishEvents.map((event) => event.metadata?.asset_name).sort()).toEqual([
-      "demo-product-server-svc-linux-x64.tar.gz",
-      "demo-product-worker-svc-linux-x64.zip",
-    ]);
+  const tarAsset = updatedRelease.assets.find((asset) => asset.name.endsWith(".tar.gz"));
+  const zipAsset = updatedRelease.assets.find((asset) => asset.name.endsWith(".zip"));
 
-    const updatedRelease = await forge.readRelease("demo-product", release.id);
-    expect(updatedRelease.assets).toHaveLength(2);
+  expect(tarAsset?.storage_pointer).toBeTruthy();
+  expect(zipAsset?.storage_pointer).toBeTruthy();
+  expect(tarAsset?.content_type).toBe("application/gzip");
+  expect(zipAsset?.content_type).toBe("application/zip");
+  expect(Number(tarAsset?.size)).toBeGreaterThan(0);
+  expect(Number(zipAsset?.size)).toBeGreaterThan(0);
+  expect(tarGzEntries(String(tarAsset?.storage_pointer)).some((entry) => entry.endsWith("server-svc"))).toBe(true);
+  expect(tarGzEntries(String(tarAsset?.storage_pointer)).some((entry) => entry.endsWith("BUILD_INFO"))).toBe(true);
+  expect(zipEntries(String(zipAsset?.storage_pointer))).toContain("worker-svc");
+  expect(zipEntries(String(zipAsset?.storage_pointer))).toContain("BUILD_INFO");
+}
 
-    const tarAsset = updatedRelease.assets.find((asset) => asset.name.endsWith(".tar.gz"));
-    const zipAsset = updatedRelease.assets.find((asset) => asset.name.endsWith(".zip"));
-    expect(tarAsset?.storage_pointer).toBeTruthy();
-    expect(zipAsset?.storage_pointer).toBeTruthy();
-    expect(tarAsset?.content_type).toBe("application/gzip");
-    expect(zipAsset?.content_type).toBe("application/zip");
-    expect(Number(tarAsset?.size)).toBeGreaterThan(0);
-    expect(Number(zipAsset?.size)).toBeGreaterThan(0);
+function createReleaseFixture(repositoryId: string) {
+  const root = tempDir();
+  const repositoriesRoot = path.join(root, "repos");
+  const storage = createInMemoryGitForgeStorageAdapter();
+  const host = createHost(repositoriesRoot);
+  const forge = createActionsForge(repositoriesRoot, host, storage);
+  const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: `${repositoryId}/workspace` });
+  return { forge, host, workspace };
+}
 
-    const tarEntries = tarGzEntries(String(tarAsset?.storage_pointer));
-    expect(tarEntries.some((entry) => entry.endsWith("server-svc"))).toBe(true);
-    expect(tarEntries.some((entry) => entry.endsWith("BUILD_INFO"))).toBe(true);
+test("compresses build matrix artifacts and attaches them to an existing release as real downloadable files", async () => {
+  const { forge, host, workspace } = createReleaseFixture("demo-product");
 
-    const zipListing = zipEntries(String(zipAsset?.storage_pointer));
-    expect(zipListing).toContain("worker-svc");
-    expect(zipListing).toContain("BUILD_INFO");
-  }, { timeout: 20_000 });
+  fs.mkdirSync(workspace, { recursive: true });
+  writeWorkflowFile(workspace, "release.yml", releaseMatrixWorkflow);
+  writeFile(workspace, "README.md", "# Demo product\n");
+  await host.ensureRepository("demo-product", { actor });
+  git(["tag", "v1.0.0"], workspace);
 
-  test("derives the release tag from the run ref when with.tag is omitted", async () => {
-    const root = tempDir();
-    const repositoriesRoot = path.join(root, "repos");
-    const storage = createInMemoryGitForgeStorageAdapter();
-    const host = createHost(repositoriesRoot);
-    const forge = createActionsForge(repositoriesRoot, host, storage);
-    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "tagged-product/workspace" });
+  const release = await createTaggedRelease(forge, "demo-product", "v1.0.0");
+  const completed = await runReleaseWorkflow(forge, "demo-product", "HEAD");
+  expect(completed.status).toBe("success");
 
-    fs.mkdirSync(workspace, { recursive: true });
-    writeWorkflowFile(workspace, "release.yml", `
+  const events = await forge.listWorkflowRunEvents("demo-product", completed.id);
+  expectPublishedAssetEvents(events);
+
+  const updatedRelease = await forge.readRelease("demo-product", release.id);
+  expectStoredReleaseAssets(updatedRelease);
+}, { timeout: 20_000 });
+
+test("derives the release tag from the run ref when with.tag is omitted", async () => {
+  const root = tempDir();
+  const repositoriesRoot = path.join(root, "repos");
+  const storage = createInMemoryGitForgeStorageAdapter();
+  const host = createHost(repositoriesRoot);
+  const forge = createActionsForge(repositoriesRoot, host, storage);
+  const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "tagged-product/workspace" });
+
+  fs.mkdirSync(workspace, { recursive: true });
+  writeWorkflowFile(workspace, "release.yml", `
 name: Release on tag
 on:
   workflow_dispatch:
@@ -211,40 +240,25 @@ jobs:
           path: out
           format: tar.gz
 `);
-    writeFile(workspace, "README.md", "# Tagged product\n");
-    await host.ensureRepository("tagged-product", { actor });
-    git(["tag", "v2.5.0"], workspace);
+  writeFile(workspace, "README.md", "# Tagged product\n");
+  await host.ensureRepository("tagged-product", { actor });
+  git(["tag", "v2.5.0"], workspace);
 
-    await forge.createRelease("tagged-product", {
-      actor,
-      existingTagName: "v2.5.0",
-      notes: "",
-      title: "v2.5.0",
-    });
+  await createTaggedRelease(forge, "tagged-product", "v2.5.0");
+  const completed = await runReleaseWorkflow(forge, "tagged-product", "refs/tags/v2.5.0");
+  expect(completed.status).toBe("success");
 
-    const run = await forge.runWorkflow("tagged-product", ".git-host/workflows/release.yml", {
-      actor,
-      ref: "refs/tags/v2.5.0",
-    });
-    const completed = await waitForRun(forge, "tagged-product", run.id);
-    expect(completed.status).toBe("success");
+  const releases = await forge.listReleases("tagged-product");
+  const release = releases.find((entry) => entry.tag_name === "v2.5.0");
+  expect(release?.assets).toHaveLength(1);
+  expect(release?.assets[0]?.name).toBe("tool-linux-x64.tar.gz");
+}, { timeout: 20_000 });
 
-    const releases = await forge.listReleases("tagged-product");
-    const release = releases.find((entry) => entry.tag_name === "v2.5.0");
-    expect(release?.assets).toHaveLength(1);
-    expect(release?.assets[0]?.name).toBe("tool-linux-x64.tar.gz");
-  }, { timeout: 20_000 });
+test("fails clearly when no release exists yet for the target tag", async () => {
+  const { forge, host, workspace } = createReleaseFixture("no-release-product");
 
-  test("fails clearly when no release exists yet for the target tag", async () => {
-    const root = tempDir();
-    const repositoriesRoot = path.join(root, "repos");
-    const storage = createInMemoryGitForgeStorageAdapter();
-    const host = createHost(repositoriesRoot);
-    const forge = createActionsForge(repositoriesRoot, host, storage);
-    const workspace = resolveRepositoryPath({ rootDir: repositoriesRoot, repositoryPath: "no-release-product/workspace" });
-
-    fs.mkdirSync(workspace, { recursive: true });
-    writeWorkflowFile(workspace, "release.yml", `
+  fs.mkdirSync(workspace, { recursive: true });
+  writeWorkflowFile(workspace, "release.yml", `
 name: Release without a prior release record
 on:
   workflow_dispatch:
@@ -263,17 +277,16 @@ jobs:
           format: tar.gz
           tag: v9.9.9
 `);
-    writeFile(workspace, "README.md", "# No release product\n");
-    await host.ensureRepository("no-release-product", { actor });
+  writeFile(workspace, "README.md", "# No release product\n");
+  await host.ensureRepository("no-release-product", { actor });
 
-    const run = await forge.runWorkflow("no-release-product", ".git-host/workflows/release.yml", { actor, ref: "HEAD" });
-    const completed = await waitForRun(forge, "no-release-product", run.id);
-    expect(completed.status).toBe("failed");
+  const run = await forge.runWorkflow("no-release-product", ".git-host/workflows/release.yml", { actor, ref: "HEAD" });
+  const completed = await waitForRun(forge, "no-release-product", run.id);
+  expect(completed.status).toBe("failed");
 
-    const steps = await forge.listWorkflowRunSteps("no-release-product", run.id);
-    const failedStep = steps.find((step) => step.status === "failed");
-    expect(failedStep).toBeTruthy();
-    const events = await forge.listWorkflowRunEvents("no-release-product", run.id);
-    expect(events.some((event) => String(event.summary || "").toLowerCase().includes("no release exists"))).toBe(true);
-  }, { timeout: 20_000 });
-});
+  const steps = await forge.listWorkflowRunSteps("no-release-product", run.id);
+  const failedStep = steps.find((step) => step.status === "failed");
+  expect(failedStep).toBeTruthy();
+  const events = await forge.listWorkflowRunEvents("no-release-product", run.id);
+  expect(events.some((event) => String(event.summary || "").toLowerCase().includes("no release exists"))).toBe(true);
+}, { timeout: 20_000 });
