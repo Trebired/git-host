@@ -43,7 +43,7 @@ function createGitSshRuntime(options: CreateGitSshServerOptions): GitSshRuntime 
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "git-host.ssh",
+    group: "trebired.git-host.ssh",
     logger: options.logger,
     source: "@trebired/git-host",
   });

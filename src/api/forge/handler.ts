@@ -14,7 +14,7 @@ function createGitForgeApiHandler(options: CreateGitForgeApiHandlerOptions) {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "git-host.forge.api",
+    group: "trebired.git-host.forge.api",
     logger: options.logger,
     source: "@trebired/git-host",
   });

@@ -57,7 +57,7 @@ async function handleGitForgeApiRequest(
 
 function createForgeRequestContext(req: IncomingMessage, options: CreateGitForgeApiHandlerOptions) {
   return {
-    logGroup: "git-host.forge.api",
+    logGroup: "trebired.git-host.forge.api",
     logger: resolveLogger(options.logger, options.loggerAdapter),
     method: text(req.method).toUpperCase() || "GET",
     url: new URL(String(req.url || "/"), "http://127.0.0.1"),

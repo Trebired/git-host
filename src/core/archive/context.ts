@@ -63,7 +63,7 @@ function createArchiveServiceContext(options: CreateGitArchiveServiceOptions): A
     cache: defaultArchiveCache(archiveOptions),
     cacheKeyVersion: text(archiveOptions.cacheKeyVersion, "v1"),
     cleanupIntervalMs: readPositiveNumber(archiveOptions.cleanupIntervalMs, 15 * 60 * 1000),
-    logGroup: options.logGroup || "git-host.archive",
+    logGroup: options.logGroup || "trebired.git-host.archive",
     logger: options.logger,
     redirectExpiresInMs: readPositiveNumber(archiveOptions.redirectExpiresInMs, 5 * 60 * 1000),
     ttlMs: readPositiveNumber(archiveOptions.ttlMs, 24 * 60 * 60 * 1000),

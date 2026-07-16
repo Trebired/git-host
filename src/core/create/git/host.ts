@@ -60,7 +60,7 @@ function createGitHostRuntime(options: CreateGitHostOptions): GitHostRuntime {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "git-host",
+    group: "trebired.git-host",
     logger: options.logger,
     source: "@trebired/git-host",
   });
@@ -71,7 +71,7 @@ function createGitHostRuntime(options: CreateGitHostOptions): GitHostRuntime {
       verbose: options.verbose === true,
     }),
     lockManager: new RepositoryLockManager(),
-    logGroup: "git-host",
+    logGroup: "trebired.git-host",
     logger,
     managedExcludeHeader: text(options.managedExcludeHeader, DEFAULT_MANAGED_EXCLUDE_HEADER),
     managedExcludePatterns: normalizeManagedExcludePatterns(options.managedExcludePatterns),

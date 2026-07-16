@@ -45,7 +45,7 @@ async function handleGitApiRequest(req: IncomingMessage, res: ServerResponse, op
 
 function createApiRequestContext(req: IncomingMessage, options: CreateGitApiHandlerOptions) {
   return {
-    logGroup: "git-host.api",
+    logGroup: "trebired.git-host.api",
     logger: resolveLogger(options.logger, options.loggerAdapter),
     method: text(req.method).toUpperCase() || "GET",
     url: new URL(String(req.url || "/"), "http://127.0.0.1"),
