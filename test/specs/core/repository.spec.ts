@@ -57,7 +57,7 @@ test("supports trebired logger-style diagnostics", async () => {
   writeFile(workspace, "README.md", "# Logger\n");
   await host.ensureRepository("demo");
 
-  expect(rows.some((entry) => entry.level === "info" && entry.group === "git-host" && entry.message === "initializing repository")).toBe(true);
+  expect(rows.some((entry) => entry.level === "info" && entry.group === "trebired.git-host" && entry.message === "initializing repository")).toBe(true);
 });
 
 test("supports event-sink logger styles", async () => {
@@ -79,7 +79,7 @@ test("supports event-sink logger styles", async () => {
   writeFile(workspace, "README.md", "# Logger Event\n");
   await host.ensureRepository("demo");
 
-  expect(rows.some((entry) => entry.level === "info" && entry.group === "git-host" && entry.message === "initializing repository")).toBe(true);
+  expect(rows.some((entry) => entry.level === "info" && entry.group === "trebired.git-host" && entry.message === "initializing repository")).toBe(true);
 });
 
 test("supports explicit logger adapters for exact emitted shapes", async () => {

@@ -32,7 +32,7 @@ function createGitForgeSocketServer(options: CreateGitForgeSocketServerOptions) 
   }
 
   const logger = resolveLogger(options.logger, options.loggerAdapter);
-  const logGroup = "git-host.forge.socket";
+  const logGroup = "trebired.git-host.forge.socket";
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",

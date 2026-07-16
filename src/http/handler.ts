@@ -56,7 +56,7 @@ function createHttpRequestState(req: IncomingMessage, options: CreateGitHttpHand
       status: 500,
       wantsWrite: false,
     },
-    logGroup: "git-host.http",
+    logGroup: "trebired.git-host.http",
     logger: resolveLogger(options.logger, options.loggerAdapter),
     method: text(req.method).toUpperCase() || "GET",
     remoteAddress: text(req.socket?.remoteAddress),
@@ -287,7 +287,7 @@ function createGitHttpHandler(options: CreateGitHttpHandlerOptions) {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "git-host.http",
+    group: "trebired.git-host.http",
     logger: options.logger,
     source: "@trebired/git-host",
   });

@@ -19,16 +19,16 @@ function reportSshAuditEvent(
 
   if (event.outcome === "completed") {
     if (!verbose) return;
-    logger.info("git-host.ssh", "ssh git request completed", event);
+    logger.info("trebired.git-host.ssh", "ssh git request completed", event);
     return;
   }
 
   if (event.outcome === "failed") {
-    logger.error("git-host.ssh", "ssh git request failed", event);
+    logger.error("trebired.git-host.ssh", "ssh git request failed", event);
     return;
   }
 
-  logger.warn("git-host.ssh", "ssh git request rejected", event);
+  logger.warn("trebired.git-host.ssh", "ssh git request rejected", event);
 }
 
 export { reportSshAuditEvent };

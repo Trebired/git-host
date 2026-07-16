@@ -166,7 +166,7 @@ function createReadRequiredFork(options: CreateGitForgeOptions) {
 function createGitForgeContext(options: CreateGitForgeOptions): GitForgeRuntimeContext {
   validateCreateGitForgeOptions(options);
   const logger = resolveLogger(options.logger, options.loggerAdapter);
-  const logGroup = "git-host.forge";
+  const logGroup = "trebired.git-host.forge";
   const verbose = options.verbose === true;
   const activityRecorder = createGitForgeActivityRecorder({ storage: options.storage.activity });
   const actions = createActionsRuntime(options);

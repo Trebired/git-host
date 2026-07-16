@@ -4,6 +4,10 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.1.1
+
+- Moved package-owned git-host logging under the `trebired.git-host` group root across core repository operations, HTTP/SSH transports, API handlers, forge runtime, sockets, and archive generation.
+
 ## 3.1.0
 
 - Added `@trebired/result` as the touched backend API response outcome surface so internal host communication uses the shared Trebired result contract instead of package-local result wrappers.

@@ -35,7 +35,7 @@ function createGitApiSocketServer(options: CreateGitApiSocketServerOptions) {
   }
 
   const logger = resolveLogger(options.logger, options.loggerAdapter);
-  const logGroup = "git-host.api.socket";
+  const logGroup = "trebired.git-host.api.socket";
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
