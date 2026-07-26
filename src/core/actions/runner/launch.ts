@@ -77,7 +77,7 @@ function resolveGoFallbackCommand(): { args: string[]; command: string; cwd?: st
     return null;
   }
 
-  const binaryDirectory = path.join(os.tmpdir(), "@trebired-git-host-actions-runner", `${process.platform}-${process.arch}`);
+  const binaryDirectory = path.join(os.tmpdir(), "@package-git-host-actions-runner", `${process.platform}-${process.arch}`);
   const binaryPath = path.join(binaryDirectory, "git-host-actions-runner");
   fs.mkdirSync(binaryDirectory, { recursive: true });
   const build = spawnSync("go", ["build", "-o", binaryPath, "./go/cmd/git-host-actions-runner"], {

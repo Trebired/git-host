@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { logPackageInitialized } from "@trebired/logger-adapter";
+import { logPackageInitialized } from "@package/logger-adapter";
 
 import type { CreateGitForgeApiHandlerOptions } from "#1mbdfxwwqqpa";
-import { serializeError, writeJson } from "#oul7o8qvkv5n";
+import { serializeError, writeJson } from "#4e7ff1c92ff1";
 import { parseGitForgeApiRoute } from "./route.js";
 import { handleGitForgeApiRequest } from "./runtime.js";
 
@@ -14,9 +14,9 @@ function createGitForgeApiHandler(options: CreateGitForgeApiHandlerOptions) {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "trebired.git-host.forge.api",
+    group: "package.git-host.forge.api",
     logger: options.logger,
-    source: "@trebired/git-host",
+    source: "@package/git-host",
   });
 
   return function gitForgeApiHandler(req: IncomingMessage, res: ServerResponse) {

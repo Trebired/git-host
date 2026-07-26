@@ -3,9 +3,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { createGitHost, createGitHttpHandler, resolveRepositoryPath } from "#rfvjfxzebkbs";
+import { createGitHost, createGitHttpHandler, resolveRepositoryPath } from "#fcd73bf294d5";
 
-const root = fs.mkdtempSync(path.join(os.tmpdir(), "@trebired-git-host-http-"));
+const root = fs.mkdtempSync(path.join(os.tmpdir(), "@package-git-host-http-"));
 const repositoriesRoot = path.join(root, "repos");
 const workspace = resolveRepositoryPath({
   rootDir: repositoriesRoot,

@@ -1,9 +1,9 @@
 import {
   DEFAULT_ACTOR_EMAIL,
   DEFAULT_ACTOR_NAME,
-} from "#r89qhx6c8mkf";
+} from "#0bba403f3e43";
 import type { GitActor } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 
 function buildGitEnv(options: {
   actor?: GitActor | null;

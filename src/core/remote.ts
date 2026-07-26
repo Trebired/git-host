@@ -1,4 +1,4 @@
-import { GitHostError } from "#ebw9yuqcyi9w";
+import { GitHostError } from "#8974ac53d713";
 import type {
   FetchOptions,
   GitActor,
@@ -8,12 +8,12 @@ import type {
   PullOptions,
   PushOptions,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { buildGitEnv, repositoryExists, runGit } from "./run_git.js";
 
-const REMOTE_USERNAME_ENV = "TREBIRED_GIT_HOST_REMOTE_USERNAME";
-const REMOTE_PASSWORD_ENV = "TREBIRED_GIT_HOST_REMOTE_PASSWORD";
-const REMOTE_CREDENTIAL_HELPER = "!f() { if [ \"$1\" = get ]; then test -n \"$TREBIRED_GIT_HOST_REMOTE_USERNAME\" && echo \"username=$TREBIRED_GIT_HOST_REMOTE_USERNAME\"; test -n \"$TREBIRED_GIT_HOST_REMOTE_PASSWORD\" && echo \"password=$TREBIRED_GIT_HOST_REMOTE_PASSWORD\"; fi; }; f";
+const REMOTE_USERNAME_ENV = "GIT_HOST_REMOTE_USERNAME";
+const REMOTE_PASSWORD_ENV = "GIT_HOST_REMOTE_PASSWORD";
+const REMOTE_CREDENTIAL_HELPER = "!f() { if [ \"$1\" = get ]; then test -n \"$GIT_HOST_REMOTE_USERNAME\" && echo \"username=$GIT_HOST_REMOTE_USERNAME\"; test -n \"$GIT_HOST_REMOTE_PASSWORD\" && echo \"password=$GIT_HOST_REMOTE_PASSWORD\"; fi; }; f";
 
 function withRemoteUrlOverrideArgs(remoteNameInput: unknown, remoteUrlInput: unknown): string[] {
   const remoteName = text(remoteNameInput, "origin");

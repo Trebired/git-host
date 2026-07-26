@@ -1,4 +1,4 @@
-import { DEFAULT_BRANCH } from "#r89qhx6c8mkf";
+import { DEFAULT_BRANCH } from "#0bba403f3e43";
 import type {
   GitBranchSummary,
   GitCommitSummary,
@@ -10,8 +10,8 @@ import type {
   GitTagSummary,
   ListCommitsOptions,
 } from "#1mbdfxwwqqpa";
-import { normalizeRepositoryRelativePath } from "#ynrrpw9yaztf";
-import { text } from "#sy81xkgkmoa0";
+import { normalizeRepositoryRelativePath } from "#390741ebf5ab";
+import { text } from "#62f869522d1f";
 import { readRepositoryOperationState } from "./operation_state.js";
 import { repositoryExists, runGit } from "./run_git.js";
 import {

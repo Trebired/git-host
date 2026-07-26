@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { GitHostError } from "#8974ac53d713";
-import type { CreateGitForgeForkInput, GitForge, SyncGitForgeForkInput } from "#3c8d8166992a";
+import type { CreateGitForgeForkInput, GitForge, SyncGitForgeForkInput } from "#1mbdfxwwqqpa";
 import { text } from "#62f869522d1f";
 import { fetchRepository } from "#1a2e563ea829";
 import { buildGitEnv, cloneRepository, ensureHostedRepositoryConfig, runGit } from "#96b00569f1f4";

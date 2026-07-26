@@ -4,6 +4,13 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.1.2
+
+- Removed package test suites and banned committed `*.spec.ts`/`*.spec.tsx` files through Code Discipline.
+- Added Code Discipline enforcement for hardcoded `trebired` strings outside package metadata.
+- Migrated Code Discipline to `.code-discipline/config.ts` with alias-map sync output.
+- Updated package-generated artifact ignores and internal package dependency ranges.
+
 ## 3.1.1
 
 - Moved package-owned git-host logging under the `trebired.git-host` group root across core repository operations, HTTP/SSH transports, API handlers, forge runtime, sockets, and archive generation.

@@ -1,10 +1,10 @@
 import { Server as SocketIoServer } from "socket.io";
-import { logPackageInitialized } from "@trebired/logger-adapter";
+import { logPackageInitialized } from "@package/logger-adapter";
 
 import { resolveLogger } from "#5a29135e56c1";
 import type {
   CreateGitApiSocketServerOptions,
-} from "#3c8d8166992a";
+} from "#1mbdfxwwqqpa";
 import { text } from "#62f869522d1f";
 import {
   LINGUIST_DONE_EVENT,
@@ -35,13 +35,13 @@ function createGitApiSocketServer(options: CreateGitApiSocketServerOptions) {
   }
 
   const logger = resolveLogger(options.logger, options.loggerAdapter);
-  const logGroup = "trebired.git-host.api.socket";
+  const logGroup = "package.git-host.api.socket";
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
     group: logGroup,
     logger: options.logger,
-    source: "@trebired/git-host",
+    source: "@package/git-host",
   });
   const verbose = options.verbose === true;
   const basePath = text(options.basePath, "/api/git");

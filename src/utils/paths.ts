@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import { GitHostError } from "#ebw9yuqcyi9w";
+import { GitHostError } from "#8974ac53d713";
 import { text } from "./text.js";
 
 function assertAbsoluteRepositoryPath(value: unknown): string {

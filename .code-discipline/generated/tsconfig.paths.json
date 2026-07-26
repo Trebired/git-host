@@ -1,0 +1,468 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "#0393514b57bc": [
+        "../../src/api/socket/server.ts"
+      ],
+      "#07a96afa0a48": [
+        "../../src/core/archive.ts"
+      ],
+      "#0bba403f3e43": [
+        "../../src/constants.ts"
+      ],
+      "#0lkt7ob2zeph": [
+        "../../src/api/forge/archives.ts"
+      ],
+      "#0v8uzq2zukc8": [
+        "../../src/core/actions/normalize.ts"
+      ],
+      "#0z3otqyjdu7f": [
+        "../../src/core/git_forge/storage_memory/adapter.ts"
+      ],
+      "#115ffae16859": [
+        "../../src/core/repository/parsers.ts"
+      ],
+      "#134up1wv9uhu": [
+        "../../src/core/actions/workspace.ts"
+      ],
+      "#14021226ec9b": [
+        "../../src/types/index.ts"
+      ],
+      "#18ua13h0c1vi": [
+        "../../src/types/host/archive.ts"
+      ],
+      "#1a2e563ea829": [
+        "../../src/core/remote.ts"
+      ],
+      "#1bae0atkgje7": [
+        "../../src/core/run_git/repository_setup.ts"
+      ],
+      "#1c744kzhgb33": [
+        "../../src/core/working_tree/mutate.ts"
+      ],
+      "#1fu49obi0gq3": [
+        "../../src/core/repository.ts"
+      ],
+      "#1h18ogbosnwx": [
+        "../../src/backend/utils/time.ts"
+      ],
+      "#1hvsns0vce55": [
+        "../../src/core/forge_actions.ts"
+      ],
+      "#1mbdfxwwqqpa": [
+        "../../src/types.ts"
+      ],
+      "#1qyeee0di7cc": [
+        "../../src/types/forge/workflows/definition.ts"
+      ],
+      "#1uaqd3hnpa5k": [
+        "../../src/api/handler/archive.ts"
+      ],
+      "#20ls7ubpf6bn": [
+        "../../src/core/actions/runner/protocol.ts"
+      ],
+      "#2161a5929bec": [
+        "../../src/ssh/keys.ts"
+      ],
+      "#26xaz6ofclk8": [
+        "../../src/core/forge_actions/job/release_asset.ts"
+      ],
+      "#29rwdliqdi93": [
+        "../../src/core/actions/release_assets.ts"
+      ],
+      "#2c9e26f53461": [
+        "../../src/types/transports.ts"
+      ],
+      "#2ebf9ed6336f": [
+        "../../src/core/inspect/icon_theme.ts"
+      ],
+      "#2oceyw1i6whw": [
+        "../../src/api/forge/actions/filters.ts"
+      ],
+      "#2swjs9o20esx": [
+        "../../src/api/forge/runtime.ts"
+      ],
+      "#342cd29fa025": [
+        "../../src/ssh/server.ts"
+      ],
+      "#34ouqyet5j1y": [
+        "../../scripts/verify-pack.mjs"
+      ],
+      "#390741ebf5ab": [
+        "../../src/utils/paths.ts"
+      ],
+      "#40nx1s0ag764": [
+        "../../src/core/create_git_host/content_methods.ts"
+      ],
+      "#42965357d713": [
+        "../../src/core/archive_cache_filesystem.ts"
+      ],
+      "#42f32dd5cd30": [
+        "../../src/core/operation_state.ts"
+      ],
+      "#4c94c22378b2": [
+        "../../src/types/forge.ts"
+      ],
+      "#4e7ff1c92ff1": [
+        "../../src/api/handler/response.ts"
+      ],
+      "#4shewkcrh4gz": [
+        "../../scripts/runner-targets.mjs"
+      ],
+      "#53fe5bbf2789": [
+        "../../src/api/handler/action.ts"
+      ],
+      "#54sqm2cb0m84": [
+        "../../src/http/handler/helpers.ts"
+      ],
+      "#56r9dqq6ml7u": [
+        "../../src/core/archive/links.ts"
+      ],
+      "#58f5a76a572c": [
+        "../../src/core/run_git/env.ts"
+      ],
+      "#59b3abcebf1a": [
+        "../../src/types/host.ts"
+      ],
+      "#5a0e75b6bdb8": [
+        "../../src/types/common.ts"
+      ],
+      "#5a29135e56c1": [
+        "../../src/logging.ts"
+      ],
+      "#5b9hlx9mpezy": [
+        "../../src/api/handler/route.ts"
+      ],
+      "#5f2400e3636a": [
+        "../../src/api/handler.ts"
+      ],
+      "#5f5fe2262a26": [
+        "../../src/core/inspect/linguist_progress.ts"
+      ],
+      "#5ubr402iaw9c": [
+        "../../src/types/forge/workflows.ts"
+      ],
+      "#61bf255baf35": [
+        "../../src/core/inspect/helpers.ts"
+      ],
+      "#622bd171bea7": [
+        "../../src/core/run_git/process.ts"
+      ],
+      "#62f869522d1f": [
+        "../../src/utils/text.ts"
+      ],
+      "#632ac808a058": [
+        "../../src/core/inspect.ts"
+      ],
+      "#666a84ce027e": [
+        "../../src/types/repository.ts"
+      ],
+      "#68c5a1845ad6": [
+        "../../src/core/working_tree/shared.ts"
+      ],
+      "#6fxc5ur8a90x": [
+        "../../src/core/actions/expressions.ts"
+      ],
+      "#6ncl68plbm7u": [
+        "../../src/core/create/git/forge/context.ts"
+      ],
+      "#7bfy3ou33f74": [
+        "../../src/core/inspect/tree_blob.ts"
+      ],
+      "#7nhhgv65uln6": [
+        "../../src/types/forge/workflows/runs.ts"
+      ],
+      "#7x13jx7cadgo": [
+        "../../examples/api_server.ts"
+      ],
+      "#8974ac53d713": [
+        "../../src/errors.ts"
+      ],
+      "#8b0f4b678e79": [
+        "../../src/core/working_tree.ts"
+      ],
+      "#8o3yz0lxs93r": [
+        "../../src/core/actions/sandbox.ts"
+      ],
+      "#90040fe3e934": [
+        "../../src/core/locks.ts"
+      ],
+      "#92b2mrh7s066": [
+        "../../src/core/create_git_host/shared.ts"
+      ],
+      "#96b00569f1f4": [
+        "../../src/core/run_git.ts"
+      ],
+      "#9ed9deeef558": [
+        "../../src/core/working_tree/read.ts"
+      ],
+      "#9eedb3d763ad": [
+        "../../src/ssh/server/shared.ts"
+      ],
+      "#9q68yjsq648z": [
+        "../../src/core/create/git/forge/fork_methods.ts"
+      ],
+      "#9u61u8i5q24v": [
+        "../../src/core/actions/go_runner.ts"
+      ],
+      "#a62e56e1fef5": [
+        "../../src/core/inspection.ts"
+      ],
+      "#a9f1d698c0aa": [
+        "../../src/core/create_git_host/remote_methods.ts"
+      ],
+      "#arhpamot5o19": [
+        "../../src/core/forge_actions/runtime/job/execute.ts"
+      ],
+      "#atvdoorwcqy9": [
+        "../../src/core/actions/redaction.ts"
+      ],
+      "#b2abc9887206": [
+        "../../src/ssh/server/audit.ts"
+      ],
+      "#b8c8814b833e": [
+        "../../src/core/create/git/host.ts"
+      ],
+      "#bpzwkfv6xs0t": [
+        "../../src/types/repository/inspection.ts"
+      ],
+      "#c4fd5905235f": [
+        "../../src/api/forge/handler.ts"
+      ],
+      "#c786ov8v2bxc": [
+        "../../src/core/inspection/snapshots.ts"
+      ],
+      "#cecx4kvnm1f7": [
+        "../../src/api/socket/linguist_connection.ts"
+      ],
+      "#cy6v1a95e1nj": [
+        "../../src/core/create/git/forge/shared.ts"
+      ],
+      "#d0qrwfpz7v8i": [
+        "../../scripts/build/runner-matrix.mjs"
+      ],
+      "#d66a914eb693": [
+        "../../src/backend/utils/object.ts"
+      ],
+      "#d6wpchhjd0b8": [
+        "../../src/core/create/git/forge/base_methods.ts"
+      ],
+      "#d9837iy4dizi": [
+        "../../src/core/forge_actions/runtime/run/execute.ts"
+      ],
+      "#daa89828a013": [
+        "../../src/http/handler.ts"
+      ],
+      "#dcskww2v23pn": [
+        "../../src/core/inspection/target.ts"
+      ],
+      "#de031fc6c08f": [
+        "../../src/core/create_git_host/working_tree_methods.ts"
+      ],
+      "#e1ead083c558": [
+        "../../src/api/socket/events.ts"
+      ],
+      "#e65e172ffada": [
+        "../../src/core/git_forge/storage_memory.ts"
+      ],
+      "#e8559447ec5f": [
+        "../../src/api/forge/route.ts"
+      ],
+      "#ea71f5c6858f": [
+        "../../src/core/create/git/forge.ts"
+      ],
+      "#ebe51631bc41": [
+        "../../src/backend/utils/normalize.ts"
+      ],
+      "#eg5ivjfdofea": [
+        "../../src/types/repository/archive.ts"
+      ],
+      "#em04rd6pxc0h": [
+        "../../src/api/forge/socket_subscription.ts"
+      ],
+      "#evdr4zn4ntk5": [
+        "../../src/core/actions/planner.ts"
+      ],
+      "#f88802286a5d": [
+        "../../src/core/create_git_host/branch_methods.ts"
+      ],
+      "#fcd73bf294d5": [
+        "../../src/index.ts"
+      ],
+      "#fj1qleiu5gwr": [
+        "../../src/core/archive/commit.ts"
+      ],
+      "#fny4b5azdymz": [
+        "../../examples/http_server.ts"
+      ],
+      "#fu1mu2qj8099": [
+        "../../examples/dummy.ts"
+      ],
+      "#fznhyzk6jqlm": [
+        "../../src/types/forge/social_forks.ts"
+      ],
+      "#g3n8cscehpt3": [
+        "../../src/types/forge/releases.ts"
+      ],
+      "#g72fdokcrr8g": [
+        "../../examples/ssh_server.ts"
+      ],
+      "#gc1rzxkbhrqu": [
+        "../../src/core/forge_actions/shared.ts"
+      ],
+      "#gkuebd5oq0gi": [
+        "../../src/core/inspection/shared.ts"
+      ],
+      "#glky615nezhr": [
+        "../../src/api/routing.ts"
+      ],
+      "#gvc0petxh683": [
+        "../../src/core/actions/expressions/read.ts"
+      ],
+      "#gzjgum0vj7q8": [
+        "../../src/core/forge_actions/runtime_support.ts"
+      ],
+      "#hzv9f3wx9ez9": [
+        "../../src/core/actions/types.ts"
+      ],
+      "#iqv5bm36ifxa": [
+        "../../src/types/repository/core.ts"
+      ],
+      "#jamvqagbwp1m": [
+        "../../src/core/git_forge/storage_memory/actions.ts"
+      ],
+      "#jdobo8z493b0": [
+        "../../src/core/git_forge/storage_memory/state.ts"
+      ],
+      "#jj32iy54c0ja": [
+        "../../src/core/actions/normalize/shared.ts"
+      ],
+      "#jqgobsuocqzv": [
+        "../../src/types/forge/workflows/actions.ts"
+      ],
+      "#judnc6y787h1": [
+        "../../src/core/archive/resolve.ts"
+      ],
+      "#kc0q88869msa": [
+        "../../src/core/inspect/linguist.ts"
+      ],
+      "#koj1e88fmnpf": [
+        "../../src/core/forge_actions/runtime/api.ts"
+      ],
+      "#lguymz6xjg6n": [
+        "../../src/core/inspect/shared.ts"
+      ],
+      "#naqqpl7gjad2": [
+        "../../src/core/inspection/analysis.ts"
+      ],
+      "#nf2wlwbyt8go": [
+        "../../scripts/prepare-dist.mjs"
+      ],
+      "#nj0t6f5vyy3x": [
+        "../../src/core/actions/workflows.ts"
+      ],
+      "#nnmpf5y1bu1f": [
+        "../../src/core/actions/expressions/types.ts"
+      ],
+      "#o538xjjiyf7m": [
+        "../../src/core/actions/node_runner.ts"
+      ],
+      "#oflnw936obpy": [
+        "../../src/core/forge_actions/runtime/types.ts"
+      ],
+      "#opwf3qzz44jq": [
+        "../../scripts/build/runner.mjs"
+      ],
+      "#ou37dzhvdfbw": [
+        "../../src/core/create/git/forge/social_methods.ts"
+      ],
+      "#p2jpecxpp3dh": [
+        "../../src/api/forge/actions/run.ts"
+      ],
+      "#pgt3n58dubd8": [
+        "../../src/core/archive/shared.ts"
+      ],
+      "#pj4g6du01gys": [
+        "../../src/core/actions/runner.ts"
+      ],
+      "#pvpm4i6ibun0": [
+        "../../src/api/forge/actions.ts"
+      ],
+      "#qqqsbhnm9zbd": [
+        "../../src/core/forge_actions/runtime/queue.ts"
+      ],
+      "#raiyak36g4hu": [
+        "../../src/core/inspect/search_archive.ts"
+      ],
+      "#rbszg8l3vatn": [
+        "../../src/core/inspect/history.ts"
+      ],
+      "#ri04lg8htjzc": [
+        "../../src/core/archive/context.ts"
+      ],
+      "#rifbqbjmjgxy": [
+        "../../src/types/forge/activity.ts"
+      ],
+      "#rl6fo497d2h3": [
+        "../../src/core/actions/artifacts.ts"
+      ],
+      "#rlvv6s65veqm": [
+        "../../src/core/forge_actions/job/steps.ts"
+      ],
+      "#s77f1g5nua7x": [
+        "../../src/core/forge_actions/runtime/engine.ts"
+      ],
+      "#s8923hsovdu5": [
+        "../../src/core/create/git/forge/release_methods.ts"
+      ],
+      "#sjt3cblinnps": [
+        "../../src/core/forge_actions/runtime/job/step/execute.ts"
+      ],
+      "#sobhnglw5uqi": [
+        "../../src/core/actions/runner/launch.ts"
+      ],
+      "#sq8yibjyv8kv": [
+        "../../src/core/archive/open.ts"
+      ],
+      "#swop6c7l95hf": [
+        "../../src/types/host/options.ts"
+      ],
+      "#tda3gxsxcw11": [
+        "../../src/core/actions/environment.ts"
+      ],
+      "#tn00pgmqt7n3": [
+        "../../src/types/forge/api.ts"
+      ],
+      "#tpqgs6k0dlv3": [
+        "../../src/core/actions/normalize/finalize.ts"
+      ],
+      "#txvbmmadpffo": [
+        "../../src/api/forge/socket.ts"
+      ],
+      "#v78uc4qt1lhk": [
+        "../../src/core/archive/read.ts"
+      ],
+      "#w1qvcntb0avm": [
+        "../../src/core/actions/expressions/tokenize.ts"
+      ],
+      "#w41mbb2gyzu1": [
+        "../../src/types/host/service.ts"
+      ],
+      "#wqa424xadbcd": [
+        "../../src/core/archive/generation.ts"
+      ],
+      "#x2bn6ub493ck": [
+        "../../src/core/actions/local_runner.ts"
+      ],
+      "#yotdvtav6ika": [
+        "../../src/core/activity.ts"
+      ],
+      "#z00j1lfq4mcb": [
+        "../../src/api/handler/runtime.ts"
+      ],
+      "#z6fwaix07pum": [
+        "../../src/core/inspection/tree.ts"
+      ]
+    }
+  }
+}

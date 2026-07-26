@@ -1,8 +1,8 @@
 const DEFAULT_BRANCH = "main";
 const DEFAULT_COMMIT_MESSAGE = "Initial import";
-const DEFAULT_ACTOR_NAME = "@trebired/git-host";
+const DEFAULT_ACTOR_NAME = "@package/git-host";
 const DEFAULT_ACTOR_EMAIL = "noreply@git-host.local";
-const DEFAULT_MANAGED_EXCLUDE_HEADER = "# Managed by @trebired/git-host";
+const DEFAULT_MANAGED_EXCLUDE_HEADER = "# Managed by @package/git-host";
 
 const DEFAULT_MANAGED_EXCLUDE_PATTERNS = Object.freeze([
   "node_modules/",

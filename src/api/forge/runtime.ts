@@ -1,18 +1,18 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { resolveLogger } from "#cqgsder5zlmf";
+import { resolveLogger } from "#5a29135e56c1";
 import type { CreateGitForgeApiHandlerOptions } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { isArchiveDownloadAction, writeArchiveDownload, writeReleaseAssetDownload } from "#1uaqd3hnpa5k";
 import type { GitForgeActor } from "#1mbdfxwwqqpa";
-import { runGitApiAction } from "#t13y2bx0ygbf";
+import { runGitApiAction } from "#53fe5bbf2789";
 import {
   applyAuthorizationHeaders,
   authorizationAllowed,
   serializeError,
   statusForError,
   writeJson,
-} from "#oul7o8qvkv5n";
+} from "#4e7ff1c92ff1";
 import { allowedMethodsForRoute, readJsonBody, routeOperation, runForgeAction } from "./actions.js";
 import { enrichForgeDataWithArchives } from "./archives.js";
 import { parseGitForgeApiRoute } from "./route.js";
@@ -57,7 +57,7 @@ async function handleGitForgeApiRequest(
 
 function createForgeRequestContext(req: IncomingMessage, options: CreateGitForgeApiHandlerOptions) {
   return {
-    logGroup: "trebired.git-host.forge.api",
+    logGroup: "package.git-host.forge.api",
     logger: resolveLogger(options.logger, options.loggerAdapter),
     method: text(req.method).toUpperCase() || "GET",
     url: new URL(String(req.url || "/"), "http://127.0.0.1"),

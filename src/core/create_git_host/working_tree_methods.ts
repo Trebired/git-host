@@ -10,7 +10,7 @@ import type {
   StagePathsInput,
   UnstagePathsInput,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import {
   abortRepositoryOperation,
   cherryPickRepository,
@@ -24,7 +24,7 @@ import {
   rebaseRepository,
   stageRepositoryPaths,
   unstageRepositoryPaths,
-} from "#x78lbcvwod9s";
+} from "#8b0f4b678e79";
 import type { GitHostMethodContext } from "./shared.js";
 
 function createWorkingTreeMethods(context: GitHostMethodContext): Pick<

@@ -191,7 +191,7 @@ async function writeConsumerPackageJson(consumerDir, tarballPath) {
     private: true,
     type: "module",
     dependencies: {
-      "@trebired/git-host": `file:${tarballPath}`,
+      "@package/git-host": `file:${tarballPath}`,
     },
     devDependencies: {
       "@types/node": `file:${nodeTypesDir}`,
@@ -201,13 +201,13 @@ async function writeConsumerPackageJson(consumerDir, tarballPath) {
 
 async function writeConsumerFixtures(consumerDir) {
   await fs.writeFile(path.join(consumerDir, "index.ts"), [
-    'import { createGitForge, createGitHost, resolveRepositoryPath } from "@trebired/git-host";',
+    'import { createGitForge, createGitHost, resolveRepositoryPath } from "@package/git-host";',
     "",
     "console.log(Boolean(createGitHost), Boolean(createGitForge), Boolean(resolveRepositoryPath));",
   ].join("\n"));
 
   await fs.writeFile(path.join(consumerDir, "runtime.ts"), [
-    'import * as mod from "@trebired/git-host";',
+    'import * as mod from "@package/git-host";',
     "",
     "console.log(typeof mod.createGitHost, typeof mod.createGitForge, Object.keys(mod).length > 0);",
   ].join("\n"));

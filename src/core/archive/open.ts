@@ -1,7 +1,7 @@
 import { PassThrough } from "node:stream";
 import { finished } from "node:stream/promises";
 
-import { GitHostError } from "#ebw9yuqcyi9w";
+import { GitHostError } from "#8974ac53d713";
 import type { GitArchiveCacheBackend, GitRepositoryHandle, OpenArchiveOptions } from "#1mbdfxwwqqpa";
 import { buildArchiveCacheKey } from "./shared.js";
 import type { ResolvedArchiveRequest } from "./shared.js";

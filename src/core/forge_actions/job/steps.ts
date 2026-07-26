@@ -8,7 +8,7 @@ import type {
   GitForgeWorkflowRunStep,
   GitForgeWorkflowRunStepStatus,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { downloadArtifact, uploadArtifact } from "#rl6fo497d2h3";
 import { setupRuntime } from "#x2bn6ub493ck";
 import { executePublishReleaseAssetStep } from "./release_asset.js";

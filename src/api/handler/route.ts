@@ -1,5 +1,5 @@
 import type { GitApiResource } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { decodeRouteSegment, parseRepositoryRoute } from "#glky615nezhr";
 
 function parseGitApiRoute(pathnameInput: unknown, basePathInput: unknown) {

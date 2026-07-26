@@ -14,7 +14,7 @@ import type {
   ResolveArchiveLinksInput,
   ResolveArchiveOptions,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { createFileSystemGitArchiveCache } from "#42965357d713";
 import { buildArchiveMetadata } from "./shared.js";
 import type { ResolvedArchiveRequest } from "./shared.js";
@@ -52,7 +52,7 @@ function readPositiveNumber(value: unknown, fallback: number) {
 function defaultArchiveCache(options?: GitHostArchiveOptions): GitArchiveCacheBackend {
   if (options?.cache) return options.cache;
   return createFileSystemGitArchiveCache({
-    rootDir: path.join(os.tmpdir(), "@trebired-git-host", "archive-cache"),
+    rootDir: path.join(os.tmpdir(), "@package-git-host", "archive-cache"),
   });
 }
 
@@ -63,7 +63,7 @@ function createArchiveServiceContext(options: CreateGitArchiveServiceOptions): A
     cache: defaultArchiveCache(archiveOptions),
     cacheKeyVersion: text(archiveOptions.cacheKeyVersion, "v1"),
     cleanupIntervalMs: readPositiveNumber(archiveOptions.cleanupIntervalMs, 15 * 60 * 1000),
-    logGroup: options.logGroup || "trebired.git-host.archive",
+    logGroup: options.logGroup || "package.git-host.archive",
     logger: options.logger,
     redirectExpiresInMs: readPositiveNumber(archiveOptions.redirectExpiresInMs, 5 * 60 * 1000),
     ttlMs: readPositiveNumber(archiveOptions.ttlMs, 24 * 60 * 60 * 1000),

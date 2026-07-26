@@ -14,14 +14,14 @@ import type {
   MaybePromise,
   RunGitForgeWorkflowInput,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { buildStepBaseEnv, runnerNeedsPrivilegeWarning } from "#tda3gxsxcw11";
 import { resolveWorkflowBoolean, resolveWorkflowString, type WorkflowExpressionContext } from "#6fxc5ur8a90x";
 import { normalizeEnv } from "#0v8uzq2zukc8";
 import { resolveRefName } from "#evdr4zn4ntk5";
 
-const ACTIVITY_LISTENER_SYMBOL = Symbol.for("@trebired/git-host/actions-activity-listeners");
-const ACTIVITY_WRAPPED_SYMBOL = Symbol.for("@trebired/git-host/actions-activity-wrapped");
+const ACTIVITY_LISTENER_SYMBOL = Symbol.for("@package/git-host/actions-activity-listeners");
+const ACTIVITY_WRAPPED_SYMBOL = Symbol.for("@package/git-host/actions-activity-wrapped");
 const DEFAULT_HEARTBEAT_INTERVAL_MS = 1000;
 const DEFAULT_LOCAL_RUNNER_LABELS = [
   "bun",
@@ -94,7 +94,7 @@ function normalizeRunner(options: CreateGitForgeActionsOptions | undefined) {
     id: text(runner.id, "local-runner"),
     kind: text(runner.kind, "local"),
     labels,
-    platform_version: text(runner.platform_version, "@trebired/git-host"),
+    platform_version: text(runner.platform_version, "@package/git-host"),
   };
 }
 

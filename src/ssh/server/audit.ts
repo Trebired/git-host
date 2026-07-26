@@ -1,4 +1,4 @@
-import { resolveLogger } from "#cqgsder5zlmf";
+import { resolveLogger } from "#5a29135e56c1";
 import type { CreateGitSshServerOptions, GitSshAuditEvent } from "#1mbdfxwwqqpa";
 
 function emitSshAuditEvent(
@@ -19,16 +19,16 @@ function reportSshAuditEvent(
 
   if (event.outcome === "completed") {
     if (!verbose) return;
-    logger.info("trebired.git-host.ssh", "ssh git request completed", event);
+    logger.info("package.git-host.ssh", "ssh git request completed", event);
     return;
   }
 
   if (event.outcome === "failed") {
-    logger.error("trebired.git-host.ssh", "ssh git request failed", event);
+    logger.error("package.git-host.ssh", "ssh git request failed", event);
     return;
   }
 
-  logger.warn("trebired.git-host.ssh", "ssh git request rejected", event);
+  logger.warn("package.git-host.ssh", "ssh git request rejected", event);
 }
 
 export { reportSshAuditEvent };

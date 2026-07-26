@@ -6,9 +6,9 @@ import {
   DEFAULT_COMMIT_MESSAGE,
   DEFAULT_MANAGED_EXCLUDE_HEADER,
   DEFAULT_MANAGED_EXCLUDE_PATTERNS,
-} from "#r89qhx6c8mkf";
+} from "#0bba403f3e43";
 import type { GitActor, GitCommandResult } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { buildGitEnv } from "./env.js";
 import { runGit } from "./process.js";
 

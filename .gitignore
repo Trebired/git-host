@@ -4,26 +4,19 @@ node_modules/
 # Build output
 dist/
 coverage/
-native/*
-!native/.gitkeep
 
 # Package artifacts
 *.tgz
 
-# Logs and runtime output
-*.log
-logs/
-.runtime/
+# Runtime and generated work files
 .tmp/
 tmp/
 
-# OS and editor noise
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
+# Native helper build output
+native/*
+!native/.gitkeep
 
-# Environment files
+# Local environment
 .env
 .env.*
 !.env.example

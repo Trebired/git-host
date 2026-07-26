@@ -1,4 +1,4 @@
-import { GitHostError } from "#ebw9yuqcyi9w";
+import { GitHostError } from "#8974ac53d713";
 import type {
   CherryPickInput,
   CommitInput,
@@ -10,10 +10,10 @@ import type {
   StagePathsInput,
   UnstagePathsInput,
 } from "#1mbdfxwwqqpa";
-import { isTruthy, text } from "#sy81xkgkmoa0";
-import { readRepositoryOperationState } from "#d7cs7wdmybuf";
+import { isTruthy, text } from "#62f869522d1f";
+import { readRepositoryOperationState } from "#42f32dd5cd30";
 import { readRepositoryStatus } from "#1fu49obi0gq3";
-import { buildGitEnv, runGit } from "#jezxo0dsbb92";
+import { buildGitEnv, runGit } from "#96b00569f1f4";
 import { assertRepositoryReady, normalizePathList, repositoryHasHead } from "./shared.js";
 
 async function stageRepositoryPaths(repository: GitRepositoryHandle, input: StagePathsInput = {}): Promise<void> {

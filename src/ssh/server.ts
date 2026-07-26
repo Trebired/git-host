@@ -1,11 +1,11 @@
 import { spawn } from "node:child_process";
-import { logPackageInitialized } from "@trebired/logger-adapter";
+import { logPackageInitialized } from "@package/logger-adapter";
 
 import { Server as GitSshServerTransport, utils as sshUtils } from "ssh2";
 
-import { resolveLogger } from "#cqgsder5zlmf";
+import { resolveLogger } from "#5a29135e56c1";
 import type { CreateGitSshServerOptions } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { reportSshAuditEvent } from "./server/audit.js";
 import {
   normalizeAuthenticationResult,
@@ -43,9 +43,9 @@ function createGitSshRuntime(options: CreateGitSshServerOptions): GitSshRuntime 
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "trebired.git-host.ssh",
+    group: "package.git-host.ssh",
     logger: options.logger,
-    source: "@trebired/git-host",
+    source: "@package/git-host",
   });
   return {
     logger: resolveLogger(options.logger, options.loggerAdapter),

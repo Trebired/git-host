@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { logPackageInitialized } from "@trebired/logger-adapter";
+import { logPackageInitialized } from "@package/logger-adapter";
 
 import {
   DEFAULT_BRANCH,
@@ -15,13 +15,13 @@ import type {
   GitRepositoryHandle,
   GitRepositorySummary,
   ReadSummaryOptions,
-} from "#3c8d8166992a";
+} from "#1mbdfxwwqqpa";
 import { assertAbsoluteRepositoryPath } from "#390741ebf5ab";
 import { text } from "#62f869522d1f";
 import { RepositoryLockManager } from "#90040fe3e934";
 import { createGitArchiveService } from "#07a96afa0a48";
 import { buildRemoteGitArgs, buildRemoteGitEnv } from "#1a2e563ea829";
-import { buildRepositorySummary } from "#4bb83a619bd3";
+import { buildRepositorySummary } from "#1fu49obi0gq3";
 import {
   cloneRepository,
   createInitialCommit,
@@ -33,10 +33,10 @@ import {
   workspaceHasTrackableFiles,
 } from "#96b00569f1f4";
 import { createBranchMethods } from "#f88802286a5d";
-import { createContentMethods } from "#4159667f1e87";
+import { createContentMethods } from "#40nx1s0ag764";
 import { createRemoteMethods } from "#a9f1d698c0aa";
 import { createWorkingTreeMethods } from "#de031fc6c08f";
-import { normalizeManagedExcludePatterns, toGitHostError } from "#b3a8e61c79e9";
+import { normalizeManagedExcludePatterns, toGitHostError } from "#92b2mrh7s066";
 
 type GitHostRuntime = {
   archiveService: ReturnType<typeof createGitArchiveService>;
@@ -60,9 +60,9 @@ function createGitHostRuntime(options: CreateGitHostOptions): GitHostRuntime {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "trebired.git-host",
+    group: "package.git-host",
     logger: options.logger,
-    source: "@trebired/git-host",
+    source: "@package/git-host",
   });
   return {
     archiveService: createGitArchiveService({
@@ -71,7 +71,7 @@ function createGitHostRuntime(options: CreateGitHostOptions): GitHostRuntime {
       verbose: options.verbose === true,
     }),
     lockManager: new RepositoryLockManager(),
-    logGroup: "trebired.git-host",
+    logGroup: "package.git-host",
     logger,
     managedExcludeHeader: text(options.managedExcludeHeader, DEFAULT_MANAGED_EXCLUDE_HEADER),
     managedExcludePatterns: normalizeManagedExcludePatterns(options.managedExcludePatterns),

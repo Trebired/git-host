@@ -1,4 +1,4 @@
-import type { CreateGitForgeOptions, GitForge } from "#3c8d8166992a";
+import type { CreateGitForgeOptions, GitForge } from "#1mbdfxwwqqpa";
 import { createGitForgeContext } from "./forge/context.js";
 import { createBaseMethods } from "./forge/base_methods.js";
 import { createSocialMethods } from "./forge/social_methods.js";

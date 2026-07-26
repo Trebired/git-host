@@ -1,5 +1,5 @@
 import type { GitRepositoryHandle, OpenArchiveOptions, ReadArchiveOptions, ResolveArchiveOptions } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { assertRepositoryReady } from "#61bf255baf35";
 import { resolveArchiveCommit } from "./commit.js";
 import {

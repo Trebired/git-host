@@ -3,7 +3,7 @@ import type { Socket } from "socket.io";
 import type {
   CreateGitApiSocketServerOptions,
   GitLinguistProgressEvent,
-} from "#3c8d8166992a";
+} from "#1mbdfxwwqqpa";
 import { text } from "#62f869522d1f";
 import { authorizationAllowed, serializeError, statusForError } from "#4e7ff1c92ff1";
 import type { NormalizedGitHostLogger } from "#1mbdfxwwqqpa";

@@ -9,8 +9,8 @@ import type {
   GitRepositoryLinguist,
   MaybePromise,
 } from "#1mbdfxwwqqpa";
-import { normalizeRepositoryRelativePath } from "#ynrrpw9yaztf";
-import { text } from "#sy81xkgkmoa0";
+import { normalizeRepositoryRelativePath } from "#390741ebf5ab";
+import { text } from "#62f869522d1f";
 
 type InspectionProgressCallback = (event: GitInspectionProgressEvent) => MaybePromise<void>;
 
