@@ -4,6 +4,10 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.1.3
+
+- Removed dead test scripts and stale test commands from publish workflows and maintainer docs.
+
 ## 3.1.2
 
 - Removed package test suites and banned committed `*.spec.ts`/`*.spec.tsx` files through Code Discipline.
@@ -25,11 +29,11 @@ This project follows semantic versioning once published.
 ## 3.0.0
 
 - **Security (breaking):** the Actions execution engine no longer spreads the embedding process's full `process.env` into workflow steps. Previously every step inherited the entire host environment, so any caller who could trigger a run could read (and echo) host process secrets, and those inherited values were not redacted from logs. Steps now run with a minimal, clean base env.
-- Added a documented default passthrough allowlist needed for tooling to work — `PATH`, `HOME`, `LANG`, `LC_ALL`, `TZ`, `TERM` (plus the platform equivalents on Windows) — with everything else opt-in.
+- Added a documented default passthrough allowlist needed for tooling to work  -  `PATH`, `HOME`, `LANG`, `LC_ALL`, `TZ`, `TERM` (plus the platform equivalents on Windows)  -  with everything else opt-in.
 - Added `actions.environment` configuration: `passthrough` (additive allowlist of `process.env` keys), `baseEnv` (explicit key/value pairs), `sensitiveKeys` (key names whose resolved values are always masked), and `inheritProcessEnv` (explicit, warning-logged opt-in that reproduces the pre-3.0 full-inheritance behavior exactly).
 - Extended output redaction so all values from the secrets map plus any `environment.sensitiveKeys` are masked in `step.output`/`job.output` event chunks, step output previews, and step summaries derived from step/action errors.
 - Added off-by-default local-runner isolation hooks under `actions.localRunner`: `uid`/`gid` privilege drop (passed to `spawn` where supported), `execTimeoutMs` per-step wall-clock kill (SIGTERM → SIGKILL), and a `beforeSpawn(childSpec)` hook so callers can wrap the step shell in their own sandbox (bwrap/nsjail/container) without forking. Documented the local-runner trust boundary: it executes arbitrary code as the host user, so only trusted workflows should run on it.
-- Added `createBubblewrapSandbox()`, a batteries-included `beforeSpawn` sandbox for Linux that wraps each step in `bwrap` with an isolated filesystem view (read-only system paths plus a writable job workspace), no network by default, and fresh pid/ipc/uts/user namespaces — configurable via `allowNetwork`, `roBind`, `bind`, `systemPaths`, and `bwrapPath`.
+- Added `createBubblewrapSandbox()`, a batteries-included `beforeSpawn` sandbox for Linux that wraps each step in `bwrap` with an isolated filesystem view (read-only system paths plus a writable job workspace), no network by default, and fresh pid/ipc/uts/user namespaces  -  configurable via `allowNetwork`, `roBind`, `bind`, `systemPaths`, and `bwrapPath`.
 - Added a startup warning when the local runner would execute steps as root with no `localRunner.uid` drop and no `beforeSpawn` sandbox (workflow code would run as root on the host).
 - Corrected the published package `license` metadata to `AGPL-3.0-only` to match the bundled `LICENSE`.
 
@@ -150,3 +154,5 @@ This project follows semantic versioning once published.
 - Added hosted repository config defaults so worktree-backed repositories can accept smart HTTP push updates through the checked-out branch.
 - Added tests covering repository init, clone, summary reads, tree and blob reads, staged and unstaged file reads, commit detail reads, working-tree staging and commit flows, branch operations, checkout, detached ref checkout, ref comparison, fetch/pull/push helpers, authenticated HTTP remote sync, operation continue and abort, JSON API reads, smart HTTP clone/push, smart HTTP auth hooks, SSH clone/push, SSH audit hooks, locking, and path rejection.
 - Initial public release.
+
+- Standardized package metadata ordering and contributing guidance around the Trebired writing style.
