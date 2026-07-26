@@ -1,6 +1,7 @@
 import { Server as SocketIoServer } from "socket.io";
 import { logPackageInitialized } from "@package/logger-adapter";
 
+import { buildGitHostLogGroup, GIT_HOST_PACKAGE_NAME } from "#0bba403f3e43";
 import { resolveLogger } from "#5a29135e56c1";
 import type {
   CreateGitApiSocketServerOptions,
@@ -35,13 +36,13 @@ function createGitApiSocketServer(options: CreateGitApiSocketServerOptions) {
   }
 
   const logger = resolveLogger(options.logger, options.loggerAdapter);
-  const logGroup = "package.git-host.api.socket";
+  const logGroup = buildGitHostLogGroup("api", "socket");
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
     group: logGroup,
     logger: options.logger,
-    source: "@package/git-host",
+    source: GIT_HOST_PACKAGE_NAME,
   });
   const verbose = options.verbose === true;
   const basePath = text(options.basePath, "/api/git");

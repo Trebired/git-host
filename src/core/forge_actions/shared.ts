@@ -1,5 +1,6 @@
 import type { ChildProcess } from "node:child_process";
 
+import { GIT_HOST_PACKAGE_NAME } from "#0bba403f3e43";
 import { GitHostError } from "#8974ac53d713";
 import type {
   CreateGitForgeActionsOptions,
@@ -94,7 +95,7 @@ function normalizeRunner(options: CreateGitForgeActionsOptions | undefined) {
     id: text(runner.id, "local-runner"),
     kind: text(runner.kind, "local"),
     labels,
-    platform_version: text(runner.platform_version, "@package/git-host"),
+    platform_version: text(runner.platform_version, GIT_HOST_PACKAGE_NAME),
   };
 }
 

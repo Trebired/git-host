@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
+import { buildGitHostLogGroup } from "#0bba403f3e43";
 import { resolveLogger } from "#5a29135e56c1";
 import type { CreateGitApiHandlerOptions } from "#1mbdfxwwqqpa";
 import { text } from "#62f869522d1f";
@@ -45,7 +46,7 @@ async function handleGitApiRequest(req: IncomingMessage, res: ServerResponse, op
 
 function createApiRequestContext(req: IncomingMessage, options: CreateGitApiHandlerOptions) {
   return {
-    logGroup: "package.git-host.api",
+    logGroup: buildGitHostLogGroup("api"),
     logger: resolveLogger(options.logger, options.loggerAdapter),
     method: text(req.method).toUpperCase() || "GET",
     url: new URL(String(req.url || "/"), "http://127.0.0.1"),

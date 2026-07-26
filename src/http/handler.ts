@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 import { logPackageInitialized } from "@package/logger-adapter";
 
+import { buildGitHostLogGroup, GIT_HOST_PACKAGE_NAME } from "#0bba403f3e43";
 import { resolveLogger } from "#5a29135e56c1";
 import type {
   CreateGitHttpHandlerOptions,
@@ -56,7 +57,7 @@ function createHttpRequestState(req: IncomingMessage, options: CreateGitHttpHand
       status: 500,
       wantsWrite: false,
     },
-    logGroup: "package.git-host.http",
+    logGroup: buildGitHostLogGroup("http"),
     logger: resolveLogger(options.logger, options.loggerAdapter),
     method: text(req.method).toUpperCase() || "GET",
     remoteAddress: text(req.socket?.remoteAddress),
@@ -287,9 +288,9 @@ function createGitHttpHandler(options: CreateGitHttpHandlerOptions) {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "package.git-host.http",
+    group: buildGitHostLogGroup("http"),
     logger: options.logger,
-    source: "@package/git-host",
+    source: GIT_HOST_PACKAGE_NAME,
   });
   return function gitHttpHandler(req: IncomingMessage, res: ServerResponse) {
     void handleGitHttpRequest(req, res, options).catch((error) => {

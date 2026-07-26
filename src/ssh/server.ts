@@ -3,6 +3,7 @@ import { logPackageInitialized } from "@package/logger-adapter";
 
 import { Server as GitSshServerTransport, utils as sshUtils } from "ssh2";
 
+import { buildGitHostLogGroup, GIT_HOST_PACKAGE_NAME } from "#0bba403f3e43";
 import { resolveLogger } from "#5a29135e56c1";
 import type { CreateGitSshServerOptions } from "#1mbdfxwwqqpa";
 import { text } from "#62f869522d1f";
@@ -43,9 +44,9 @@ function createGitSshRuntime(options: CreateGitSshServerOptions): GitSshRuntime 
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "package.git-host.ssh",
+    group: buildGitHostLogGroup("ssh"),
     logger: options.logger,
-    source: "@package/git-host",
+    source: GIT_HOST_PACKAGE_NAME,
   });
   return {
     logger: resolveLogger(options.logger, options.loggerAdapter),

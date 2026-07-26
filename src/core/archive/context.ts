@@ -1,6 +1,7 @@
 import os from "node:os";
 import path from "node:path";
 
+import { buildGitHostLogGroup } from "#0bba403f3e43";
 import type {
   GitArchive,
   GitArchiveCacheBackend,
@@ -63,7 +64,7 @@ function createArchiveServiceContext(options: CreateGitArchiveServiceOptions): A
     cache: defaultArchiveCache(archiveOptions),
     cacheKeyVersion: text(archiveOptions.cacheKeyVersion, "v1"),
     cleanupIntervalMs: readPositiveNumber(archiveOptions.cleanupIntervalMs, 15 * 60 * 1000),
-    logGroup: options.logGroup || "package.git-host.archive",
+    logGroup: options.logGroup || buildGitHostLogGroup("archive"),
     logger: options.logger,
     redirectExpiresInMs: readPositiveNumber(archiveOptions.redirectExpiresInMs, 5 * 60 * 1000),
     ttlMs: readPositiveNumber(archiveOptions.ttlMs, 24 * 60 * 60 * 1000),

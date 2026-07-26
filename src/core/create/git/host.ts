@@ -5,6 +5,8 @@ import {
   DEFAULT_BRANCH,
   DEFAULT_COMMIT_MESSAGE,
   DEFAULT_MANAGED_EXCLUDE_HEADER,
+  GIT_HOST_LOG_GROUP,
+  GIT_HOST_PACKAGE_NAME,
 } from "#0bba403f3e43";
 import { GitHostError } from "#8974ac53d713";
 import { resolveLogger } from "#5a29135e56c1";
@@ -60,9 +62,9 @@ function createGitHostRuntime(options: CreateGitHostOptions): GitHostRuntime {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "package.git-host",
+    group: GIT_HOST_LOG_GROUP,
     logger: options.logger,
-    source: "@package/git-host",
+    source: GIT_HOST_PACKAGE_NAME,
   });
   return {
     archiveService: createGitArchiveService({
@@ -71,7 +73,7 @@ function createGitHostRuntime(options: CreateGitHostOptions): GitHostRuntime {
       verbose: options.verbose === true,
     }),
     lockManager: new RepositoryLockManager(),
-    logGroup: "package.git-host",
+    logGroup: GIT_HOST_LOG_GROUP,
     logger,
     managedExcludeHeader: text(options.managedExcludeHeader, DEFAULT_MANAGED_EXCLUDE_HEADER),
     managedExcludePatterns: normalizeManagedExcludePatterns(options.managedExcludePatterns),
