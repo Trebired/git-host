@@ -94,8 +94,8 @@ source:
 steps:
   - name: Install
     run: bun install
-  - name: Test
-    run: bun test
+  - name: Typecheck
+    run: bun run typecheck
   - name: Build
     run: bun run build
 ```
@@ -188,7 +188,7 @@ Supported subset:
   - `oven-sh/setup-bun@v2`
   - `actions/upload-artifact@v4`
   - `actions/download-artifact@v4`
-  - `actions/publish-release-asset@v1` (no GitHub equivalent — see below)
+  - `actions/publish-release-asset@v1` (no GitHub equivalent  -  see below)
 - expressions in common places such as env values, `if`, shell commands, concurrency groups, and built-in action `with` values
 - expression contexts:
   - `github.ref`
@@ -206,7 +206,7 @@ Supported subset:
 `actions/publish-release-asset@v1` compresses a downloaded/checked-out path into a real
 `.tar.gz` or `.zip` and attaches it to a release as a `GitForgeReleaseAsset` with a
 `storage_pointer` your host's `releaseAssetStore.openAssetDownload()` resolves at
-download time — the same asset shape and download path the release API already
+download time  -  the same asset shape and download path the release API already
 serves. GitHub Actions has no built-in equivalent for this (you'd reach for a
 marketplace action like `softprops/action-gh-release`); this is an intentional
 first-party addition to git-host's Actions, not an attempt to mirror GitHub syntax
@@ -221,7 +221,7 @@ for something GitHub doesn't ship itself.
     tag: v1.2.3              # optional; defaults to github.ref_name
 ```
 
-The target release must already exist — this step does not create one. Resolution
+The target release must already exist  -  this step does not create one. Resolution
 order: `with.tag` if given, else the run's `release_id` (set automatically when the
 workflow was triggered by `release.create`), else a release matching `with.tag`/
 `github.ref_name` by `tag_name`. If none is found, the step fails with a clear error
@@ -366,7 +366,7 @@ const forge = createGitForge({
 
 Runtime env merge order (later layers win):
 
-- clean base env (see below — **not** the full host `process.env` by default)
+- clean base env (see below  -  **not** the full host `process.env` by default)
 - static `actions.env`
 - host-provided execution env
 - workflow `env`
@@ -408,8 +408,8 @@ const forge = createGitForge({
 > to `environment.passthrough` (or `environment.baseEnv`), or set
 > `environment.inheritProcessEnv: true` to reproduce the old behavior exactly.
 
-Secrets are available to expressions and the runtime env, but their values —
-along with the resolved values of any `environment.sensitiveKeys` — are redacted
+Secrets are available to expressions and the runtime env, but their values  - 
+along with the resolved values of any `environment.sensitiveKeys`  -  are redacted
 from:
 
 - live socket output
