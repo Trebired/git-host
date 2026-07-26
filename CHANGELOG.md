@@ -4,6 +4,11 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.1.4
+
+- Added package-owned organization metadata and derived git-host log groups from `package.json`.
+- Updated internal package dependency ranges to the current sibling package releases.
+
 ## 3.1.3
 
 - Removed dead test scripts and stale test commands from publish workflows and maintainer docs.

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { logPackageInitialized } from "@package/logger-adapter";
 
+import { buildGitHostLogGroup, GIT_HOST_PACKAGE_NAME } from "#0bba403f3e43";
 import { GitHostError } from "#8974ac53d713";
 import { resolveLogger } from "#5a29135e56c1";
 import type {
@@ -166,7 +167,7 @@ function createReadRequiredFork(options: CreateGitForgeOptions) {
 function createGitForgeContext(options: CreateGitForgeOptions): GitForgeRuntimeContext {
   validateCreateGitForgeOptions(options);
   const logger = resolveLogger(options.logger, options.loggerAdapter);
-  const logGroup = "package.git-host.forge";
+  const logGroup = buildGitHostLogGroup("forge");
   const verbose = options.verbose === true;
   const activityRecorder = createGitForgeActivityRecorder({ storage: options.storage.activity });
   const actions = createActionsRuntime(options);
@@ -176,7 +177,7 @@ function createGitForgeContext(options: CreateGitForgeOptions): GitForgeRuntimeC
     fallback: "console",
     group: logGroup,
     logger: options.logger,
-    source: "@package/git-host",
+    source: GIT_HOST_PACKAGE_NAME,
   });
   const recordActivity = createRecordActivity(activityRecorder);
   const readSocialState = createReadSocialState(options);

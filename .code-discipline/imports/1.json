@@ -46,6 +46,7 @@
   "#5f2400e3636a": "./src/api/handler.ts",
   "#5f5fe2262a26": "./src/core/inspect/linguist_progress.ts",
   "#5ubr402iaw9c": "./src/types/forge/workflows.ts",
+  "#5wurj14e1j4l": "./src/package-metadata.ts",
   "#61bf255baf35": "./src/core/inspect/helpers.ts",
   "#622bd171bea7": "./src/core/run_git/process.ts",
   "#62f869522d1f": "./src/utils/text.ts",

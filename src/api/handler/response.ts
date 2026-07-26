@@ -114,7 +114,7 @@ function withStructuredResult(status: number, payload: unknown): unknown {
   if (record.ok === true) {
     return {
       ...record,
-      result: result.ok("Git host backend request completed.", {
+      result: result.ok("git-host-request-completed", {
         data: hasOwn(record, "data") ? (record.data ?? null) : null,
         details: collectResultDetails(record, ["action", "repository_id", "repository_key"]),
       }),
@@ -135,7 +135,7 @@ function withStructuredResult(status: number, payload: unknown): unknown {
           ? result.notFound(code, { details: { ...details, message } })
           : status === 409
             ? result.conflict(code, { details: { ...details, message } })
-            : result.error(status, code, { details: { ...details, message } }),
+            : result.error(code, status, { details: { ...details, message } }),
     };
   }
 

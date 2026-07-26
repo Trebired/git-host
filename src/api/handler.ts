@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { logPackageInitialized } from "@package/logger-adapter";
 
+import { buildGitHostLogGroup, GIT_HOST_PACKAGE_NAME } from "#0bba403f3e43";
 import type { CreateGitApiHandlerOptions } from "#1mbdfxwwqqpa";
 import { serializeError, writeJson } from "./handler/response.js";
 import { parseGitApiRoute } from "./handler/route.js";
@@ -14,9 +15,9 @@ function createGitApiHandler(options: CreateGitApiHandlerOptions) {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "package.git-host.api",
+    group: buildGitHostLogGroup("api"),
     logger: options.logger,
-    source: "@package/git-host",
+    source: GIT_HOST_PACKAGE_NAME,
   });
 
   return function gitApiHandler(req: IncomingMessage, res: ServerResponse) {
