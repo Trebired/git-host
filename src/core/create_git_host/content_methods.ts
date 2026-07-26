@@ -23,14 +23,14 @@ import {
   readRepositoryCompare,
   readRepositoryLinguist,
   searchRepository,
-} from "#yip4ahplpvfl";
+} from "#632ac808a058";
 import {
   readRepositoryAnalysis,
   readRepositoryDirectory,
   readRepositoryFile,
   readRepositoryTree,
   resolveRepositoryInspectionTarget,
-} from "#h03o1plsdntl";
+} from "#a62e56e1fef5";
 import type { GitHostMethodContext } from "./shared.js";
 
 function createContentMethods(context: GitHostMethodContext): Pick<

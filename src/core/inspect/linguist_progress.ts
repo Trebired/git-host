@@ -6,7 +6,7 @@ import type {
   GitRepositoryHandle,
   MaybePromise,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 
 type GitLinguistProgressCallback = (event: GitLinguistProgressEvent) => MaybePromise<void>;
 

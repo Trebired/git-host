@@ -5,7 +5,7 @@ import type {
   LoggerAdapterLogMethod,
   LoggerAdapterWriter,
   NormalizedLoggerAdapter,
-} from "@trebired/logger-adapter";
+} from "@package/logger-adapter";
 
 type MaybePromise<T> = T | Promise<T>;
 

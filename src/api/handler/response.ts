@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { result } from "@trebired/result";
-import { GitHostError, isGitHostError } from "#ebw9yuqcyi9w";
-import { text } from "#sy81xkgkmoa0";
+import { result } from "@package/result";
+import { GitHostError, isGitHostError } from "#8974ac53d713";
+import { text } from "#62f869522d1f";
 
 function applyAuthorizationHeaders(res: ServerResponse, headers: Record<string, string> | undefined) {
   const nextHeaders = headers && typeof headers === "object" ? headers : {};
@@ -130,12 +130,12 @@ function withStructuredResult(status: number, payload: unknown): unknown {
     return {
       ...record,
       result: status >= 500
-        ? result.internal(code, message, { details })
+        ? result.internal(code, { details: { ...details, message } })
         : status === 404
-          ? result.notFound(code, message, { details })
+          ? result.notFound(code, { details: { ...details, message } })
           : status === 409
-            ? result.conflict(code, message, { details })
-            : result.error(status, code, message, { details }),
+            ? result.conflict(code, { details: { ...details, message } })
+            : result.error(status, code, { details: { ...details, message } }),
     };
   }
 

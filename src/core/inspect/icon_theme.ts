@@ -5,7 +5,7 @@ import path from "node:path";
 import { generateManifest, type Manifest } from "material-icon-theme";
 
 import type { GitTreeEntry, GitTreeEntryIcon } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 
 const require = createRequire(import.meta.url);
 

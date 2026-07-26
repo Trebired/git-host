@@ -43,7 +43,7 @@ async function materializeWorkspace(input: ActionsRunnerInput) {
 }
 
 function resolveActionsWorkspaceRoot(options: CreateGitForgeActionsOptions | undefined, repositoryId: string, runId: string): string {
-  const root = text(options?.workspaceRoot, path.join(os.tmpdir(), "@trebired-git-host-actions"));
+  const root = text(options?.workspaceRoot, path.join(os.tmpdir(), "@package-git-host-actions"));
   return path.join(root, repositoryId, runId);
 }
 
@@ -51,7 +51,7 @@ function resolveActionsWorkspaceRoot(options: CreateGitForgeActionsOptions | und
 // outlive the run that produced them, so they can't live under a path any run-cleanup
 // logic is allowed to delete.
 function resolveReleaseAssetsRoot(options: CreateGitForgeActionsOptions | undefined): string {
-  return text(options?.releaseAssetsRoot, path.join(os.tmpdir(), "@trebired-git-host-release-assets"));
+  return text(options?.releaseAssetsRoot, path.join(os.tmpdir(), "@package-git-host-release-assets"));
 }
 
 export {

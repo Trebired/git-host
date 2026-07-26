@@ -1,6 +1,6 @@
 import {
   resolveLogger as resolveSharedLogger,
-} from "@trebired/logger-adapter";
+} from "@package/logger-adapter";
 
 import type {
   GitHostLogger,
@@ -16,7 +16,7 @@ function resolveLogger(
     adapter,
     fallback: "console",
     logger,
-    source: "@trebired/git-host",
+    source: "@package/git-host",
   }) as NormalizedGitHostLogger;
 }
 

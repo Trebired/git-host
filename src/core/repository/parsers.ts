@@ -7,7 +7,7 @@ import type {
   GitTagSummary,
   GitStatusEntry,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 
 function parseBranchLine(line: string) {
   const next = String(line || "").trim();

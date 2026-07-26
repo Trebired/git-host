@@ -1,4 +1,4 @@
-import type { GitForge } from "#3c8d8166992a";
+import type { GitForge } from "#1mbdfxwwqqpa";
 import { assertActor } from "./shared.js";
 import type { GitForgeRuntimeContext } from "./context.js";
 

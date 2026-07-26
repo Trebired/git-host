@@ -1,5 +1,5 @@
-import { DEFAULT_MANAGED_EXCLUDE_PATTERNS } from "#r89qhx6c8mkf";
-import { GitHostError } from "#ebw9yuqcyi9w";
+import { DEFAULT_MANAGED_EXCLUDE_PATTERNS } from "#0bba403f3e43";
+import { GitHostError } from "#8974ac53d713";
 import type {
   CreateGitHostOptions,
   EnsureRepositoryOptions,
@@ -7,9 +7,9 @@ import type {
   GitRepositorySummary,
   NormalizedGitHostLogger,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
-import { RepositoryLockManager } from "#a08ndk3v0tpm";
-import type { GitArchiveService } from "#1051qntat2i5";
+import { text } from "#62f869522d1f";
+import { RepositoryLockManager } from "#90040fe3e934";
+import type { GitArchiveService } from "#07a96afa0a48";
 
 function normalizeManagedExcludePatterns(value: unknown): string[] {
   const patterns = Array.isArray(value) ? value.map((entry) => text(entry)).filter(Boolean) : [];

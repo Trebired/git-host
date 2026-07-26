@@ -3,14 +3,14 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { createGitHost, createGitSshServer, resolveRepositoryPath } from "#rfvjfxzebkbs";
+import { createGitHost, createGitSshServer, resolveRepositoryPath } from "#fcd73bf294d5";
 
 const authorizedKey = String(process.env.GIT_HOST_AUTHORIZED_KEY || "").trim();
 if (!authorizedKey) {
   throw new Error("Set GIT_HOST_AUTHORIZED_KEY to an authorized SSH public key before running demo:ssh.");
 }
 
-const root = fs.mkdtempSync(path.join(os.tmpdir(), "@trebired-git-host-ssh-"));
+const root = fs.mkdtempSync(path.join(os.tmpdir(), "@package-git-host-ssh-"));
 const repositoriesRoot = path.join(root, "repos");
 const workspace = resolveRepositoryPath({
   rootDir: repositoriesRoot,

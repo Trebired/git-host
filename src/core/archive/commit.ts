@@ -1,6 +1,6 @@
-import { GitHostError } from "#ebw9yuqcyi9w";
+import { GitHostError } from "#8974ac53d713";
 import type { GitRepositoryHandle, GitSourceArchiveFormat } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { runGit } from "#96b00569f1f4";
 
 async function resolveArchiveCommit(repository: GitRepositoryHandle, ref: string, format: GitSourceArchiveFormat): Promise<string> {

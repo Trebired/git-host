@@ -1,12 +1,12 @@
-import { GitHostError } from "#ebw9yuqcyi9w";
+import { GitHostError } from "#8974ac53d713";
 import type {
   GitBlob,
   GitLinguistProgressEvent,
   GitRepositoryHandle,
   GitTreeEntry,
 } from "#1mbdfxwwqqpa";
-import { normalizeRepositoryRelativePath } from "#ynrrpw9yaztf";
-import { text } from "#sy81xkgkmoa0";
+import { normalizeRepositoryRelativePath } from "#390741ebf5ab";
+import { text } from "#62f869522d1f";
 import { resolveTreeEntryIcon } from "./icon_theme.js";
 import { readRepositoryLinguist, readRepositoryTreeEntries } from "./linguist.js";
 import { runGit, runGitBuffer } from "#96b00569f1f4";

@@ -2,9 +2,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { createGitHost, resolveRepositoryPath } from "#rfvjfxzebkbs";
+import { createGitHost, resolveRepositoryPath } from "#fcd73bf294d5";
 
-const root = fs.mkdtempSync(path.join(os.tmpdir(), "@trebired-git-host-"));
+const root = fs.mkdtempSync(path.join(os.tmpdir(), "@package-git-host-"));
 const repositoriesRoot = path.join(root, "repos");
 const workspace = resolveRepositoryPath({
   rootDir: repositoriesRoot,

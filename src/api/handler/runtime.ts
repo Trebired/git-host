@@ -1,8 +1,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { resolveLogger } from "#cqgsder5zlmf";
+import { resolveLogger } from "#5a29135e56c1";
 import type { CreateGitApiHandlerOptions } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { enrichRepositoryDataWithArchives, isArchiveDownloadAction, writeArchiveDownload } from "./archive.js";
 import { runGitApiAction } from "./action.js";
 import {
@@ -45,7 +45,7 @@ async function handleGitApiRequest(req: IncomingMessage, res: ServerResponse, op
 
 function createApiRequestContext(req: IncomingMessage, options: CreateGitApiHandlerOptions) {
   return {
-    logGroup: "trebired.git-host.api",
+    logGroup: "package.git-host.api",
     logger: resolveLogger(options.logger, options.loggerAdapter),
     method: text(req.method).toUpperCase() || "GET",
     url: new URL(String(req.url || "/"), "http://127.0.0.1"),

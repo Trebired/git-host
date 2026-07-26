@@ -8,7 +8,7 @@ import type {
   GitForgeWorkflowRunJob,
   GitForgeWorkflowRunStep,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 
 type InMemoryGitForgeState = {
   activity: Map<string, GitForgeActivityEntry[]>;

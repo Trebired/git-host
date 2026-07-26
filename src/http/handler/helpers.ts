@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 
-import { GitHostError } from "#ebw9yuqcyi9w";
+import { GitHostError } from "#8974ac53d713";
 import type {
   CreateGitHttpHandlerOptions,
   GitHttpAuthenticationResult,
@@ -13,7 +13,7 @@ import type {
   GitHttpService,
   GitRepositoryHandle,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 
 function normalizeBasePath(value: unknown): string {
   const next = text(value).replace(/\/+$/g, "");

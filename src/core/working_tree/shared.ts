@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { GitHostError } from "#ebw9yuqcyi9w";
+import { GitHostError } from "#8974ac53d713";
 import type { GitFileContent, GitRepositoryHandle, GitWorkingTree, GitWorkingTreeEntry, ReadWorkingTreeFileOptions } from "#1mbdfxwwqqpa";
-import { normalizeRepositoryRelativePath } from "#ynrrpw9yaztf";
-import { text } from "#sy81xkgkmoa0";
-import { repositoryExists, runGit } from "#jezxo0dsbb92";
+import { normalizeRepositoryRelativePath } from "#390741ebf5ab";
+import { text } from "#62f869522d1f";
+import { repositoryExists, runGit } from "#96b00569f1f4";
 
 function normalizePathList(input: unknown): string[] {
   const values = Array.isArray(input) ? input : [input];

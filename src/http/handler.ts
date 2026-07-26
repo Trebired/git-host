@@ -1,15 +1,15 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { spawn } from "node:child_process";
 import path from "node:path";
-import { logPackageInitialized } from "@trebired/logger-adapter";
+import { logPackageInitialized } from "@package/logger-adapter";
 
-import { resolveLogger } from "#cqgsder5zlmf";
+import { resolveLogger } from "#5a29135e56c1";
 import type {
   CreateGitHttpHandlerOptions,
   GitHttpAuditEvent,
   GitRepositoryHandle,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import {
   applyAuthorizationHeaders,
   authorizationAllowed,
@@ -56,7 +56,7 @@ function createHttpRequestState(req: IncomingMessage, options: CreateGitHttpHand
       status: 500,
       wantsWrite: false,
     },
-    logGroup: "trebired.git-host.http",
+    logGroup: "package.git-host.http",
     logger: resolveLogger(options.logger, options.loggerAdapter),
     method: text(req.method).toUpperCase() || "GET",
     remoteAddress: text(req.socket?.remoteAddress),
@@ -287,9 +287,9 @@ function createGitHttpHandler(options: CreateGitHttpHandlerOptions) {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "trebired.git-host.http",
+    group: "package.git-host.http",
     logger: options.logger,
-    source: "@trebired/git-host",
+    source: "@package/git-host",
   });
   return function gitHttpHandler(req: IncomingMessage, res: ServerResponse) {
     void handleGitHttpRequest(req, res, options).catch((error) => {

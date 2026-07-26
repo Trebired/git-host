@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { logPackageInitialized } from "@trebired/logger-adapter";
+import { logPackageInitialized } from "@package/logger-adapter";
 
 import { GitHostError } from "#8974ac53d713";
 import { resolveLogger } from "#5a29135e56c1";
@@ -14,7 +14,7 @@ import type {
   GitForgeReleaseAssetLink,
   GitForgeRepositoryOverview,
   GitForgeSocialState,
-} from "#3c8d8166992a";
+} from "#1mbdfxwwqqpa";
 import { text } from "#62f869522d1f";
 import { createGitForgeActivityRecorder } from "#yotdvtav6ika";
 import { createGitForgeActionsRuntime } from "#1hvsns0vce55";
@@ -166,7 +166,7 @@ function createReadRequiredFork(options: CreateGitForgeOptions) {
 function createGitForgeContext(options: CreateGitForgeOptions): GitForgeRuntimeContext {
   validateCreateGitForgeOptions(options);
   const logger = resolveLogger(options.logger, options.loggerAdapter);
-  const logGroup = "trebired.git-host.forge";
+  const logGroup = "package.git-host.forge";
   const verbose = options.verbose === true;
   const activityRecorder = createGitForgeActivityRecorder({ storage: options.storage.activity });
   const actions = createActionsRuntime(options);
@@ -176,7 +176,7 @@ function createGitForgeContext(options: CreateGitForgeOptions): GitForgeRuntimeC
     fallback: "console",
     group: logGroup,
     logger: options.logger,
-    source: "@trebired/git-host",
+    source: "@package/git-host",
   });
   const recordActivity = createRecordActivity(activityRecorder);
   const readSocialState = createReadSocialState(options);

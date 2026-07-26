@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { logPackageInitialized } from "@trebired/logger-adapter";
+import { logPackageInitialized } from "@package/logger-adapter";
 
 import type { CreateGitApiHandlerOptions } from "#1mbdfxwwqqpa";
 import { serializeError, writeJson } from "./handler/response.js";
@@ -14,9 +14,9 @@ function createGitApiHandler(options: CreateGitApiHandlerOptions) {
   logPackageInitialized({
     adapter: options.loggerAdapter,
     fallback: "console",
-    group: "trebired.git-host.api",
+    group: "package.git-host.api",
     logger: options.logger,
-    source: "@trebired/git-host",
+    source: "@package/git-host",
   });
 
   return function gitApiHandler(req: IncomingMessage, res: ServerResponse) {

@@ -1,5 +1,5 @@
 import type { GitSourceArchiveLinks, ResolveArchiveLinksInput } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { buildArchiveRootDirectory, ensureRootDirectorySuffix, resolveArchiveFileName, resolveArchiveHref, resolveArchiveRootDirectory } from "./shared.js";
 import type { ArchiveServiceContext } from "./context.js";
 

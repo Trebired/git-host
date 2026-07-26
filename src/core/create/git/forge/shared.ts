@@ -4,7 +4,7 @@ import type {
   GitForgeForkStatus,
   GitForgeRepositoryOverview,
   GitRepositoryHandle,
-} from "#3c8d8166992a";
+} from "#1mbdfxwwqqpa";
 import { text } from "#62f869522d1f";
 import { fetchRepository } from "#1a2e563ea829";
 import { repositoryExists, runGit } from "#96b00569f1f4";

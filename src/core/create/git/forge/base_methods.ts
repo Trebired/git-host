@@ -6,7 +6,7 @@ import type {
   GitForgeWorkflowRunFilters,
   RunGitForgeWorkflowInput,
   CancelGitForgeWorkflowRunInput,
-} from "#3c8d8166992a";
+} from "#1mbdfxwwqqpa";
 import { text } from "#62f869522d1f";
 import { assertActor } from "./shared.js";
 import type { GitForgeRuntimeContext } from "./context.js";

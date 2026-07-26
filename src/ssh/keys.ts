@@ -2,8 +2,8 @@ import { createHash } from "node:crypto";
 
 import { utils as sshUtils } from "ssh2";
 
-import { GitHostError } from "#ebw9yuqcyi9w";
-import { text } from "#sy81xkgkmoa0";
+import { GitHostError } from "#8974ac53d713";
+import { text } from "#62f869522d1f";
 
 type GitSshKeyAlgorithm = "ecdsa" | "ed25519" | "rsa";
 

@@ -1,5 +1,5 @@
 import type { GitRepositoryHandle, ReadArchiveOptions } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 import { assertRepositoryReady } from "#61bf255baf35";
 import { archiveContentType, ensureRootDirectorySuffix, normalizeArchiveFormat, resolveArchiveFileName } from "./shared.js";
 import type { ArchiveServiceContext, GitArchiveService } from "./context.js";

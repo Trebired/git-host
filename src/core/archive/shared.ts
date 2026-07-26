@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { GitHostError } from "#ebw9yuqcyi9w";
+import { GitHostError } from "#8974ac53d713";
 import type {
   GitArchiveCacheEntry,
   GitArchiveFileNameContext,
@@ -12,7 +12,7 @@ import type {
   GitRepositoryHandle,
   GitSourceArchiveFormat,
 } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 
 type ResolvedArchiveRequest = {
   cache_entry: GitArchiveCacheEntry | null;

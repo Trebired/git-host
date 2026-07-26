@@ -1,4 +1,4 @@
-import { GitHostError } from "#ebw9yuqcyi9w";
+import { GitHostError } from "#8974ac53d713";
 import type {
   GitDirectoryEntry,
   GitDirectorySnapshot,

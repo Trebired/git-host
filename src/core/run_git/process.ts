@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 
 import type { GitCommandBufferResult, GitCommandResult } from "#1mbdfxwwqqpa";
-import { text } from "#sy81xkgkmoa0";
+import { text } from "#62f869522d1f";
 
 function spawnGitProcess(args: string[], options: { cwd: string; env?: Record<string, string> }) {
   return spawn("git", Array.isArray(args) ? args : [], {
