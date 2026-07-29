@@ -20,13 +20,9 @@ It is not:
 
 Runtime support: Bun 1+.
 
-Host requirement: `git` available on the host
-
 ```sh
 bun i @trebired/git-host
 ```
-
-For the packaged Actions runner binaries, the published package ships Linux GNU and macOS builds. If you are working locally from source, the runtime can also fall back to the TypeScript runner path when a packaged binary is not present.
 
 ## Quick Start
 
@@ -58,7 +54,9 @@ const summary = await gitHost.readSummary("demo");
 console.log(summary.repository.current_branch);
 ```
 
-## Actions Model
+## Concepts
+
+### Actions Model
 
 Repository Actions are repository-owned. Workflows are discovered from files committed inside the repository itself, not from top-level global records.
 
@@ -74,7 +72,7 @@ Default layout:
 
 The `workflows/` directory is intentional. It keeps the model familiar and gives you room to add more package-owned repository metadata under the configurable root later.
 
-### Workflow File
+#### Workflow File
 
 `git-host` now supports two workflow formats:
 
@@ -198,7 +196,7 @@ Supported subset:
   - `job.status`
   - `needs.<job>.result`
 
-### Publishing Release Assets
+#### Publishing Release Assets
 
 `actions/publish-release-asset@v1` compresses a downloaded/checked-out path into a real
 `.tar.gz` or `.zip` and attaches it to a release as a `GitForgeReleaseAsset` with a
@@ -241,7 +239,7 @@ Each workflow file is exposed through the forge API as a repository-owned workfl
 .git-host/workflows/build.yml
 ```
 
-### Custom Workflow Root
+#### Custom Workflow Root
 
 The root folder is configurable. The folder name does not have to stay `.git-host`.
 
@@ -285,7 +283,7 @@ actions: {
 }
 ```
 
-## Actions Execution
+### Actions Execution
 
 Workflow runs are persistent and repository-owned:
 
@@ -321,7 +319,7 @@ The runtime emits persisted run events such as:
 - `run.failed`
 - `run.cancelled`
 
-### Host Context And Redaction
+#### Host Context And Redaction
 
 Hosts can inject per-repository execution context through `actions.resolveExecutionContext()`:
 
@@ -472,7 +470,7 @@ const forge = createGitForge({
 });
 ```
 
-### Workflow APIs
+#### Workflow APIs
 
 The forge API exposes:
 
@@ -494,7 +492,7 @@ The HTTP API keeps the existing routes and adds run sub-collections such as:
 - `GET /repositories/:repositoryKey/actions/runs/:runId/steps`
 - `GET /repositories/:repositoryKey/actions/runs/:runId/artifacts`
 
-## Activity Integration
+### Activity Integration
 
 Repository activity is normalized and repository-owned. Activity entries are returned through the repository activity API and can be used to trigger workflows.
 
@@ -519,9 +517,9 @@ Push-triggered Actions can be created from:
 - SSH pushes
 - programmatic host/forge push operations
 
-## Smart HTTP And SSH
+### Smart HTTP And SSH
 
-### HTTP
+#### HTTP
 
 ```ts
 import { createServer } from "node:http";
@@ -540,7 +538,7 @@ const server = createServer(createGitHttpHandler({
 server.listen(3000);
 ```
 
-### SSH
+#### SSH
 
 ```ts
 import { createGitSshServer } from "@trebired/git-host";
@@ -558,7 +556,7 @@ const server = createGitSshServer({
 server.listen(2222);
 ```
 
-## Forge Layer
+### Forge Layer
 
 Use `createGitForge()` when you want repository releases, forks, activity, social state, and Actions on top of the Git host:
 
@@ -604,7 +602,7 @@ const forge = createGitForge({
 });
 ```
 
-## JSON API And Live Sockets
+### JSON API And Live Sockets
 
 The package exposes backend API helpers:
 
@@ -615,7 +613,17 @@ The package exposes backend API helpers:
 
 The forge socket server supports live workflow run viewing with replay from a sequence cursor so disconnected clients can catch up from persisted events.
 
-## Packaging
+## Runtime
+
+### Install Notes
+
+Host requirement: `git` available on the host
+
+
+
+For the packaged Actions runner binaries, the published package ships Linux GNU and macOS builds. If you are working locally from source, the runtime can also fall back to the TypeScript runner path when a packaged binary is not present.
+
+### Packaging
 
 The published package ships:
 
@@ -629,3 +637,23 @@ Repository Actions workflow binaries are built in CI for:
 - Linux arm64 GNU
 - macOS x64
 - macOS arm64
+
+## Public API
+
+The package exposes the documented runtime functions, constants, and types through its package entrypoints.
+
+Entrypoints:
+
+- `@trebired/git-host`
+
+## What It Does Not Do
+
+This package does not:
+
+- provide a hosted SaaS
+- replace the Git CLI with a fake in-memory Git implementation
+- ship a bundled frontend UI
+
+## License
+
+Licensed under AGPL-3.0-only. See [LICENSE](./LICENSE).
