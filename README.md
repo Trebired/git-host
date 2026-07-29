@@ -653,7 +653,3 @@ This package does not:
 - provide a hosted SaaS
 - replace the Git CLI with a fake in-memory Git implementation
 - ship a bundled frontend UI
-
-## License
-
-Licensed under AGPL-3.0-only. See [LICENSE](./LICENSE).
