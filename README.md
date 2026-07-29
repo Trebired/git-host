@@ -1,6 +1,6 @@
 # @trebired/git-host
 
-Embeddable Git host and forge for Node.js and Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository APIs, normalized repository activity, and repository-owned Actions workflows.
+Embeddable Git host and forge for Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository APIs, normalized repository activity, and repository-owned Actions workflows.
 
 `@trebired/git-host` is meant for larger self-hosted products that already own users, permissions, storage, and UI, but do not want to keep rebuilding the Git and forge layer underneath them.
 
@@ -18,17 +18,15 @@ It is not:
 
 ## Install
 
-Runtime support:
+Runtime support: Bun 1+.
 
-- Node.js 18+
-- Bun 1+
-- `git` available on the host
+Host requirement: `git` available on the host
 
 ```sh
-npm install @trebired/git-host
+bun i @trebired/git-host
 ```
 
-For the packaged Actions runner binaries, the npm package ships Linux GNU and macOS builds. If you are working locally from source, the runtime can also fall back to the TypeScript runner path when a packaged binary is not present.
+For the packaged Actions runner binaries, the published package ships Linux GNU and macOS builds. If you are working locally from source, the runtime can also fall back to the TypeScript runner path when a packaged binary is not present.
 
 ## Quick Start
 
@@ -184,7 +182,6 @@ Supported subset:
 - shell steps with `run`
 - built-in `uses:` handlers for:
   - `actions/checkout@v4`
-  - `actions/setup-node@v4`
   - `oven-sh/setup-bun@v2`
   - `actions/upload-artifact@v4`
   - `actions/download-artifact@v4`
@@ -620,7 +617,7 @@ The forge socket server supports live workflow run viewing with replay from a se
 
 ## Packaging
 
-The npm package ships:
+The published package ships:
 
 - the backend TypeScript runtime
 - packaged Actions runner binaries under `native/`

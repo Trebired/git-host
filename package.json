@@ -1,10 +1,11 @@
 {
   "name": "@trebired/git-host",
   "version": "3.1.4",
-  "description": "Embeddable Git host and forge for Node.js and Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository automation, and backend APIs.",
+  "description": "Embeddable Git host and forge for Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository automation, and backend APIs.",
   "type": "module",
   "private": false,
   "license": "AGPL-3.0-only",
+  "author": "Miroslav Machynka (Trebired)",
   "config": {
     "organization": {
       "name": "trebired"
@@ -12,8 +13,7 @@
   },
   "packageManager": "bun@1.3.12",
   "engines": {
-    "bun": ">=1.0.0",
-    "node": ">=18"
+    "bun": ">=1.0.0"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -31,18 +31,18 @@
     "README.md"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json && node ./scripts/prepare-dist.mjs prepare-dist",
-    "build:runner": "node ./scripts/build/runner.mjs",
-    "build:runner:matrix": "node ./scripts/build/runner-matrix.mjs",
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && bun ./scripts/prepare-dist.mjs prepare-dist",
+    "build:runner": "bun ./scripts/build/runner.mjs",
+    "build:runner:matrix": "bun ./scripts/build/runner-matrix.mjs",
     "demo": "bun run examples/dummy.ts",
     "demo:api": "bun run examples/api_server.ts",
     "demo:http": "bun run examples/http_server.ts",
     "demo:ssh": "bun run examples/ssh_server.ts",
-    "postpack": "node ./scripts/prepare-dist.mjs postpack",
-    "prepack": "bun run build && node ./scripts/prepare-dist.mjs prepack",
+    "postpack": "bun ./scripts/prepare-dist.mjs postpack",
+    "prepack": "bun run build && bun ./scripts/prepare-dist.mjs prepack",
     "prepublishOnly": "bun run typecheck && bun run verify:pack",
     "typecheck": "tsc --noEmit",
-    "verify:pack": "node ./scripts/verify-pack.mjs"
+    "verify:pack": "bun ./scripts/verify-pack.mjs"
   },
   "dependencies": {
     "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.2.5",
@@ -69,7 +69,6 @@
     "backend",
     "actions",
     "automation",
-    "node",
     "bun"
   ],
   "repository": {

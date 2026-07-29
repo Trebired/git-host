@@ -11,7 +11,7 @@ coverage/
 # Runtime and generated work files
 .tmp/
 tmp/
-
+cd-report-*.txt
 # Native helper build output
 native/*
 !native/.gitkeep
