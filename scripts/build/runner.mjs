@@ -7,7 +7,7 @@ import {
   hostRunnerTarget,
   runnerBinaryNameForTarget,
   runnerBuildConfigForTarget,
-} from "#m1584m7vnigi";
+} from "#4shewkcrh4gz";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const requestedTarget = readTarget() || hostRunnerTarget();
