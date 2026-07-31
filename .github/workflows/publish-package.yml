@@ -62,8 +62,11 @@ jobs:
         with:
           go-version-file: go.mod
 
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
       - name: Build Actions runner
-        run: bun ./scripts/build/runner.mjs --target ${{ matrix.target }}
+        run: bun run prepare:generated && bun ./scripts/build/runner.mjs --target ${{ matrix.target }}
 
       - name: Upload Actions runner
         uses: actions/upload-artifact@v4
