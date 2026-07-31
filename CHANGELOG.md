@@ -4,6 +4,14 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.1.8
+
+- Fixed a broken published-package build: a fresh checkout has no committed `.code-discipline/generated/` output, and nothing regenerated it before `typecheck`/`build`, so every internal `#hash` import failed to resolve. `typecheck`, `build`, and the `build-runner` CI job now install dependencies and run `prepare:generated` first.
+- Fixed a stale internal alias in `scripts/build/runner.mjs` left over from an earlier alias reassignment; it pointed at a module that had since moved.
+- Standardized package metadata (author field, config-driven organization name, dropped the Node engine constraint) and migrated `.code-discipline/config.ts` to `defineCodeDisciplineConfig`.
+- Normalized README structure and removed the license footer.
+- Updated the `@trebired/code-discipline` devDependency to 4.8.0.
+
 ## 3.1.4
 
 - Added package-owned organization metadata and derived git-host log groups from `package.json`.
