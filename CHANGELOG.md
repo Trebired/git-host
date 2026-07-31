@@ -4,6 +4,10 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.1.9
+
+- Picked up `@trebired/logger-adapter@0.2.11`, which fixes a dropped public export and a leaked internal type-alias import that this package's own consumer smoke test (`verify:pack`) caught.
+
 ## 3.1.8
 
 - Fixed a broken published-package build: a fresh checkout has no committed `.code-discipline/generated/` output, and nothing regenerated it before `typecheck`/`build`, so every internal `#hash` import failed to resolve. `typecheck`, `build`, and the `build-runner` CI job now install dependencies and run `prepare:generated` first.
