@@ -1,6 +1,6 @@
 {
   "name": "@trebired/git-host",
-  "version": "3.1.6",
+  "version": "3.1.7",
   "description": "Embeddable Git host and forge for Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository automation, and backend APIs.",
   "type": "module",
   "private": false,
@@ -32,7 +32,7 @@
   ],
   "scripts": {
     "build": "bun run prepare:generated && rm -rf dist && tsc -p tsconfig.build.json && bun ./scripts/prepare-dist.mjs prepare-dist",
-    "build:runner": "bun ./scripts/build/runner.mjs",
+    "build:runner": "bun run prepare:generated && bun ./scripts/build/runner.mjs",
     "build:runner:matrix": "bun ./scripts/build/runner-matrix.mjs",
     "demo": "bun run examples/dummy.ts",
     "demo:api": "bun run examples/api_server.ts",
