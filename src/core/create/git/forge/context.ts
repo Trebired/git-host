@@ -4,18 +4,7 @@ import { logPackageInitialized } from "@package/logger-adapter";
 import { buildGitHostLogGroup, GIT_HOST_PACKAGE_NAME } from "#0bba403f3e43";
 import { GitHostError } from "#8974ac53d713";
 import { resolveLogger } from "#5a29135e56c1";
-import type {
-  CreateGitForgeOptions,
-  GitForge,
-  GitForgeActivityEntry,
-  GitForgeActivityKind,
-  GitForgeActor,
-  GitForgeRelease,
-  GitForgeReleaseAsset,
-  GitForgeReleaseAssetLink,
-  GitForgeRepositoryOverview,
-  GitForgeSocialState,
-} from "#1mbdfxwwqqpa";
+import { CreateGitForgeOptions, GitForgeActivityEntry, GitForgeActivityKind, GitForgeActor, GitForgeRelease, GitForgeReleaseAsset, GitForgeReleaseAssetLink, GitForgeRepositoryOverview, GitForgeSocialState } from "#1mbdfxwwqqpa";
 import { text } from "#62f869522d1f";
 import { createGitForgeActivityRecorder } from "#yotdvtav6ika";
 import { createGitForgeActionsRuntime } from "#1hvsns0vce55";

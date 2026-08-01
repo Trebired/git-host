@@ -4,6 +4,12 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.1.10
+
+- Updated Code Discipline configuration to the `imports` rule with dead import removal enabled.
+- Updated git-host log group metadata fallback so package-owned logs stay under the organization root when package metadata is unavailable.
+- Updated internal package dependency ranges to the current published sibling releases.
+
 ## 3.1.9
 
 - Picked up `@trebired/logger-adapter@0.2.11`, which fixes a dropped public export and a leaked internal type-alias import that this package's own consumer smoke test (`verify:pack`) caught.
