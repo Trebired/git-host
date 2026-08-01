@@ -1,11 +1,6 @@
 import type { ChildProcess } from "node:child_process";
 
-import type {
-  CreateGitForgeActionsOptions,
-  GitForgeWorkflowRun,
-  GitForgeWorkflowRunEvent,
-  GitForgeWorkflowRunStep,
-} from "#1mbdfxwwqqpa";
+import { CreateGitForgeActionsOptions, GitForgeWorkflowRun, GitForgeWorkflowRunStep } from "#1mbdfxwwqqpa";
 
 type ActionsRunnerInput = {
   branch: string;

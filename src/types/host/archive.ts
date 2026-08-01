@@ -1,13 +1,7 @@
 import type { Writable } from "node:stream";
 
 import type { MaybePromise } from "#5a0e75b6bdb8";
-import type {
-  GitArchiveFormat,
-  GitArchiveMetadata,
-  GitRepositoryHandle,
-  GitSourceArchiveFormat,
-  GitSourceArchiveLinks,
-} from "#666a84ce027e";
+import { GitArchiveFormat, GitArchiveMetadata, GitRepositoryHandle, GitSourceArchiveFormat } from "#666a84ce027e";
 
 type ReadArchiveOptions = {
   fileName?: string;

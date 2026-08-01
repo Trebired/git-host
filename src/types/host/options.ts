@@ -1,33 +1,6 @@
 import type { GitActor, GitHostLogger, GitHostLoggerAdapter, MaybePromise } from "#5a0e75b6bdb8";
 import type { GitForgeActivityRecorder } from "#4c94c22378b2";
-import type {
-  GitArchiveFormat,
-  GitBlame,
-  GitBlob,
-  GitBranchSummary,
-  GitCommitDetail,
-  GitCommitSummary,
-  GitCompareSummary,
-  GitDirectorySnapshot,
-  GitFileContent,
-  GitFileSnapshot,
-  GitInspectionEmptyBehavior,
-  GitInspectionProgressEvent,
-  GitInspectionRef,
-  GitInspectionTarget,
-  GitLinguistProgressEvent,
-  GitRepositoryAnalysis,
-  GitRepositoryHandle,
-  GitRepositoryLinguist,
-  GitRepositorySummary,
-  GitSearchResult,
-  GitSourceArchiveLinks,
-  GitTagDetail,
-  GitTagSummary,
-  GitTreeEntry,
-  GitTreeSnapshot,
-  GitWorkingTree,
-} from "#666a84ce027e";
+import { GitInspectionEmptyBehavior, GitInspectionProgressEvent, GitInspectionRef, GitLinguistProgressEvent, GitRepositoryHandle } from "#666a84ce027e";
 import type { GitHostArchiveOptions, OpenArchiveOptions, ReadArchiveOptions, ResolveArchiveLinksInput, ResolveArchiveOptions } from "./archive.js";
 
 type BuildGitEnvOptions = {

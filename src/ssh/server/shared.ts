@@ -1,4 +1,3 @@
-import { GitHostError } from "#8974ac53d713";
 import type {
   CreateGitSshServerOptions,
   GitSshAuthenticationResult,

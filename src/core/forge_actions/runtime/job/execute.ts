@@ -11,18 +11,11 @@ import type {
 import { text } from "#62f869522d1f";
 
 import { resolveWorkflowBoolean, resolveWorkflowString, type WorkflowExpressionContext } from "#6fxc5ur8a90x";
-import { materializeJobWorkspace, runShellCommand } from "#x2bn6ub493ck";
+import { materializeJobWorkspace } from "#x2bn6ub493ck";
 import { normalizeEnv } from "#0v8uzq2zukc8";
 import { createRunRedactor } from "#atvdoorwcqy9";
 import { resolveActionsWorkspaceRoot } from "#134up1wv9uhu";
-import {
-  DEFAULT_HEARTBEAT_INTERVAL_MS,
-  buildExpressionContext,
-  isTerminalJobStatus,
-  mergeRuntimeEnv,
-  normalizeTriggerContext,
-  nowIso,
-} from "#gc1rzxkbhrqu";
+import { buildExpressionContext, isTerminalJobStatus, mergeRuntimeEnv, normalizeTriggerContext, nowIso } from "#gc1rzxkbhrqu";
 import type {
   ActiveRunState,
   ResolvedExecutionContext,
