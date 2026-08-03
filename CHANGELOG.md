@@ -4,6 +4,11 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.1.11
+
+- Moved Code Discipline config, alias-map state, generated tsconfig paths, and reports to `.trebired/code-discipline/`.
+- Updated the `@trebired/code-discipline` devDependency to `^4.10.0`.
+
 ## 3.1.10
 
 - Updated Code Discipline configuration to the `imports` rule with dead import removal enabled.
