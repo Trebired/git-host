@@ -5,34 +5,34 @@
     "": {
       "name": "@trebired/git-host",
       "dependencies": {
-        "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.2.11",
-        "@package/result": "npm:@trebired/result@^1.1.4",
-        "js-yaml": "^4.1.1",
-        "linguist-js": "^3.0.0",
-        "material-icon-theme": "^5.35.0",
+        "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.2.12",
+        "@package/result": "npm:@trebired/result@^1.1.6",
+        "js-yaml": "^4.3.1",
+        "linguist-js": "^3.0.2",
+        "material-icon-theme": "^5.37.0",
         "socket.io": "^4.8.3",
         "ssh2": "^1.17.0",
       },
       "devDependencies": {
-        "@trebired/code-discipline": "^4.10.0",
-        "@types/bun": "^1.3.4",
-        "@types/node": "^24.10.1",
+        "@trebired/code-discipline": "^4.10.1",
+        "@types/bun": "^1.3.14",
+        "@types/node": "^24.13.3",
         "@types/ssh2": "^1.15.5",
         "socket.io-client": "^4.8.3",
-        "typescript": "^6.0.2",
+        "typescript": "^6.0.3",
       },
     },
   },
   "packages": {
-    "@package/logger": ["@trebired/logger@2.5.11", "", { "dependencies": { "@package/result": "npm:@trebired/result@^1.1.1", "fflate": "^0.8.3", "tar-stream": "^3.2.0" }, "peerDependencies": { "react": ">=18" }, "optionalPeers": ["react"] }, "sha512-OzHrXSSrxyHA/ViecHtN6ninxDkHtAdj32ifkHKpuvrosEMSaJHWSbP/lT6hdf7oJnmGveKMdQkE9iEiNCS4eQ=="],
+    "@package/logger": ["@trebired/logger@2.5.13", "", { "dependencies": { "@package/result": "npm:@trebired/result@^1.1.4", "fflate": "^0.8.3", "tar-stream": "^3.2.0" }, "peerDependencies": { "react": ">=18" }, "optionalPeers": ["react"] }, "sha512-nXATeIVIWTJLOtSqfBQchZm74F34p36jeD8h/0NsvmZSaQxRed7Ty4jfjmvPehMGnvj5j4mcDpVLaTL38ZC5ig=="],
 
-    "@package/logger-adapter": ["@trebired/logger-adapter@0.2.11", "", {}, "sha512-sGgBBqcON7AJXRjuE1vDDejYcCl6a2yEHWie8uBEFDtQQ5piu8fcTPPzcuJhTMekF90z7x8l59t3uC9deFSwNg=="],
+    "@package/logger-adapter": ["@trebired/logger-adapter@0.2.12", "", {}, "sha512-QW0DpI2Etscx5amJBs2H4qiFKTbZn+bzkUAdQsEL/dDmZVH9lO7uF0s27eXIiwP49lEAroPMAdla8B2tuOJTVA=="],
 
-    "@package/result": ["@trebired/result@1.1.4", "", { "dependencies": { "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.2.5" } }, "sha512-h6QzscjWYRfSm8/JqOw/MXw5ImL/Y8ON2nfCP8RXwLklKeahCGVqAhk+m19pKQCIH3sAuys7SqneG/gHhCKreg=="],
+    "@package/result": ["@trebired/result@1.1.6", "", { "dependencies": { "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.2.11" } }, "sha512-qRXp1K7q1VhdIXlFEuNSvBMAoHbZljIeCSP5EBVPh0daF7LQ8f6G3+OVkItm5x/xK/L9Xj9dk6XxA5NpsL2saw=="],
 
     "@socket.io/component-emitter": ["@socket.io/component-emitter@3.1.2", "", {}, "sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA=="],
 
-    "@trebired/code-discipline": ["@trebired/code-discipline@4.10.0", "", { "dependencies": { "@package/logger": "npm:@trebired/logger@^2.5.11", "@package/result": "npm:@trebired/result@^1.1.4", "prettier": "3.9.6", "typescript": "^6.0.3" }, "bin": { "code-discipline": "dist/cli.js" } }, "sha512-CaOO6wtoOgKRRgqj+Ajl36LCl8sFca1Dy2PmlxrNHiqPGcUGfLTYDrab3OBXjM87Q+0i7viNKMcK61qH2i28Tg=="],
+    "@trebired/code-discipline": ["@trebired/code-discipline@4.10.1", "", { "dependencies": { "@package/logger": "npm:@trebired/logger@^2.5.13", "@package/result": "npm:@trebired/result@^1.1.6", "prettier": "3.9.6", "typescript": "^6.0.3" }, "bin": { "code-discipline": "dist/cli.js" } }, "sha512-KdtygKz96c4SC7T8DkciTqltub6x4rrWQgaVxb+NzAAr793pgjTkysquvOphSk20rA18KOnzR4pbTdpIPX5t6w=="],
 
     "@types/bun": ["@types/bun@1.3.14", "", { "dependencies": { "bun-types": "1.3.14" } }, "sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw=="],
 
@@ -106,7 +106,7 @@
 
     "isbinaryfile": ["isbinaryfile@6.0.0", "", {}, "sha512-2FN2B8MAqKv6d5TaKsLvMrwMcghxwHTpcKy0L5mhNbRqjNqo2++SpCqN6eG1lCC1GmTQgvrYJYXv2+Chvyevag=="],
 
-    "js-yaml": ["js-yaml@4.3.0", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-1td788aAnnZ5qs7V2QIRl1owjtYpbKt749Y3xauqQgwIIGF/xXWz1wMTEBx5O3LK3lXLVuqXPdPxj2BoFHaW9Q=="],
+    "js-yaml": ["js-yaml@4.3.1", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-CY6crGq313MX8GkwvB7tzgp99vjQxY1++5y10/BKN/GUfHqWaOGQMNZkBvqSzsZKWk/ijwHlWzzkLulsGHhjWQ=="],
 
     "linguist-js": ["linguist-js@3.0.2", "", { "dependencies": { "binary-extensions": "^3.1.0", "commander": "^14.0.3", "common-path-prefix": "^3.0.0", "ignore": "^7.0.5", "isbinaryfile": "^6.0.0", "js-yaml": "^4.3.0", "node-cache": "^5.1.2" }, "bin": { "linguist-js": "bin/index.js", "linguist": "bin/index.js" } }, "sha512-1VpWhFUPg8vSVQAAD8jgMw0Hx8dCev3snFd3JSV7wN0XJbYyyry9UTTU2gNmVVKHotAxGFvT37CQoJA+i8b9EA=="],
 
@@ -161,6 +161,8 @@
     "xmlhttprequest-ssl": ["xmlhttprequest-ssl@2.1.2", "", {}, "sha512-TEU+nJVUUnA4CYJFLvK5X9AOeH4KvDvhIfm0vV1GaQRtchnG0hgK5p8hw/xjv8cunWYCsiPCSDzObPyhEwq3KQ=="],
 
     "@types/ssh2/@types/node": ["@types/node@18.19.130", "", { "dependencies": { "undici-types": "~5.26.4" } }, "sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg=="],
+
+    "linguist-js/js-yaml": ["js-yaml@4.3.0", "", { "dependencies": { "argparse": "^2.0.1" }, "bin": { "js-yaml": "bin/js-yaml.js" } }, "sha512-1td788aAnnZ5qs7V2QIRl1owjtYpbKt749Y3xauqQgwIIGF/xXWz1wMTEBx5O3LK3lXLVuqXPdPxj2BoFHaW9Q=="],
 
     "@types/ssh2/@types/node/undici-types": ["undici-types@5.26.5", "", {}, "sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA=="],
   }
