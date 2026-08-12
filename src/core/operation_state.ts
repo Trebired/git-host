@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { GitOperationState } from "#1mbdfxwwqqpa";
+import type { GitOperationState } from "#14021226ec9b";
 
 function readRepositoryOperationState(workspaceRoot: string): GitOperationState {
   const gitDir = path.join(workspaceRoot, ".git");

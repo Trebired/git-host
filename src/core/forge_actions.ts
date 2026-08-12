@@ -26,33 +26,33 @@ function createGitForgeActionsRuntime(options: CreateGitForgeActionsRuntimeOptio
 
   warnForUnsafeRunnerOptions(options.actions, runner);
   const runtimeSupport = createRuntimeSupport({
-    options,
-    runListeners,
-    runSequences,
-    runner,
-    storage,
+      options,
+      runListeners,
+      runSequences,
+      runner,
+      storage,
   });
   const jobStepSupport = createJobStepSupport({
-    emitRunEvent: runtimeSupport.emitRunEvent,
-    markQueuedStepsForJob: runtimeSupport.markQueuedStepsForJob,
-    options,
-    runner,
-    storage,
-    updateJob: runtimeSupport.updateJob,
-    updateStep: runtimeSupport.updateStep,
+      emitRunEvent: runtimeSupport.emitRunEvent,
+      markQueuedStepsForJob: runtimeSupport.markQueuedStepsForJob,
+      options,
+      runner,
+      storage,
+      updateJob: runtimeSupport.updateJob,
+      updateStep: runtimeSupport.updateStep,
   });
 
   return createRuntimeEngine({
-    activeRuns,
-    jobStepSupport,
-    options,
-    processingRef: { value: false },
-    queuedRuns,
-    runExecutionContexts,
-    runListeners,
-    runner,
-    runtimeSupport,
-    storage,
+      activeRuns,
+      jobStepSupport,
+      options,
+      processingRef: { value: false },
+      queuedRuns,
+      runExecutionContexts,
+      runListeners,
+      runner,
+      runtimeSupport,
+      storage,
   });
 }
 

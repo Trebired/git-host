@@ -3,21 +3,16 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { result } from "@package/result";
 import { GitHostError, isGitHostError } from "#8974ac53d713";
 import { text } from "#62f869522d1f";
+import { applyHeaders } from "#ha60kf0g69sv";
 
-function applyAuthorizationHeaders(res: ServerResponse, headers: Record<string, string> | undefined) {
-  const nextHeaders = headers && typeof headers === "object" ? headers : {};
-  for (const [name, value] of Object.entries(nextHeaders)) {
-    if (!name || typeof value !== "string") continue;
-    res.setHeader(name, value);
-  }
-}
+const applyAuthorizationHeaders = applyHeaders;
 
 function authorizationAllowed(value: boolean | {
-  allowed: boolean;
-  headers?: Record<string, string>;
-  message?: string;
-  status?: number;
-} | undefined) {
+    allowed: boolean;
+    headers?: Record<string, string>;
+    message?: string;
+    status?: number;
+  } | undefined) {
   if (value == null) return { allowed: true, status: 200, message: "" };
   if (typeof value === "boolean") return { allowed: value, status: value ? 200 : 403, message: "" };
 
@@ -44,26 +39,26 @@ function statusForError(error: unknown): number {
       case "archive_format_not_supported":
       case "invalid_branch_name":
       case "invalid_repository_path":
-        return 400;
+      return 400;
       case "archive_access_denied":
-        return 403;
+      return 403;
       case "archive_generation_failed":
-        return 500;
+      return 500;
       case "archive_ref_not_found":
       case "release_tag_not_found":
       case "repository_not_found":
       case "forge_resource_not_found":
-        return 404;
+      return 404;
       case "repository_empty":
       case "repository_not_initialized":
       case "repository_clone_target_not_empty":
       case "forge_sync_conflict":
-        return 409;
+      return 409;
       case "forge_invalid_actor":
       case "forge_invalid_input":
-        return 400;
+      return 400;
       default:
-        return 400;
+      return 400;
     }
   }
 
@@ -115,8 +110,8 @@ function withStructuredResult(status: number, payload: unknown): unknown {
     return {
       ...record,
       result: result.ok("git-host-request-completed", {
-        data: hasOwn(record, "data") ? (record.data ?? null) : null,
-        details: collectResultDetails(record, ["action", "repository_id", "repository_key"]),
+          data: hasOwn(record, "data") ? (record.data ?? null) : null,
+          details: collectResultDetails(record, ["action", "repository_id", "repository_key"]),
       }),
     };
   }
@@ -130,19 +125,19 @@ function withStructuredResult(status: number, payload: unknown): unknown {
     return {
       ...record,
       result: status >= 500
-        ? result.internal(code, { details: { ...details, message } })
-        : status === 404
-          ? result.notFound(code, { details: { ...details, message } })
-          : status === 409
-            ? result.conflict(code, { details: { ...details, message } })
-            : result.error(code, status, { details: { ...details, message } }),
+      ? result.internal(code, { details: { ...details, message } })
+      : status === 404
+      ? result.notFound(code, { details: { ...details, message } })
+      : status === 409
+      ? result.conflict(code, { details: { ...details, message } })
+      : result.error(code, status, { details: { ...details, message } }),
     };
   }
 
   return payload;
 }
 
-function collectResultDetails(record: Record<string, unknown>, keys: string[]): Record<string, unknown> | undefined {
+function collectResultDetails(record: Record<string, unknown>, keys: string[]): Record<string, unknown>|undefined {
   const details: Record<string, unknown> = {};
 
   for (const key of keys) {
@@ -154,7 +149,7 @@ function collectResultDetails(record: Record<string, unknown>, keys: string[]): 
   return Object.keys(details).length > 0 ? details : undefined;
 }
 
-function toRecord(value: unknown): Record<string, unknown> | null {
+function toRecord(value: unknown): Record<string, unknown>|null {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
   }

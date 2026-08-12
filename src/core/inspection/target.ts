@@ -6,7 +6,7 @@ import type {
   GitInspectionTargetResolved,
   GitRepositoryHandle,
   ResolveInspectionTargetOptions,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { assertRepositoryReady } from "#61bf255baf35";
 import { runGit } from "#96b00569f1f4";
@@ -17,7 +17,7 @@ import {
   resolveEmptyBehavior,
 } from "./shared.js";
 
-async function tryResolveCommitForRef(repository: GitRepositoryHandle, ref: string): Promise<{ commit: string; ref: string } | null> {
+async function tryResolveCommitForRef(repository: GitRepositoryHandle, ref: string): Promise<{commit:string;ref:string}|null> {
   const revision = text(ref);
   if (!revision) return null;
 
@@ -35,7 +35,7 @@ async function hasRepositoryHeadCommit(repository: GitRepositoryHandle): Promise
   return revisionRes.ok;
 }
 
-async function readCurrentBranchRef(repository: GitRepositoryHandle): Promise<string | null> {
+async function readCurrentBranchRef(repository: GitRepositoryHandle): Promise<string|null> {
   const branchRes = await runGit(["symbolic-ref", "--quiet", "--short", "HEAD"], { cwd: repository.path });
   if (!branchRes.ok) return null;
   const branch = text(branchRes.stdout);
@@ -78,16 +78,16 @@ function throwInspectionTargetError(
 ): never {
   if (target.reason === "unborn") {
     throw new GitHostError("repository_unborn", `Repository "${repository.id}" has no commits yet.`, {
-      reason: target.reason,
-      ref: target.resolved_ref || null,
-      repositoryId: repository.id,
+        reason: target.reason,
+        ref: target.resolved_ref || null,
+        repositoryId: repository.id,
     });
   }
 
   throw new GitHostError("ref_not_found", `Repository ref "${inspectionSnapshotRef(target)}" does not exist.`, {
-    reason: target.reason,
-    ref: inspectionSnapshotRef(target),
-    repositoryId: repository.id,
+      reason: target.reason,
+      ref: inspectionSnapshotRef(target),
+      repositoryId: repository.id,
   });
 }
 

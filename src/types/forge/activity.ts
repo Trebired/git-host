@@ -8,27 +8,27 @@ type GitForgeActor = {
 };
 
 type GitForgeActivityKind =
-  | "fork.create"
-  | "fork.sync"
-  | "repository.fetch"
-  | "repository.pull"
-  | "repository.push"
-  | "release.create"
-  | "release.delete"
-  | "release.update"
-  | "star"
-  | "unstar"
-  | "watch"
-  | "unwatch"
-  | (string & {});
+|"fork.create"
+|"fork.sync"
+|"repository.fetch"
+|"repository.pull"
+|"repository.push"
+|"release.create"
+|"release.delete"
+|"release.update"
+|"star"
+|"unstar"
+|"watch"
+|"unwatch"
+|(string& {});
 
 type GitForgeActivitySource =
-  | "api"
-  | "forge"
-  | "http"
-  | "ssh"
-  | "system"
-  | (string & {});
+|"api"
+|"forge"
+|"http"
+|"ssh"
+|"system"
+|(string& {});
 
 type GitForgeActivityFilters = {
   actor?: string;
@@ -66,10 +66,10 @@ type GitForgeActivityRecorder = {
   recordActivity(input: GitForgeActivityRecordInput): MaybePromise<GitForgeActivityEntry>;
 };
 
-type GitForgeTransportActivityRecorder = GitForgeActivityRecorder & {
+type GitForgeTransportActivityRecorder = GitForgeActivityRecorder& {
   listActivity(repositoryId: string, filters?: GitForgeActivityFilters): MaybePromise<GitForgeActivityEntry[]>;
-  recordHttpAuditEvent(event: GitHttpAuditEvent): MaybePromise<GitForgeActivityEntry | null>;
-  recordSshAuditEvent(event: GitSshAuditEvent): MaybePromise<GitForgeActivityEntry | null>;
+  recordHttpAuditEvent(event: GitHttpAuditEvent): MaybePromise<GitForgeActivityEntry|null>;
+  recordSshAuditEvent(event: GitSshAuditEvent): MaybePromise<GitForgeActivityEntry|null>;
 };
 
 type GitForgeActivityStorage = {

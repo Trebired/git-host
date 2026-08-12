@@ -27,7 +27,7 @@ type GitArchiveMetadata = {
   size: number | null;
 };
 
-type GitArchive = GitArchiveMetadata & {
+type GitArchive = GitArchiveMetadata& {
   content: string;
   encoding: "base64";
 };

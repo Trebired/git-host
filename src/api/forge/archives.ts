@@ -3,7 +3,7 @@ import type {
   CreateGitForgeApiHandlerOptions,
   GitForgeRelease,
   GitForgeRepositoryOverview,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import {
   attachReleaseSourceArchives,
@@ -13,26 +13,26 @@ import { isForgeReleasePayload } from "./actions.js";
 import type { GitForgeApiRoute } from "./route.js";
 
 async function enrichForgeDataWithArchives(
-  options: Pick<CreateGitForgeApiHandlerOptions, "basePath" | "forge" | "gitHost">,
+  options: Pick<CreateGitForgeApiHandlerOptions, "basePath"|"forge"|"gitHost">,
   route: GitForgeApiRoute,
   repositoryId: string,
   data: unknown,
 ) {
   if (route.resource === "repository") {
     return await enrichRepositoryDataWithArchives({
-      basePath: options.basePath,
-      gitHost: options.gitHost,
-    }, {
-      ...route,
-      repositoryId,
-    } as any, data);
+        basePath: options.basePath,
+        gitHost: options.gitHost,
+      }, {
+        ...route,
+        repositoryId,
+      } as any, data);
   }
   if (route.action === "release" && isForgeReleasePayload(data)) {
     return await attachReleaseWithNotFoundGuard(options, repositoryId, route.repositoryKey, data);
   }
   if (route.action === "releases" && Array.isArray(data)) {
-    return await Promise.all(data.map(async (release) => {
-      return await enrichRelease(options, route.repositoryKey, repositoryId, release);
+    return await Promise.all(data.map(async(release) => {
+          return await enrichRelease(options, route.repositoryKey, repositoryId, release);
     }));
   }
   if (route.action === "releases" && isForgeReleasePayload(data)) {
@@ -45,21 +45,21 @@ async function enrichForgeDataWithArchives(
 }
 
 async function enrichRelease(
-  options: Pick<CreateGitForgeApiHandlerOptions, "basePath" | "forge" | "gitHost">,
+  options: Pick<CreateGitForgeApiHandlerOptions, "basePath"|"forge"|"gitHost">,
   repositoryKey: string,
   repositoryId: string,
   release: unknown,
 ) {
   return await enrichForgeDataWithArchives(options, {
-    action: "release",
-    releaseId: text((release as GitForgeRelease).id),
-    repositoryKey,
-    resource: "release",
-  }, repositoryId, release);
+      action: "release",
+      releaseId: text((release as GitForgeRelease).id),
+      repositoryKey,
+      resource: "release",
+    }, repositoryId, release);
 }
 
 async function enrichOverview(
-  options: Pick<CreateGitForgeApiHandlerOptions, "basePath" | "forge" | "gitHost">,
+  options: Pick<CreateGitForgeApiHandlerOptions, "basePath"|"forge"|"gitHost">,
   route: GitForgeApiRoute,
   repositoryId: string,
   overview: GitForgeRepositoryOverview,
@@ -67,13 +67,13 @@ async function enrichOverview(
   return {
     ...overview,
     latest_release: overview.latest_release
-      ? await enrichRelease(options, route.repositoryKey, repositoryId, overview.latest_release) as GitForgeRelease
-      : null,
+    ? await enrichRelease(options, route.repositoryKey, repositoryId, overview.latest_release) as GitForgeRelease
+    : null,
   };
 }
 
 async function attachReleaseWithNotFoundGuard(
-  options: Pick<CreateGitForgeApiHandlerOptions, "basePath" | "forge" | "gitHost">,
+  options: Pick<CreateGitForgeApiHandlerOptions, "basePath"|"forge"|"gitHost">,
   repositoryId: string,
   repositoryKey: string,
   release: GitForgeRelease,

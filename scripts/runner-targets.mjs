@@ -1,10 +1,10 @@
 import fs from "node:fs";
 
 const TARGET_RUNNER_NAMES = new Map([
-  ["x86_64-unknown-linux-gnu", "git-host-actions-runner-linux-x64-gnu"],
-  ["aarch64-unknown-linux-gnu", "git-host-actions-runner-linux-arm64-gnu"],
-  ["x86_64-apple-darwin", "git-host-actions-runner-darwin-x64"],
-  ["aarch64-apple-darwin", "git-host-actions-runner-darwin-arm64"],
+    ["x86_64-unknown-linux-gnu", "git-host-actions-runner-linux-x64-gnu"],
+    ["aarch64-unknown-linux-gnu", "git-host-actions-runner-linux-arm64-gnu"],
+    ["x86_64-apple-darwin", "git-host-actions-runner-darwin-x64"],
+    ["aarch64-apple-darwin", "git-host-actions-runner-darwin-arm64"],
 ]);
 
 const RELEASE_RUNNER_TARGETS = [
@@ -49,15 +49,15 @@ function runnerBinaryNameForTarget(target) {
 function runnerBuildConfigForTarget(target) {
   switch (target) {
     case "x86_64-unknown-linux-gnu":
-      return { GOARCH: "amd64", GOOS: "linux" };
+    return { GOARCH: "amd64", GOOS: "linux" };
     case "aarch64-unknown-linux-gnu":
-      return { GOARCH: "arm64", GOOS: "linux" };
+    return { GOARCH: "arm64", GOOS: "linux" };
     case "x86_64-apple-darwin":
-      return { GOARCH: "amd64", GOOS: "darwin" };
+    return { GOARCH: "amd64", GOOS: "darwin" };
     case "aarch64-apple-darwin":
-      return { GOARCH: "arm64", GOOS: "darwin" };
+    return { GOARCH: "arm64", GOOS: "darwin" };
     default:
-      throw new Error(`unsupported-runner-target: ${target}`);
+    throw new Error(`unsupported-runner-target: ${target}`);
   }
 }
 

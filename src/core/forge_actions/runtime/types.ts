@@ -5,7 +5,7 @@ import type {
   GitForgeWorkflowRun,
   GitForgeWorkflowTriggerKind,
   RunGitForgeWorkflowInput,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 
 import type { createJobStepSupport } from "#rlvv6s65veqm";
 import type {
@@ -26,7 +26,7 @@ type CancelWorkflowRun = (
 type QueueWorkflowRun = (
   repositoryId: string,
   workflow: GitForgeWorkflow,
-  input: RunGitForgeWorkflowInput & {
+  input: RunGitForgeWorkflowInput& {
     triggerKind: GitForgeWorkflowTriggerKind;
   },
 ) => Promise<GitForgeWorkflowRun>;

@@ -1,3 +1,5 @@
+import { noop } from "#38ephfxhlt3m";
+
 const repositoryMutationTails = new Map<string, Promise<void>>();
 
 class RepositoryLockManager {
@@ -6,14 +8,14 @@ class RepositoryLockManager {
     if (!key) return await operation();
 
     const previous = repositoryMutationTails.get(key) || Promise.resolve();
-    let release = function () {};
+    let release = noop;
     const gate = new Promise<void>((resolve) => {
-      release = resolve;
+        release = resolve;
     });
-    const tail = previous.catch(() => {}).then(() => gate);
+    const tail = previous.catch (() => {}).then(() => gate);
     repositoryMutationTails.set(key, tail);
 
-    await previous.catch(() => {});
+    await previous.catch (() => {});
     try {
       return await operation();
     } finally {

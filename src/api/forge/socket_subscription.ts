@@ -1,9 +1,9 @@
 import type { Socket } from "socket.io";
 
-import type { CreateGitForgeSocketServerOptions } from "#1mbdfxwwqqpa";
+import type { CreateGitForgeSocketServerOptions } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { authorizationAllowed, serializeError, statusForError } from "#4e7ff1c92ff1";
-import type { NormalizedGitHostLogger } from "#1mbdfxwwqqpa";
+import type { NormalizedGitHostLogger } from "#14021226ec9b";
 
 import {
   ACTIONS_RUN_DONE_EVENT,
@@ -17,11 +17,11 @@ function isTerminalRunEventType(value: string) {
 
 function emitMissingRunIdentity(socket: Socket) {
   socket.emit(ACTIONS_RUN_ERROR_EVENT, {
-    error: {
-      code: "forge_resource_not_found",
-      message: "repositoryKey and runId are required.",
-    },
-    status: 404,
+      error: {
+        code: "forge_resource_not_found",
+        message: "repositoryKey and runId are required.",
+      },
+      status: 404,
   });
   socket.emit(ACTIONS_RUN_DONE_EVENT, { ok: false });
   socket.disconnect();
@@ -29,11 +29,11 @@ function emitMissingRunIdentity(socket: Socket) {
 
 function emitMissingRepository(socket: Socket, repositoryKey: string) {
   socket.emit(ACTIONS_RUN_ERROR_EVENT, {
-    error: {
-      code: "repository_not_found",
-      message: "Repository not found.",
-    },
-    status: 404,
+      error: {
+        code: "repository_not_found",
+        message: "Repository not found.",
+      },
+      status: 404,
   });
   socket.emit(ACTIONS_RUN_DONE_EVENT, { ok: false, repository_key: repositoryKey });
   socket.disconnect();
@@ -53,18 +53,18 @@ async function authorizeRunSocket(
   if (afterSequence > 0) searchParams.set("afterSequence", String(afterSequence));
   return authorizationAllowed(options.authorize
     ? await options.authorize({
-      action: "action_run",
-      actor,
-      method: "SOCKET",
-      operation: "subscribe",
-      pathname,
-      remoteAddress: text(socket.handshake.address),
-      repositoryId,
-      repositoryKey,
-      request: socket.request,
-      resource: "action_run",
-      runId,
-      searchParams,
+        action: "action_run",
+        actor,
+        method: "SOCKET",
+        operation: "subscribe",
+        pathname,
+        remoteAddress: text(socket.handshake.address),
+        repositoryId,
+        repositoryKey,
+        request: socket.request,
+        resource: "action_run",
+        runId,
+        searchParams,
     })
     : undefined);
 }
@@ -78,27 +78,27 @@ function emitDeniedRunSocket(
   message: string,
 ) {
   socket.emit(ACTIONS_RUN_ERROR_EVENT, {
-    error: {
-      code: "permission_denied",
-      message,
-    },
-    status,
+      error: {
+        code: "permission_denied",
+        message,
+      },
+      status,
   });
   socket.emit(ACTIONS_RUN_DONE_EVENT, {
-    ok: false,
-    repository_id: repositoryId,
-    repository_key: repositoryKey,
-    run_id: runId,
+      ok: false,
+      repository_id: repositoryId,
+      repository_key: repositoryKey,
+      run_id: runId,
   });
   socket.disconnect();
 }
 
 function emitCompletedRunSocket(socket: Socket, repositoryId: string, repositoryKey: string, runId: string) {
   socket.emit(ACTIONS_RUN_DONE_EVENT, {
-    ok: true,
-    repository_id: repositoryId,
-    repository_key: repositoryKey,
-    run_id: runId,
+      ok: true,
+      repository_id: repositoryId,
+      repository_key: repositoryKey,
+      run_id: runId,
   });
 }
 
@@ -116,12 +116,12 @@ function logDeniedRunSocket(
   status: number,
 ) {
   logger.warn(logGroup, "forge socket permission denied", {
-    action: "action_run",
-    pathname,
-    repositoryId,
-    repositoryKey,
-    runId,
-    status,
+      action: "action_run",
+      pathname,
+      repositoryId,
+      repositoryKey,
+      runId,
+      status,
   });
 }
 
@@ -134,10 +134,10 @@ function logSubscribedRunSocket(
   socketId: string,
 ) {
   logger.info(logGroup, "forge action run socket subscribed", {
-    repositoryId,
-    repositoryKey,
-    runId,
-    socketId,
+      repositoryId,
+      repositoryKey,
+      runId,
+      socketId,
   });
 }
 
@@ -151,11 +151,11 @@ function logFailedRunSocket(
   error: unknown,
 ) {
   logger.error(logGroup, "forge action run socket failed", {
-    error: error instanceof Error ? error.message : String(error),
-    repositoryId,
-    repositoryKey,
-    runId,
-    socketId,
+      error: error instanceof Error ? error.message : String(error),
+      repositoryId,
+      repositoryKey,
+      runId,
+      socketId,
   });
 }
 
@@ -167,18 +167,18 @@ function emitFailedRunSocket(
   error: unknown,
 ) {
   socket.emit(ACTIONS_RUN_ERROR_EVENT, {
-    ...serializeError(error),
-    ok: false,
-    repository_id: repositoryId,
-    repository_key: repositoryKey,
-    run_id: runId,
-    status: statusForError(error),
+      ...serializeError(error),
+      ok: false,
+      repository_id: repositoryId,
+      repository_key: repositoryKey,
+      run_id: runId,
+      status: statusForError(error),
   });
   socket.emit(ACTIONS_RUN_DONE_EVENT, {
-    ok: false,
-    repository_id: repositoryId,
-    repository_key: repositoryKey,
-    run_id: runId,
+      ok: false,
+      repository_id: repositoryId,
+      repository_key: repositoryKey,
+      run_id: runId,
   });
   socket.disconnect();
 }
@@ -191,7 +191,7 @@ async function replayRunEvents(
   afterSequence: number,
 ) {
   const events = await options.forge.listWorkflowRunEvents(repositoryId, runId, {
-    afterSequence,
+      afterSequence,
   });
   for (const event of events) {
     socket.emit(ACTIONS_RUN_EVENT, event);
@@ -206,16 +206,16 @@ async function subscribeToLiveRun(
   runId: string,
 ) {
   let subscription: { close: () => void } | null = null;
-  subscription = options.forge.subscribeWorkflowRun(repositoryId, runId, async (event) => {
-    socket.emit(ACTIONS_RUN_EVENT, event);
-    if (isTerminalRunEventType(event.type)) {
-      emitCompletedRunSocket(socket, repositoryId, repositoryKey, runId);
-      subscription?.close();
-      socket.disconnect();
-    }
+  subscription = options.forge.subscribeWorkflowRun(repositoryId, runId, async(event) => {
+      socket.emit(ACTIONS_RUN_EVENT, event);
+      if (isTerminalRunEventType(event.type)) {
+        emitCompletedRunSocket(socket, repositoryId, repositoryKey, runId);
+        subscription?.close();
+        socket.disconnect();
+      }
   });
   socket.on("disconnect", () => {
-    subscription?.close();
+      subscription?.close();
   });
 }
 
@@ -234,7 +234,10 @@ async function resolveRunSubscriptionContext(
     : repositoryKey);
   return {
     afterSequence,
-    pathname: `${basePath.replace(/\/+$/g, "") || ""}/repositories/${encodeURIComponent(repositoryKey)}/actions/runs/${encodeURIComponent(runId)}/socket`,
+    pathname: `${basePath.replace(
+    /\/+$/g,
+    ""
+    ) || ""}/repositories/${encodeURIComponent(repositoryKey)}/actions/runs/${encodeURIComponent(runId)}/socket`,
     repositoryId,
     repositoryKey,
     runId,
@@ -310,7 +313,7 @@ function createRunSubscriptionHandler(
       emitMissingRepository(socket, context.repositoryKey);
       return;
     }
-    await runAuthorizedSubscription(options, socket, context as typeof context & { repositoryId: string }, verbose, logger, logGroup);
+    await runAuthorizedSubscription(options, socket, context as typeof context& { repositoryId: string }, verbose, logger, logGroup);
   };
 }
 

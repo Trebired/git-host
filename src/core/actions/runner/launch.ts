@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { GitHostError } from "#8974ac53d713";
-import type { CreateGitForgeActionsOptions } from "#1mbdfxwwqqpa";
+import type { CreateGitForgeActionsOptions } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 
 import type { RunnerLaunch } from "#hzv9f3wx9ez9";
@@ -35,8 +35,8 @@ function findPackageRoot(startPath: string): string {
 function packagedRunnerCandidatePaths(binaryName: string): string[] {
   const currentDir = path.dirname(fileURLToPath(import.meta.url));
   return RUNNER_BINARY_DIRECTORIES.flatMap((directory) => [
-    path.resolve(currentDir, `../../../../${directory}`, binaryName),
-    path.resolve(process.cwd(), directory, binaryName),
+      path.resolve(currentDir, `../../../../${directory}`, binaryName),
+      path.resolve(process.cwd(), directory, binaryName),
   ]);
 }
 
@@ -58,8 +58,8 @@ function resolvePackagedRunnerPath(options: CreateGitForgeActionsOptions | undef
 function resolveGoFallbackCommand(): { args: string[]; command: string; cwd?: string } | null {
   if (sourceCheckoutGoRunnerPath !== undefined) {
     return sourceCheckoutGoRunnerPath
-      ? { args: [], command: sourceCheckoutGoRunnerPath }
-      : null;
+    ? { args: [], command: sourceCheckoutGoRunnerPath }
+    : null;
   }
 
   const packageRoot = findPackageRoot(path.dirname(fileURLToPath(import.meta.url)));
@@ -70,7 +70,7 @@ function resolveGoFallbackCommand(): { args: string[]; command: string; cwd?: st
   }
 
   const probe = spawnSync("go", ["version"], {
-    encoding: "utf8",
+      encoding: "utf8",
   });
   if (probe.status !== 0) {
     sourceCheckoutGoRunnerPath = null;
@@ -81,8 +81,8 @@ function resolveGoFallbackCommand(): { args: string[]; command: string; cwd?: st
   const binaryPath = path.join(binaryDirectory, "git-host-actions-runner");
   fs.mkdirSync(binaryDirectory, { recursive: true });
   const build = spawnSync("go", ["build", "-o", binaryPath, "./go/cmd/git-host-actions-runner"], {
-    cwd: packageRoot,
-    encoding: "utf8",
+      cwd: packageRoot,
+      encoding: "utf8",
   });
   if (build.status !== 0 || !fs.existsSync(binaryPath)) {
     sourceCheckoutGoRunnerPath = null;

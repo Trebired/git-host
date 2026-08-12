@@ -20,7 +20,7 @@ type ResolveArchiveOptions = {
   rootDirectory?: string;
 };
 
-type OpenArchiveOptions = ResolveArchiveOptions & {
+type OpenArchiveOptions = ResolveArchiveOptions& {
   preferRedirect?: boolean;
 };
 
@@ -87,18 +87,18 @@ type GitArchiveCacheWriter = {
 };
 
 type GitArchiveCacheBackend = {
-  cleanupExpired?(now?: Date): MaybePromise<number>;
-  createRedirectUrl?(
+  cleanupExpired ? (now?: Date) : MaybePromise<number>;
+  createRedirectUrl ? (
     cacheKey: string,
     entry: GitArchiveCacheEntry,
     input?: {
       expiresInMs?: number;
       metadata?: GitArchiveMetadata;
     },
-  ): MaybePromise<string | null>;
-  readEntry?(cacheKey: string): MaybePromise<GitArchiveCacheEntry | null>;
-  openReadStream(cacheKey: string): MaybePromise<GitArchiveCacheReadResult | null>;
-  prepareWrite(cacheKey: string): MaybePromise<GitArchiveCacheWriter | null>;
+  ) : MaybePromise<string|null>;
+  readEntry ? (cacheKey: string) : MaybePromise<GitArchiveCacheEntry|null>;
+  openReadStream(cacheKey: string): MaybePromise<GitArchiveCacheReadResult|null>;
+  prepareWrite(cacheKey: string): MaybePromise<GitArchiveCacheWriter|null>;
 };
 
 type GitHostArchiveOptions = {

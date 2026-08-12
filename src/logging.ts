@@ -7,17 +7,17 @@ import type {
   GitHostLogger,
   GitHostLoggerAdapter,
   NormalizedGitHostLogger,
-} from "./types.js";
+} from "./types/index.ts";
 
 function resolveLogger(
   logger?: GitHostLogger,
   adapter?: GitHostLoggerAdapter,
 ): NormalizedGitHostLogger {
   return resolveSharedLogger({
-    adapter,
-    fallback: "console",
-    logger,
-    source: GIT_HOST_PACKAGE_NAME,
+      adapter,
+      fallback: "console",
+      logger,
+      source: GIT_HOST_PACKAGE_NAME,
   }) as NormalizedGitHostLogger;
 }
 

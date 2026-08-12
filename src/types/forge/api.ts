@@ -61,9 +61,9 @@ type GitForgeStorageAdapter = {
 type CreateGitForgeOptions = {
   actions?: CreateGitForgeActionsOptions;
   createForkRepository: (input: {
-    actor: GitForgeActor;
-    upstreamRepository: GitRepositoryHandle;
-    upstreamRepositoryId: string;
+      actor: GitForgeActor;
+      upstreamRepository: GitRepositoryHandle;
+      upstreamRepositoryId: string;
   }) => MaybePromise<GitRepositoryHandle>;
   gitHost: GitHost;
   logger?: GitHostLogger;
@@ -93,17 +93,21 @@ type GitForge = {
   listWorkflows(repositoryId: string, filters?: GitForgeWorkflowFilters): Promise<GitForgeWorkflow[]>;
   readOverview(repositoryId: string, input?: ReadGitForgeRepositoryInput): Promise<GitForgeRepositoryOverview>;
   openReleaseAsset(repositoryId: string, releaseId: string, assetId: string, input?: {
-    repositoryKey?: string;
+      repositoryKey?: string;
   }): Promise<GitForgeReleaseAssetDownload>;
   readRelease(repositoryId: string, releaseId: string): Promise<GitForgeRelease>;
   readSocialState(repositoryId: string, input?: ReadGitForgeRepositoryInput): Promise<GitForgeSocialState>;
   readWorkflow(repositoryId: string, workflowId: string): Promise<GitForgeWorkflow>;
   readWorkflowRun(repositoryId: string, runId: string): Promise<GitForgeWorkflowRun>;
   resolveReleaseAssetLink(repositoryId: string, releaseId: string, assetId: string, input?: {
-    repositoryKey?: string;
+      repositoryKey?: string;
   }): Promise<GitForgeReleaseAssetLink>;
   runWorkflow(repositoryId: string, workflowId: string, input: RunGitForgeWorkflowInput): Promise<GitForgeWorkflowRun>;
-  subscribeWorkflowRun(repositoryId: string, runId: string, listener: (event: GitForgeWorkflowRunEvent) => MaybePromise<void>): GitForgeWorkflowRunSocketSubscription;
+  subscribeWorkflowRun(
+    repositoryId: string,
+    runId: string,
+    listener: (event: GitForgeWorkflowRunEvent) => MaybePromise<void>
+  ): GitForgeWorkflowRunSocketSubscription;
   syncFork(forkRepositoryId: string, input: SyncGitForgeForkInput): Promise<GitForgeFork>;
   unstarRepository(repositoryId: string, input: { actor: GitForgeActor }): Promise<GitForgeSocialState>;
   unwatchRepository(repositoryId: string, input: { actor: GitForgeActor }): Promise<GitForgeSocialState>;
@@ -120,57 +124,57 @@ type GitForgeApiAuthorizationResult = boolean | {
 };
 
 type GitForgeResource =
-  | "activity"
-  | "action_run"
-  | "action_workflow"
-  | "actions"
-  | "asset"
-  | "fork"
-  | "release"
-  | "repository"
-  | "social";
+|"activity"
+|"action_run"
+|"action_workflow"
+|"actions"
+|"asset"
+|"fork"
+|"release"
+|"repository"
+|"social";
 
 type GitForgeOperation =
-  | "cancel"
-  | "create"
-  | "delete"
-  | "read"
-  | "run"
-  | "subscribe"
-  | "sync"
-  | "update";
+|"cancel"
+|"create"
+|"delete"
+|"read"
+|"run"
+|"subscribe"
+|"sync"
+|"update";
 
 type CreateGitForgeApiHandlerOptions = {
   authorize?: (input: {
-    action: string;
-    actor: GitForgeActor | null;
-    assetId?: string;
-    method: string;
-    operation: GitForgeOperation;
-    pathname: string;
-    runId?: string;
-    releaseId?: string;
-    remoteAddress: string;
-    repositoryId: string;
-    repositoryKey: string;
-    request: IncomingMessage;
-    resource: GitForgeResource;
-    searchParams: URLSearchParams;
+      action: string;
+      actor: GitForgeActor | null;
+      assetId?: string;
+      method: string;
+      operation: GitForgeOperation;
+      pathname: string;
+      runId?: string;
+      releaseId?: string;
+      remoteAddress: string;
+      repositoryId: string;
+      repositoryKey: string;
+      request: IncomingMessage;
+      resource: GitForgeResource;
+      searchParams: URLSearchParams;
   }) => MaybePromise<GitForgeApiAuthorizationResult>;
   basePath?: string;
   forge: GitForge;
   gitHost: GitHost;
   logger?: GitHostLogger;
   loggerAdapter?: GitHostLoggerAdapter;
-  resolveActor?: (request: IncomingMessage) => MaybePromise<GitForgeActor | null>;
+  resolveActor?: (request: IncomingMessage) => MaybePromise<GitForgeActor|null>;
   resolveRepositoryId?: (
     repositoryKey: string,
     request: IncomingMessage,
-  ) => MaybePromise<string | null>;
+  ) => MaybePromise<string|null>;
   verbose?: boolean;
 };
 
-type CreateGitForgeSocketServerOptions = CreateGitForgeApiHandlerOptions & {
+type CreateGitForgeSocketServerOptions = CreateGitForgeApiHandlerOptions& {
   httpServer: HttpServer;
   socketOptions?: Partial<SocketIoServerOptions>;
   socketPath?: string;

@@ -32,14 +32,14 @@ async function main() {
 
 async function resetTempRoot() {
   await fs.rm(tempRoot, {
-    force: true,
-    recursive: true,
+      force: true,
+      recursive: true,
   });
   await fs.mkdir(tempRoot, {
-    recursive: true,
+      recursive: true,
   });
   await fs.mkdir(npmCacheDir, {
-    recursive: true,
+      recursive: true,
   });
 }
 
@@ -47,16 +47,16 @@ function packPackage() {
   const stdoutPath = path.join(tempRoot, "pack-output.json");
 
   execFileSync("sh", [
-    "-lc",
-    `npm pack --json > ${shellEscape(stdoutPath)}`,
-  ], {
-    ...createNpmOptions(rootDir),
-    stdio: ["ignore", "inherit", "inherit"],
+      "-lc",
+      `npm pack --json > ${shellEscape(stdoutPath)}`,
+    ], {
+      ...createNpmOptions(rootDir),
+      stdio: ["ignore", "inherit", "inherit"],
   });
 
   const stdout = execFileSync("cat", [stdoutPath], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
   });
   const [entry] = JSON.parse(stdout);
 
@@ -69,8 +69,8 @@ function packPackage() {
 
 function listTarEntries(tarballPath) {
   const stdout = execFileSync("tar", ["-tf", tarballPath], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
   });
 
   return new Set(stdout
@@ -81,8 +81,8 @@ function listTarEntries(tarballPath) {
 
 function readPackedPackageJson(tarballPath) {
   const stdout = execFileSync("tar", ["-xOf", tarballPath, "package/package.json"], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "inherit"],
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "inherit"],
   });
 
   return JSON.parse(stdout);
@@ -169,8 +169,8 @@ function expectedRunnerPackPaths(scope) {
 
 function resolveRunnerScope() {
   return process.env.GIT_HOST_VERIFY_RUNNER_SCOPE === "matrix"
-    ? "matrix"
-    : "host";
+  ? "matrix"
+  : "host";
 }
 
 function assertTarEntryExists(tarballEntries, packagePath, message) {
@@ -187,74 +187,74 @@ function normalizePackagePath(packagePath) {
 
 async function writeConsumerPackageJson(consumerDir, tarballPath) {
   await fs.writeFile(path.join(consumerDir, "package.json"), JSON.stringify({
-    name: "git-host-pack-smoke",
-    private: true,
-    type: "module",
-    dependencies: {
-      "@package/git-host": `file:${tarballPath}`,
-    },
-    devDependencies: {
-      "@types/node": `file:${nodeTypesDir}`,
-    },
-  }, null, 2));
+        name: "git-host-pack-smoke",
+        private: true,
+        type: "module",
+        dependencies: {
+          "@package/git-host": `file:${tarballPath}`,
+        },
+        devDependencies: {
+          "@types/node": `file:${nodeTypesDir}`,
+        },
+      }, null, 2));
 }
 
 async function writeConsumerFixtures(consumerDir) {
   await fs.writeFile(path.join(consumerDir, "index.ts"), [
-    'import { createGitForge, createGitHost, resolveRepositoryPath } from "@package/git-host";',
-    "",
-    "console.log(Boolean(createGitHost), Boolean(createGitForge), Boolean(resolveRepositoryPath));",
-  ].join("\n"));
+      'import { createGitForge, createGitHost, resolveRepositoryPath } from "@package/git-host";',
+      "",
+      "console.log(Boolean(createGitHost), Boolean(createGitForge), Boolean(resolveRepositoryPath));",
+    ].join("\n"));
 
   await fs.writeFile(path.join(consumerDir, "runtime.ts"), [
-    'import * as mod from "@package/git-host";',
-    "",
-    "console.log(typeof mod.createGitHost, typeof mod.createGitForge, Object.keys(mod).length > 0);",
-  ].join("\n"));
+      'import * as mod from "@package/git-host";',
+      "",
+      "console.log(typeof mod.createGitHost, typeof mod.createGitForge, Object.keys(mod).length > 0);",
+    ].join("\n"));
   await fs.writeFile(path.join(consumerDir, "tsconfig.json"), JSON.stringify({
-    compilerOptions: {
-      lib: [
-        "ES2020",
-      ],
-      module: "ESNext",
-      moduleResolution: "Bundler",
-      noEmit: true,
-      target: "ES2020",
-      types: [
-        "node",
-      ],
-    },
-    include: [
-      "./index.ts",
-    ],
-  }, null, 2));
+        compilerOptions: {
+          lib: [
+            "ES2020",
+          ],
+          module: "ESNext",
+          moduleResolution: "Bundler",
+          noEmit: true,
+          target: "ES2020",
+          types: [
+            "node",
+          ],
+        },
+        include: [
+          "./index.ts",
+        ],
+      }, null, 2));
 }
 
 function runConsumerInstall(consumerDir) {
   execFileSync("npm", ["install", "--ignore-scripts"], {
-    ...createNpmOptions(consumerDir),
-    stdio: "inherit",
+      ...createNpmOptions(consumerDir),
+      stdio: "inherit",
   });
 }
 
 function runConsumerTypecheck(consumerDir) {
   execFileSync(process.execPath, [tscBin, "-p", "tsconfig.json"], {
-    cwd: consumerDir,
-    stdio: "inherit",
+      cwd: consumerDir,
+      stdio: "inherit",
   });
 }
 
 function runConsumerRuntimeCheck(consumerDir) {
   execFileSync("bun", ["runtime.ts"], {
-    cwd: consumerDir,
-    stdio: "inherit",
+      cwd: consumerDir,
+      stdio: "inherit",
   });
 }
 
 async function runConsumerSmokeTest(tarballPath) {
   const consumerDir = path.join(tempRoot, "consumer");
   await fs.mkdir(consumerDir, {
-    recursive: true,
+      recursive: true,
   });
   await writeConsumerPackageJson(consumerDir, tarballPath);
   await writeConsumerFixtures(consumerDir);
@@ -275,6 +275,6 @@ function createNpmOptions(cwd) {
 
 function shellEscape(value) {
   return `'${String(value).replace(/'/gu, `'\\''`)}'`;
-}
+  }
 
-await main();
+  await main();

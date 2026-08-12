@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { GitHostError } from "#8974ac53d713";
-import type { GitForgeWorkflowRunArtifact } from "#1mbdfxwwqqpa";
+import type { GitForgeWorkflowRunArtifact } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 
 type StoredArtifact = {
@@ -38,10 +38,10 @@ function walkFiles(root: string): string[] {
 
 function toMatcher(pattern: string) {
   const escaped = pattern
-    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
-    .replace(/\*\*/g, ".*")
-    .replace(/\*/g, "[^/]*")
-    .replace(/\?/g, ".");
+  .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+  .replace(/\*\*/g, ".*")
+  .replace(/\*/g, "[^/]*")
+  .replace(/\?/g, ".");
   return new RegExp(`^${escaped}$`);
 }
 
@@ -54,26 +54,26 @@ function expandArtifactPathSpec(workspacePath: string, spec: string) {
   }
   const matcher = toMatcher(normalizedSpec);
   const candidates = walkFiles(workspacePath)
-    .map((entry) => ({
-      absolutePath: entry,
-      relativePath: path.relative(workspacePath, entry).replace(/\\/g, "/"),
-    }));
+  .map((entry) => ({
+        absolutePath: entry,
+        relativePath: path.relative(workspacePath, entry).replace(/\\/g, "/"),
+  }));
   return candidates
-    .filter((entry) => matcher.test(entry.relativePath))
-    .map((entry) => entry.absolutePath);
+  .filter((entry) => matcher.test(entry.relativePath))
+  .map((entry) => entry.absolutePath);
 }
 
 function parseArtifactPathSpecs(input: string) {
   return text(input)
-    .split(/\r?\n|,/)
-    .map((entry) => text(entry).trim())
-    .filter(Boolean);
+  .split(/\r?\n|,/)
+  .map((entry) => text(entry).trim())
+  .filter(Boolean);
 }
 
 function directorySize(root: string) {
   return walkFiles(root)
-    .map((entry) => fs.statSync(entry).size)
-    .reduce((total, value) => total + value, 0);
+  .map((entry) => fs.statSync(entry).size)
+  .reduce((total, value) => total + value, 0);
 }
 
 function copyArtifactEntry(sourcePath: string, destinationPath: string) {
@@ -91,17 +91,17 @@ function artifactStoragePath(artifactsRoot: string, artifactName: string) {
 }
 
 function uploadArtifact(input: {
-  artifactName: string;
-  artifactsRoot: string;
-  pathSpec: string;
-  workspacePath: string;
+    artifactName: string;
+    artifactsRoot: string;
+    pathSpec: string;
+    workspacePath: string;
 }): StoredArtifact {
   const specs = parseArtifactPathSpecs(input.pathSpec);
   const matches = Array.from(new Set(specs.flatMap((spec) => expandArtifactPathSpec(input.workspacePath, spec))));
   if (!matches.length) {
     throw new GitHostError("forge_actions_runner_failed", `Artifact "${input.artifactName}" did not match any files.`, {
-      artifactName: input.artifactName,
-      pathSpec: input.pathSpec,
+        artifactName: input.artifactName,
+        pathSpec: input.pathSpec,
     });
   }
   const destinationRoot = artifactStoragePath(input.artifactsRoot, input.artifactName);
@@ -123,16 +123,16 @@ function uploadArtifact(input: {
 }
 
 function downloadArtifact(input: {
-  artifact: GitForgeWorkflowRunArtifact;
-  artifactsRoot: string;
-  destinationPath: string;
-  workspacePath: string;
+    artifact: GitForgeWorkflowRunArtifact;
+    artifactsRoot: string;
+    destinationPath: string;
+    workspacePath: string;
 }) {
   const sourceRoot = input.artifact.path || artifactStoragePath(input.artifactsRoot, input.artifact.name);
   if (!fs.existsSync(sourceRoot)) {
     throw new GitHostError("forge_actions_runner_failed", `Artifact "${input.artifact.name}" is missing from storage.`, {
-      artifactId: input.artifact.id,
-      artifactName: input.artifact.name,
+        artifactId: input.artifact.id,
+        artifactName: input.artifact.name,
     });
   }
   const destination = path.resolve(input.workspacePath, text(input.destinationPath, "."));

@@ -4,7 +4,7 @@ import type {
   GitSshAuthorizationResult,
   GitSshResolvedRepository,
   GitSshService,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { assertAbsoluteRepositoryPath } from "#390741ebf5ab";
 import { text } from "#62f869522d1f";
 
@@ -92,10 +92,10 @@ async function resolveRepositoryResult(
     username: string;
     wantsWrite: boolean;
   },
-): Promise<GitSshResolvedRepository | null> {
+): Promise<GitSshResolvedRepository|null> {
   const resolved = await options.resolveRepository(repositoryKey, input);
   if (!resolved) return null;
-  if ("repository" in resolved) {
+  if ("repository"in resolved) {
     return {
       repository: {
         id: text(resolved.repository.id, repositoryKey),

@@ -11,8 +11,8 @@ type GitForgeSocialState = {
 };
 
 type GitForgeSocialStorage = {
-  listStars?(repositoryId: string): MaybePromise<string[]>;
-  listWatchers?(repositoryId: string): MaybePromise<string[]>;
+  listStars ? (repositoryId: string) : MaybePromise<string[]>;
+  listWatchers ? (repositoryId: string) : MaybePromise<string[]>;
   setStar(repositoryId: string, actorId: string, starred: boolean): MaybePromise<void>;
   setWatching(repositoryId: string, actorId: string, watching: boolean): MaybePromise<void>;
   viewerHasStarred(repositoryId: string, actorId: string): MaybePromise<boolean>;
@@ -55,7 +55,7 @@ type GitForgeForkStorageRecord = {
 type GitForgeForkStorage = {
   createFork(input: GitForgeForkStorageRecord): MaybePromise<GitForgeForkStorageRecord>;
   listForks(repositoryId: string): MaybePromise<GitForgeForkStorageRecord[]>;
-  readFork(forkRepositoryId: string): MaybePromise<GitForgeForkStorageRecord | null>;
+  readFork(forkRepositoryId: string): MaybePromise<GitForgeForkStorageRecord|null>;
 };
 
 export type {

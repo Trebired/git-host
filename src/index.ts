@@ -24,7 +24,7 @@ export { createGitForge } from "./core/create/git/forge.js";
 export { createGitForgeActivityRecorder } from "./core/activity.js";
 export { createGitForgeActionsRuntime, isTerminalRunStatus } from "./core/forge_actions.js";
 export { createBubblewrapSandbox } from "./core/actions/sandbox.js";
-export { createInMemoryGitForgeStorageAdapter } from "./core/git_forge/storage_memory.js";
+export { createInMemoryGitForgeStorageAdapter } from "./core/git_forge/storage_memory/adapter.js";
 export { fetchRepository, pullRepository, pushRepository } from "./core/remote.js";
 export { createGitHttpHandler, parseGitHttpRoute } from "./http/handler.js";
 export {
@@ -78,7 +78,12 @@ export {
   runGitBuffer,
 } from "./core/run_git.js";
 export { GitHostError, isGitHostError } from "./errors.js";
-export { assertAbsoluteRepositoryPath, normalizeRepositoryRelativePath, resolveRepositoryPath } from "./utils/paths.js";
+export {
+  assertAbsoluteRepositoryPath,
+  normalizeOptionalRepositoryRelativePath,
+  normalizeRepositoryRelativePath,
+  resolveRepositoryPath,
+} from "./utils/paths.js";
 
 export type { GitHostErrorCode } from "./errors.js";
 export type { GenerateGitSshKeyPairOptions, GitSshKeyAlgorithm, GitSshKeyPair } from "./ssh/keys.js";
@@ -276,4 +281,4 @@ export type {
   UnstagePathsInput,
   UpdateGitForgeReleaseInput,
   UpdateGitForgeWorkflowInput,
-} from "./types.js";
+} from "./types/index.ts";

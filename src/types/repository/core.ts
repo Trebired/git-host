@@ -34,7 +34,7 @@ type GitStatusEntry = {
   unstaged: boolean;
 };
 
-type GitWorkingTreeEntry = GitStatusEntry & {
+type GitWorkingTreeEntry = GitStatusEntry& {
   staged_lines_added: number;
   staged_lines_removed: number;
   unstaged_lines_added: number;
@@ -86,7 +86,7 @@ type GitDiffFile = {
 };
 
 type GitCommitDetail = {
-  commit: GitCommitSummary & {
+  commit: GitCommitSummary& {
     message: string;
     parent_hashes: string[];
   };
@@ -128,7 +128,7 @@ type GitTagSummary = {
   target_type: string;
 };
 
-type GitTagDetail = GitTagSummary & {
+type GitTagDetail = GitTagSummary& {
   message: string;
 };
 
@@ -266,7 +266,7 @@ type GitRepositoryLinguist = {
     bytes: number;
     count: number;
     lines: GitRepositoryLinguistLines;
-    results: Record<string, string | null>;
+    results: Record<string, string|null>;
   };
   languages: {
     bytes: number;

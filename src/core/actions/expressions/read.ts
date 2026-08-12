@@ -4,6 +4,7 @@ import { text } from "#62f869522d1f";
 import type { ExpressionToken, WorkflowExpressionContext } from "./types.js";
 
 const SUPPORTED_FUNCTIONS = new Set(["always", "cancelled", "failure", "success"]);
+
 type ExpressionParserState = {
   context: WorkflowExpressionContext;
   index: number;
@@ -38,7 +39,7 @@ function coerceComparisonValue(input: unknown) {
 }
 
 function currentToken(state: ExpressionParserState) {
-  return state.tokens[state.index] || { type: "eof" as const };
+  return state.tokens[state.index] || { type: "eof"as const };
 }
 
 function advance(state: ExpressionParserState) {
@@ -48,7 +49,7 @@ function advance(state: ExpressionParserState) {
 function expectToken(state: ExpressionParserState, type: ExpressionToken["type"]) {
   if (currentToken(state).type !== type) {
     throw new GitHostError("forge_invalid_workflow_definition", `Unexpected token "${currentToken(state).type}" in workflow expression.`, {
-      expected: type,
+        expected: type,
     });
   }
   advance(state);
@@ -61,7 +62,7 @@ function isJobStatus(context: WorkflowExpressionContext, status: string) {
 function parseSupportedFunction(state: ExpressionParserState, name: string) {
   if (!SUPPORTED_FUNCTIONS.has(name)) {
     throw new GitHostError("forge_invalid_workflow_definition", `Unsupported workflow expression function "${name}()".`, {
-      function: name,
+        function: name,
     });
   }
   advance(state);
@@ -149,7 +150,11 @@ function createExpressionReader(tokens: ExpressionToken[], context: WorkflowExpr
     parse() {
       const value = parseOr(state);
       if (currentToken(state).type !== "eof") {
-        throw new GitHostError("forge_invalid_workflow_definition", `Unexpected trailing token "${currentToken(state).type}" in workflow expression.`, {});
+        throw new GitHostError(
+          "forge_invalid_workflow_definition",
+          `Unexpected trailing token "${currentToken(state).type}" in workflow expression.`,
+          {}
+        );
       }
       return value;
     },

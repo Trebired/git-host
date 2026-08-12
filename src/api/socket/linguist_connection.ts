@@ -3,10 +3,10 @@ import type { Socket } from "socket.io";
 import type {
   CreateGitApiSocketServerOptions,
   GitLinguistProgressEvent,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { authorizationAllowed, serializeError, statusForError } from "#4e7ff1c92ff1";
-import type { NormalizedGitHostLogger } from "#1mbdfxwwqqpa";
+import type { NormalizedGitHostLogger } from "#14021226ec9b";
 
 import {
   LINGUIST_DONE_EVENT,
@@ -17,11 +17,11 @@ import {
 
 function emitMissingRepositoryKey(socket: Socket) {
   socket.emit(LINGUIST_ERROR_EVENT, {
-    error: {
-      code: "repository_not_found",
-      message: "Repository key is required.",
-    },
-    status: 404,
+      error: {
+        code: "repository_not_found",
+        message: "Repository key is required.",
+      },
+      status: 404,
   });
   socket.emit(LINGUIST_DONE_EVENT, { ok: false });
   socket.disconnect();
@@ -29,11 +29,11 @@ function emitMissingRepositoryKey(socket: Socket) {
 
 function emitMissingRepositoryId(socket: Socket, repositoryKey: string) {
   socket.emit(LINGUIST_ERROR_EVENT, {
-    error: {
-      code: "repository_not_found",
-      message: "Repository not found.",
-    },
-    status: 404,
+      error: {
+        code: "repository_not_found",
+        message: "Repository not found.",
+      },
+      status: 404,
   });
   socket.emit(LINGUIST_DONE_EVENT, { ok: false, repository_key: repositoryKey });
   socket.disconnect();
@@ -47,16 +47,16 @@ function emitDeniedSocket(
   message: string,
 ) {
   socket.emit(LINGUIST_ERROR_EVENT, {
-    error: {
-      code: "permission_denied",
-      message,
-    },
-    status,
+      error: {
+        code: "permission_denied",
+        message,
+      },
+      status,
   });
   socket.emit(LINGUIST_DONE_EVENT, {
-    ok: false,
-    repository_id: repositoryId,
-    repository_key: repositoryKey,
+      ok: false,
+      repository_id: repositoryId,
+      repository_key: repositoryKey,
   });
   socket.disconnect();
 }
@@ -73,14 +73,14 @@ async function authorizeLinguistSocket(
   if (ref) searchParams.set("ref", ref);
   return authorizationAllowed(options.authorize
     ? await options.authorize({
-      action: "linguist_socket",
-      method: "SOCKET",
-      pathname,
-      remoteAddress: text(socket.handshake.address),
-      repositoryId,
-      repositoryKey,
-      request: socket.request,
-      searchParams,
+        action: "linguist_socket",
+        method: "SOCKET",
+        pathname,
+        remoteAddress: text(socket.handshake.address),
+        repositoryId,
+        repositoryKey,
+        request: socket.request,
+        searchParams,
     })
     : undefined);
 }
@@ -94,25 +94,25 @@ function logDeniedSocket(
   status: number,
 ) {
   logger.warn(logGroup, "api socket permission denied", {
-    action: "linguist_socket",
-    pathname,
-    repositoryId,
-    repositoryKey,
-    status,
+      action: "linguist_socket",
+      pathname,
+      repositoryId,
+      repositoryKey,
+      status,
   });
 }
 
 function emitLinguistResult(socket: Socket, repositoryId: string, repositoryKey: string, data: unknown) {
   socket.emit(LINGUIST_RESULT_EVENT, {
-    action: "linguist",
-    data,
-    repository_id: repositoryId,
-    repository_key: repositoryKey,
+      action: "linguist",
+      data,
+      repository_id: repositoryId,
+      repository_key: repositoryKey,
   });
   socket.emit(LINGUIST_DONE_EVENT, {
-    ok: true,
-    repository_id: repositoryId,
-    repository_key: repositoryKey,
+      ok: true,
+      repository_id: repositoryId,
+      repository_key: repositoryKey,
   });
 }
 
@@ -124,9 +124,9 @@ function logCompletedSocket(
   socketId: string,
 ) {
   logger.info(logGroup, "api linguist socket completed", {
-    repositoryId,
-    repositoryKey,
-    socketId,
+      repositoryId,
+      repositoryKey,
+      socketId,
   });
 }
 
@@ -139,25 +139,25 @@ function logFailedSocket(
   error: unknown,
 ) {
   logger.error(logGroup, "api linguist socket failed", {
-    error: error instanceof Error ? error.message : String(error),
-    repositoryId,
-    repositoryKey,
-    socketId,
+      error: error instanceof Error ? error.message : String(error),
+      repositoryId,
+      repositoryKey,
+      socketId,
   });
 }
 
 function emitFailedSocket(socket: Socket, repositoryId: string, repositoryKey: string, error: unknown) {
   socket.emit(LINGUIST_ERROR_EVENT, {
-    ...serializeError(error),
-    ok: false,
-    repository_id: repositoryId,
-    repository_key: repositoryKey,
-    status: statusForError(error),
+      ...serializeError(error),
+      ok: false,
+      repository_id: repositoryId,
+      repository_key: repositoryKey,
+      status: statusForError(error),
   });
   socket.emit(LINGUIST_DONE_EVENT, {
-    ok: false,
-    repository_id: repositoryId,
-    repository_key: repositoryKey,
+      ok: false,
+      repository_id: repositoryId,
+      repository_key: repositoryKey,
   });
 }
 
@@ -211,10 +211,10 @@ async function runLinguistSocket(
 
   try {
     const data = await options.gitHost.readLinguist(context.repositoryId, {
-      onProgress(progressEvent: GitLinguistProgressEvent) {
-        socket.emit(LINGUIST_PROGRESS_EVENT, progressEvent);
-      },
-      ref: context.ref,
+        onProgress(progressEvent: GitLinguistProgressEvent) {
+          socket.emit(LINGUIST_PROGRESS_EVENT, progressEvent);
+        },
+        ref: context.ref,
     });
     emitLinguistResult(socket, context.repositoryId, context.repositoryKey, data);
     if (verbose) {
@@ -248,7 +248,7 @@ function createLinguistConnectionHandler(
       emitMissingRepositoryId(socket, context.repositoryKey);
       return;
     }
-    await runLinguistSocket(options, socket, context as typeof context & { repositoryId: string }, verbose, logger, logGroup);
+    await runLinguistSocket(options, socket, context as typeof context& { repositoryId: string }, verbose, logger, logGroup);
   };
 }
 

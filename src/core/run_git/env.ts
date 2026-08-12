@@ -2,13 +2,13 @@ import {
   DEFAULT_ACTOR_EMAIL,
   DEFAULT_ACTOR_NAME,
 } from "#0bba403f3e43";
-import type { GitActor } from "#1mbdfxwwqqpa";
+import type { GitActor } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 
 function buildGitEnv(options: {
-  actor?: GitActor | null;
-  extraEnv?: Record<string, string>;
-} = {}): Record<string, string> {
+    actor?: GitActor | null;
+    extraEnv?: Record<string, string>;
+  } = {}): Record<string, string> {
   const actor = options.actor || null;
   const extraEnv = options.extraEnv || {};
   const name = text(actor && actor.name, DEFAULT_ACTOR_NAME);

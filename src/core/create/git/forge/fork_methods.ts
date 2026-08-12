@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { GitHostError } from "#8974ac53d713";
-import type { CreateGitForgeForkInput, GitForge, SyncGitForgeForkInput } from "#1mbdfxwwqqpa";
+import type { CreateGitForgeForkInput, GitForge, SyncGitForgeForkInput } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { fetchRepository } from "#1a2e563ea829";
 import { buildGitEnv, cloneRepository, ensureHostedRepositoryConfig, runGit } from "#96b00569f1f4";
@@ -10,27 +10,27 @@ import { assertActor, ensureUpstreamRemote, nowIso, readForkStatus, repositoryHa
 import type { GitForgeRuntimeContext } from "./context.js";
 
 function createListForksMethod(context: GitForgeRuntimeContext) {
-  return async (repositoryId: string) => {
+  return async(repositoryId: string) => {
     const upstreamSummary = await context.readOverview(repositoryId);
     const upstreamRepository = repositoryHandleFromSummary(upstreamSummary.repository);
     const upstreamBranch = text(upstreamSummary.repository.repository.default_branch, "main");
     const forks = await context.options.storage.forks.listForks(repositoryId);
-    return await Promise.all(forks.map(async (fork) => {
-      const forkSummary = await context.readOverview(fork.fork_repository_id);
-      const forkRepository = repositoryHandleFromSummary(forkSummary.repository);
-      return {
-        created_at: fork.created_at,
-        created_by: fork.created_by,
-        fork_repository_id: fork.fork_repository_id,
-        fork_status: await readForkStatus(forkRepository, upstreamRepository, upstreamBranch),
-        upstream_repository_id: fork.upstream_repository_id,
-      };
+    return await Promise.all(forks.map(async(fork) => {
+          const forkSummary = await context.readOverview(fork.fork_repository_id);
+          const forkRepository = repositoryHandleFromSummary(forkSummary.repository);
+          return {
+            created_at: fork.created_at,
+            created_by: fork.created_by,
+            fork_repository_id: fork.fork_repository_id,
+            fork_status: await readForkStatus(forkRepository, upstreamRepository, upstreamBranch),
+            upstream_repository_id: fork.upstream_repository_id,
+          };
     }));
   };
 }
 
 function createCreateForkMethod(context: GitForgeRuntimeContext) {
-  return async (repositoryId: string, input: CreateGitForgeForkInput) => {
+  return async(repositoryId: string, input: CreateGitForgeForkInput) => {
     const actor = assertActor(input.actor);
     const upstreamSummary = await context.readOverview(repositoryId);
     const upstreamRepository = repositoryHandleFromSummary(upstreamSummary.repository);
@@ -44,10 +44,10 @@ function createCreateForkMethod(context: GitForgeRuntimeContext) {
     await fetchRepository(forkRepository, { remote: "upstream" });
     const createdAt = nowIso();
     await context.options.storage.forks.createFork({
-      created_at: createdAt,
-      created_by: actor.id,
-      fork_repository_id: forkRepository.id,
-      upstream_repository_id: repositoryId,
+        created_at: createdAt,
+        created_by: actor.id,
+        fork_repository_id: forkRepository.id,
+        upstream_repository_id: repositoryId,
     });
     await context.recordActivity(repositoryId, actor, "fork.create", { fork_repository_id: forkRepository.id });
     if (context.verbose) context.logger.info(context.logGroup, "created forge fork", { forkRepositoryId: forkRepository.id, repositoryId });
@@ -62,7 +62,7 @@ function createCreateForkMethod(context: GitForgeRuntimeContext) {
 }
 
 function createSyncForkMethod(context: GitForgeRuntimeContext) {
-  return async (forkRepositoryId: string, input: SyncGitForgeForkInput) => {
+  return async(forkRepositoryId: string, input: SyncGitForgeForkInput) => {
     const actor = assertActor(input.actor);
     const fork = await context.readRequiredFork(forkRepositoryId);
     const upstreamSummary = await context.readOverview(fork.upstream_repository_id);
@@ -89,7 +89,7 @@ function createSyncForkMethod(context: GitForgeRuntimeContext) {
   };
 }
 
-function createForkMethods(context: GitForgeRuntimeContext): Pick<GitForge, "createFork" | "listForks" | "syncFork"> {
+function createForkMethods(context: GitForgeRuntimeContext): Pick<GitForge, "createFork"|"listForks"|"syncFork"> {
   return {
     createFork: createCreateForkMethod(context),
     listForks: createListForksMethod(context),
@@ -102,15 +102,15 @@ async function cloneForkRepository(repositoryId: string, forkRepository: { id: s
   const cloneRes = await cloneRepository({ cloneUrl: upstreamPath, workspaceRoot: forkRepository.path });
   if (!cloneRes.ok) {
     throw new GitHostError("git_command_failed", text(cloneRes.stderr, "Failed to clone the fork repository."), {
-      forkRepositoryId: forkRepository.id,
-      repositoryId,
+        forkRepositoryId: forkRepository.id,
+        repositoryId,
     });
   }
   const hostedRes = await ensureHostedRepositoryConfig(forkRepository.path);
   if (!hostedRes.ok) {
     throw new GitHostError("git_command_failed", text(hostedRes.stderr, "Failed to configure the fork repository."), {
-      forkRepositoryId: forkRepository.id,
-      repositoryId,
+        forkRepositoryId: forkRepository.id,
+        repositoryId,
     });
   }
 }
@@ -142,7 +142,11 @@ async function fastForwardFork(
   }
   const mergeRes = await runGit(["merge", "--ff-only", upstreamRef], { cwd: repositoryPath, env: buildGitEnv({ actor }) });
   if (!mergeRes.ok) {
-    throw new GitHostError("forge_sync_conflict", text(mergeRes.stderr, "The fork cannot be fast-forwarded from upstream."), { forkRepositoryId, upstreamBranch });
+    throw new GitHostError(
+      "forge_sync_conflict",
+      text(mergeRes.stderr, "The fork cannot be fast-forwarded from upstream."),
+      { forkRepositoryId, upstreamBranch }
+    );
   }
 }
 
@@ -155,7 +159,11 @@ async function mergeForkUpstream(
 ) {
   const mergeRes = await runGit(["merge", "--no-edit", upstreamRef], { cwd: repositoryPath, env: buildGitEnv({ actor }) });
   if (!mergeRes.ok) {
-    throw new GitHostError("forge_sync_conflict", text(mergeRes.stderr, "Failed to merge upstream changes into the fork."), { forkRepositoryId, upstreamBranch });
+    throw new GitHostError(
+      "forge_sync_conflict",
+      text(mergeRes.stderr, "Failed to merge upstream changes into the fork."),
+      { forkRepositoryId, upstreamBranch }
+    );
   }
 }
 

@@ -6,13 +6,13 @@ import type {
 } from "./core.js";
 
 type GitLinguistProgressStage =
-  | "queued"
-  | "resolving_ref"
-  | "listing_tree"
-  | "reading_blobs"
-  | "analyzing"
-  | "completed"
-  | "failed";
+|"queued"
+|"resolving_ref"
+|"listing_tree"
+|"reading_blobs"
+|"analyzing"
+|"completed"
+|"failed";
 
 type GitLinguistProgressEvent = {
   commit?: string;
@@ -54,13 +54,13 @@ type GitInspectionTargetEmpty = {
 type GitInspectionTarget = GitInspectionTargetResolved | GitInspectionTargetEmpty;
 
 type GitInspectionProgressPhase =
-  | "resolving_ref"
-  | "reading_tree"
-  | "reading_blob"
-  | "running_linguist"
-  | "enriching"
-  | "completed"
-  | "failed";
+|"resolving_ref"
+|"reading_tree"
+|"reading_blob"
+|"running_linguist"
+|"enriching"
+|"completed"
+|"failed";
 
 type GitInspectionProgressEvent = {
   commit?: string;
@@ -114,22 +114,22 @@ type GitDirectoryEntry = {
 };
 
 type GitDirectorySnapshot =
-  | {
-      empty: boolean;
-      entries: GitDirectoryEntry[];
-      kind: "dir";
-      parent_path: string | null;
-      path: string;
-      target: GitInspectionTarget;
-    }
-  | {
-      empty: boolean;
-      entry: GitDirectoryEntry;
-      kind: "file";
-      parent_path: string | null;
-      path: string;
-      target: GitInspectionTarget;
-    };
+| {
+  empty: boolean;
+  entries: GitDirectoryEntry[];
+  kind: "dir";
+  parent_path: string | null;
+  path: string;
+  target: GitInspectionTarget;
+}
+| {
+  empty: boolean;
+  entry: GitDirectoryEntry;
+  kind: "file";
+  parent_path: string | null;
+  path: string;
+  target: GitInspectionTarget;
+};
 
 type GitFileSnapshot = {
   blob: GitBlob | null;

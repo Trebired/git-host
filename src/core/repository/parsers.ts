@@ -6,7 +6,7 @@ import type {
   GitRepositoryStatus,
   GitTagSummary,
   GitStatusEntry,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 
 function parseBranchLine(line: string) {
@@ -43,10 +43,10 @@ function applyBranchDeltas(
 ) {
   if (!deltas) return;
   deltas.split(",").map((entry) => entry.trim()).forEach((entry) => {
-    const ahead = entry.match(/^ahead (\d+)$/);
-    if (ahead) branch.ahead = Number(ahead[1]) || 0;
-    const behind = entry.match(/^behind (\d+)$/);
-    if (behind) branch.behind = Number(behind[1]) || 0;
+      const ahead = entry.match(/^ahead (\d+)$/);
+      if (ahead) branch.ahead = Number(ahead[1]) || 0;
+      const behind = entry.match(/^behind (\d+)$/);
+      if (behind) branch.behind = Number(behind[1]) || 0;
   });
 }
 
@@ -121,10 +121,10 @@ function parseStatusOutput(stdout: string): GitRepositoryStatus {
 
 function parseBranchesOutput(stdout: string): GitBranchSummary[] {
   return String(stdout || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .map((line) => {
       const [name, head, upstream, commit] = line.split("\t");
       return {
         current: text(head) === "*",
@@ -132,16 +132,16 @@ function parseBranchesOutput(stdout: string): GitBranchSummary[] {
         name: text(name),
         upstream: text(upstream),
       };
-    });
+  });
 }
 
 function parseRemotesOutput(stdout: string): GitRemoteSummary[] {
   const remotes = new Map<string, GitRemoteSummary>();
   String(stdout || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .forEach((line) => {
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .forEach((line) => {
       const [name, url, kindWithParens] = line.split(/\s+/);
       const kind = text(kindWithParens).replace(/[()]/g, "");
       if (!name || !url || !kind) return;
@@ -149,16 +149,16 @@ function parseRemotesOutput(stdout: string): GitRemoteSummary[] {
       if (kind === "fetch") current.fetch_url = url;
       if (kind === "push") current.push_url = url;
       remotes.set(name, current);
-    });
+  });
   return Array.from(remotes.values());
 }
 
 function parseCommitLogOutput(stdout: string): GitCommitSummary[] {
   return String(stdout || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .map((line) => {
       const [hash, shortHash, authorName, authorEmail, authoredAt, subject] = line.split("\u001f");
       return {
         author_email: text(authorEmail),
@@ -168,16 +168,28 @@ function parseCommitLogOutput(stdout: string): GitCommitSummary[] {
         short_hash: text(shortHash),
         subject: text(subject),
       };
-    });
+  });
 }
 
 function parseTagsOutput(stdout: string): GitTagSummary[] {
   return String(stdout || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const [name, hash, shortHash, objectType, taggerName, taggerEmail, taggedAt, subject, targetHash, targetShortHash, targetType] = line.split("\u001f");
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .map((line) => {
+      const [
+        name,
+        hash,
+        shortHash,
+        objectType,
+        taggerName,
+        taggerEmail,
+        taggedAt,
+        subject,
+        targetHash,
+        targetShortHash,
+        targetType
+      ] = line.split("\u001f");
       const annotated = text(objectType) === "tag";
       return {
         annotated,
@@ -192,15 +204,15 @@ function parseTagsOutput(stdout: string): GitTagSummary[] {
         target_short_hash: text(targetShortHash, text(shortHash)),
         target_type: text(targetType, text(objectType)),
       };
-    });
+  });
 }
 
 function parseNameStatusOutput(stdout: string): GitDiffFile[] {
   return String(stdout || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .map((line) => {
       const code = line.slice(0, 2).trim();
       const rest = line.slice(2).trim();
       const parts = rest.split(/\t+/);
@@ -213,23 +225,23 @@ function parseNameStatusOutput(stdout: string): GitDiffFile[] {
         original_path: text(originalPath),
         path: text(finalPath),
       };
-    });
+  });
 }
 
-function parseNumstatOutput(stdout: string): Map<string, { lines_added: number; lines_removed: number }> {
-  const map = new Map<string, { lines_added: number; lines_removed: number }>();
+function parseNumstatOutput(stdout: string): Map<string, {lines_added:number;lines_removed:number}> {
+  const map = new Map<string, {lines_added:number;lines_removed:number}>();
   String(stdout || "")
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .forEach((line) => {
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .forEach((line) => {
       const [addedRaw, removedRaw, filePath] = line.split(/\t+/);
       if (!filePath) return;
       map.set(filePath, {
-        lines_added: addedRaw === "-" ? 0 : Number(addedRaw) || 0,
-        lines_removed: removedRaw === "-" ? 0 : Number(removedRaw) || 0,
+          lines_added: addedRaw === "-" ? 0 : Number(addedRaw) || 0,
+          lines_removed: removedRaw === "-" ? 0 : Number(removedRaw) || 0,
       });
-    });
+  });
   return map;
 }
 

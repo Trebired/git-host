@@ -5,8 +5,9 @@ import { buildGitHostLogGroup, GIT_HOST_PACKAGE_NAME } from "#0bba403f3e43";
 import { resolveLogger } from "#5a29135e56c1";
 import type {
   CreateGitApiSocketServerOptions,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
+import { normalizeSocketPath } from "#omwpz9vv7et8";
 import {
   LINGUIST_DONE_EVENT,
   LINGUIST_ERROR_EVENT,
@@ -15,17 +16,6 @@ import {
   LINGUIST_START_EVENT,
 } from "./events.js";
 import { createLinguistConnectionHandler } from "./linguist_connection.js";
-
-function normalizeSocketPath(basePathInput: unknown, socketPathInput: unknown): string {
-  const socketPath = text(socketPathInput).replace(/\/+$/g, "");
-  if (socketPath) {
-    return socketPath.startsWith("/") ? socketPath : `/${socketPath}`;
-  }
-
-  const basePath = text(basePathInput).replace(/\/+$/g, "");
-  if (!basePath || basePath === "/") return "/socket.io";
-  return `${basePath.startsWith("/") ? basePath : `/${basePath}`}/socket.io`;
-}
 
 function createGitApiSocketServer(options: CreateGitApiSocketServerOptions) {
   if (!options || typeof options.gitHost !== "object") {
@@ -38,25 +28,25 @@ function createGitApiSocketServer(options: CreateGitApiSocketServerOptions) {
   const logger = resolveLogger(options.logger, options.loggerAdapter);
   const logGroup = buildGitHostLogGroup("api", "socket");
   logPackageInitialized({
-    adapter: options.loggerAdapter,
-    fallback: "console",
-    group: logGroup,
-    logger: options.logger,
-    source: GIT_HOST_PACKAGE_NAME,
+      adapter: options.loggerAdapter,
+      fallback: "console",
+      group: logGroup,
+      logger: options.logger,
+      source: GIT_HOST_PACKAGE_NAME,
   });
   const verbose = options.verbose === true;
   const basePath = text(options.basePath, "/api/git");
   const path = normalizeSocketPath(basePath, options.socketPath);
   const io = new SocketIoServer(options.httpServer, {
-    ...(options.socketOptions || {}),
-    path,
+      ...(options.socketOptions || {}),
+      path,
   });
   const handleLinguistSocket = createLinguistConnectionHandler(options, logger, logGroup, basePath, verbose);
 
   io.on("connection", (socket) => {
-    socket.on(LINGUIST_START_EVENT, (payload?: { ref?: string; repositoryKey?: string }) => {
-      void handleLinguistSocket(socket, payload);
-    });
+      socket.on(LINGUIST_START_EVENT, (payload?: { ref?: string; repositoryKey?: string }) => {
+          void handleLinguistSocket(socket, payload);
+      });
   });
 
   return io;

@@ -7,7 +7,7 @@ function assertAbsoluteRepositoryPath(value: unknown): string {
   const repositoryPath = text(value);
   if (!repositoryPath || !path.isAbsolute(repositoryPath)) {
     throw new GitHostError("invalid_repository_path", "Repository paths must be absolute.", {
-      path: repositoryPath,
+        path: repositoryPath,
     });
   }
 
@@ -27,8 +27,8 @@ function resolveRepositoryPath(options: { repositoryPath: string; rootDir: strin
   const relative = path.relative(rootDir, resolved);
   if (relative.startsWith("..") || path.isAbsolute(relative)) {
     throw new GitHostError("invalid_repository_path", "Repository path escaped the configured root.", {
-      path: rawRepositoryPath,
-      rootDir,
+        path: rawRepositoryPath,
+        rootDir,
     });
   }
 
@@ -43,18 +43,28 @@ function normalizeRepositoryRelativePath(value: unknown, options: { allowEmpty?:
   }
   if (path.posix.isAbsolute(rawRepositoryPath) || path.win32.isAbsolute(rawRepositoryPath)) {
     throw new GitHostError("invalid_repository_path", "Repository path fragments must be relative.", {
-      path: rawRepositoryPath,
+        path: rawRepositoryPath,
     });
   }
 
   const parts = rawRepositoryPath.split("/").filter(Boolean);
   if (!parts.length || parts.some((part) => part === "." || part === "..")) {
     throw new GitHostError("invalid_repository_path", "Repository path fragments must not contain traversal segments.", {
-      path: rawRepositoryPath,
+        path: rawRepositoryPath,
     });
   }
 
   return parts.join("/");
 }
 
-export { assertAbsoluteRepositoryPath, normalizeRepositoryRelativePath, resolveRepositoryPath };
+function normalizeOptionalRepositoryRelativePath(value: unknown): string {
+  const raw = text(value);
+  return raw ? normalizeRepositoryRelativePath(raw) : "";
+}
+
+export {
+  assertAbsoluteRepositoryPath,
+  normalizeOptionalRepositoryRelativePath,
+  normalizeRepositoryRelativePath,
+  resolveRepositoryPath,
+};

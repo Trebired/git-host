@@ -9,7 +9,7 @@ import type {
   RebaseInput,
   StagePathsInput,
   UnstagePathsInput,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import {
   abortRepositoryOperation,
@@ -28,19 +28,19 @@ import {
 import type { GitHostMethodContext } from "./shared.js";
 
 function createWorkingTreeMethods(context: GitHostMethodContext): Pick<
-  GitHost,
-  | "abortOperation"
-  | "cherryPick"
-  | "commit"
-  | "continueOperation"
-  | "discardPaths"
-  | "merge"
-  | "readStagedFile"
-  | "readUnstagedFile"
-  | "readWorkingTree"
-  | "rebase"
-  | "stagePaths"
-  | "unstagePaths"
+GitHost,
+|"abortOperation"
+|"cherryPick"
+|"commit"
+|"continueOperation"
+|"discardPaths"
+|"merge"
+|"readStagedFile"
+|"readUnstagedFile"
+|"readWorkingTree"
+|"rebase"
+|"stagePaths"
+|"unstagePaths"
 > {
   const { ensureRepositoryInner, lockManager, readSummaryForRepository, resolveRepository } = context;
 
@@ -61,74 +61,74 @@ function createWorkingTreeMethods(context: GitHostMethodContext): Pick<
     },
 
     async stagePaths(repositoryId: string, input: StagePathsInput = {}) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        await stageRepositoryPaths(repository, input);
-        return await readSummaryForRepository(repository);
+      return await lockManager.withLock(text(repositoryId), async() => {
+          const repository = await ensureRepositoryInner(repositoryId);
+          await stageRepositoryPaths(repository, input);
+          return await readSummaryForRepository(repository);
       });
     },
 
     async unstagePaths(repositoryId: string, input: UnstagePathsInput = {}) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        await unstageRepositoryPaths(repository, input);
-        return await readSummaryForRepository(repository);
+      return await lockManager.withLock(text(repositoryId), async() => {
+          const repository = await ensureRepositoryInner(repositoryId);
+          await unstageRepositoryPaths(repository, input);
+          return await readSummaryForRepository(repository);
       });
     },
 
     async discardPaths(repositoryId: string, input: DiscardPathsInput = {}) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        await discardRepositoryPaths(repository, input);
-        return await readSummaryForRepository(repository);
+      return await lockManager.withLock(text(repositoryId), async() => {
+          const repository = await ensureRepositoryInner(repositoryId);
+          await discardRepositoryPaths(repository, input);
+          return await readSummaryForRepository(repository);
       });
     },
 
     async commit(repositoryId: string, input: CommitInput) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        await commitRepository(repository, input);
-        return await readSummaryForRepository(repository);
+      return await lockManager.withLock(text(repositoryId), async() => {
+          const repository = await ensureRepositoryInner(repositoryId);
+          await commitRepository(repository, input);
+          return await readSummaryForRepository(repository);
       });
     },
 
     async merge(repositoryId: string, input: MergeInput = {}) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        await mergeRepository(repository, input);
-        return await readSummaryForRepository(repository);
+      return await lockManager.withLock(text(repositoryId), async() => {
+          const repository = await ensureRepositoryInner(repositoryId);
+          await mergeRepository(repository, input);
+          return await readSummaryForRepository(repository);
       });
     },
 
     async rebase(repositoryId: string, input: RebaseInput = {}) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        await rebaseRepository(repository, input);
-        return await readSummaryForRepository(repository);
+      return await lockManager.withLock(text(repositoryId), async() => {
+          const repository = await ensureRepositoryInner(repositoryId);
+          await rebaseRepository(repository, input);
+          return await readSummaryForRepository(repository);
       });
     },
 
     async cherryPick(repositoryId: string, input: CherryPickInput = {}) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        await cherryPickRepository(repository, input);
-        return await readSummaryForRepository(repository);
+      return await lockManager.withLock(text(repositoryId), async() => {
+          const repository = await ensureRepositoryInner(repositoryId);
+          await cherryPickRepository(repository, input);
+          return await readSummaryForRepository(repository);
       });
     },
 
     async continueOperation(repositoryId: string, input: ContinueOperationInput = {}) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        await continueRepositoryOperation(repository, input);
-        return await readSummaryForRepository(repository);
+      return await lockManager.withLock(text(repositoryId), async() => {
+          const repository = await ensureRepositoryInner(repositoryId);
+          await continueRepositoryOperation(repository, input);
+          return await readSummaryForRepository(repository);
       });
     },
 
     async abortOperation(repositoryId: string) {
-      return await lockManager.withLock(text(repositoryId), async () => {
-        const repository = await ensureRepositoryInner(repositoryId);
-        await abortRepositoryOperation(repository);
-        return await readSummaryForRepository(repository);
+      return await lockManager.withLock(text(repositoryId), async() => {
+          const repository = await ensureRepositoryInner(repositoryId);
+          await abortRepositoryOperation(repository);
+          return await readSummaryForRepository(repository);
       });
     },
   };

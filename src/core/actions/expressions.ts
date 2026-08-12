@@ -11,10 +11,10 @@ function resolveWorkflowExpression(input: string, context: WorkflowExpressionCon
 
 function resolveWorkflowString(input: string, context: WorkflowExpressionContext): string {
   return text(input).replace(/\$\{\{\s*([\s\S]*?)\s*\}\}/g, (_, expression: string) => {
-    const value = resolveWorkflowExpression(expression, context);
-    if (value == null) return "";
-    if (typeof value === "boolean") return value ? "true" : "false";
-    return String(value);
+      const value = resolveWorkflowExpression(expression, context);
+      if (value == null) return "";
+      if (typeof value === "boolean") return value ? "true" : "false";
+      return String(value);
   });
 }
 

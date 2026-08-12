@@ -1,5 +1,5 @@
 import { GitHostError } from "#8974ac53d713";
-import type { GitBlame, GitBlameLine, GitCommitDetail, GitCompareSummary, GitRepositoryHandle } from "#1mbdfxwwqqpa";
+import type { GitBlame, GitBlameLine, GitCommitDetail, GitCompareSummary, GitRepositoryHandle } from "#14021226ec9b";
 import { normalizeRepositoryRelativePath } from "#390741ebf5ab";
 import { text } from "#62f869522d1f";
 import { parseCommitLogOutput, parseNameStatusOutput, parseNumstatOutput } from "#1fu49obi0gq3";
@@ -15,14 +15,14 @@ import { formatGitTimestamp, normalizeOptionalPath } from "./shared.js";
 
 async function readRepositoryCommitArtifacts(repository: GitRepositoryHandle, commitHash: string) {
   return await Promise.all([
-    runGit(
-      ["show", "--quiet", "--date=iso-strict", "--format=%H%x1f%h%x1f%P%x1f%an%x1f%ae%x1f%ad%x1f%s", commitHash],
-      { cwd: repository.path },
-    ),
-    runGit(["show", "--quiet", "--format=%B", commitHash], { cwd: repository.path }),
-    runGit(["show", "--find-renames", "--numstat", "--format=", commitHash], { cwd: repository.path }),
-    runGit(["show", "--find-renames", "--name-status", "--format=", commitHash], { cwd: repository.path }),
-    runGit(["show", "--find-renames", "--format=", commitHash], { cwd: repository.path }),
+      runGit(
+        ["show", "--quiet", "--date=iso-strict", "--format=%H%x1f%h%x1f%P%x1f%an%x1f%ae%x1f%ad%x1f%s", commitHash],
+        { cwd: repository.path },
+      ),
+      runGit(["show", "--quiet", "--format=%B", commitHash], { cwd: repository.path }),
+      runGit(["show", "--find-renames", "--numstat", "--format=", commitHash], { cwd: repository.path }),
+      runGit(["show", "--find-renames", "--name-status", "--format=", commitHash], { cwd: repository.path }),
+      runGit(["show", "--find-renames", "--format=", commitHash], { cwd: repository.path }),
   ]);
 }
 
@@ -36,8 +36,8 @@ async function readRepositoryCommit(repository: GitRepositoryHandle, commitRefIn
   const revRes = await runGit(["rev-parse", "--verify", `${commitRef}^{commit}`], { cwd: repository.path });
   if (!revRes.ok) {
     throw new GitHostError("git_command_failed", text(revRes.stderr, "Commit does not exist."), {
-      commitRef,
-      repositoryId: repository.id,
+        commitRef,
+        repositoryId: repository.id,
     });
   }
 
@@ -93,11 +93,11 @@ async function readRepositoryCompare(
   }
 
   const [numstatRes, nameStatusRes, diffRes, logRes, mergeBaseRes] = await Promise.all([
-    runGit(diffNumstatArgs, { cwd: repository.path }),
-    runGit(diffNameStatusArgs, { cwd: repository.path }),
-    runGit(diffArgs, { cwd: repository.path }),
-    runGit(logArgs, { cwd: repository.path }),
-    runGit(["merge-base", base.ref, head.ref], { cwd: repository.path }),
+      runGit(diffNumstatArgs, { cwd: repository.path }),
+      runGit(diffNameStatusArgs, { cwd: repository.path }),
+      runGit(diffArgs, { cwd: repository.path }),
+      runGit(logArgs, { cwd: repository.path }),
+      runGit(["merge-base", base.ref, head.ref], { cwd: repository.path }),
   ]);
 
   if (!numstatRes.ok) throw new GitHostError("git_command_failed", text(numstatRes.stderr, "Failed to read compare diff."));
@@ -139,15 +139,15 @@ async function readRepositoryBlame(
   const blameRes = await runGit(["blame", "--line-porcelain", ref, "--", filePath], { cwd: repository.path });
   if (!blameRes.ok) {
     throw new GitHostError("git_command_failed", text(blameRes.stderr, "Failed to read blame information."), {
-      path: filePath,
-      ref,
-      repositoryId: repository.id,
+        path: filePath,
+        ref,
+        repositoryId: repository.id,
     });
   }
 
   const rows = String(blameRes.stdout || "").split(/\r?\n/);
   const lines: GitBlameLine[] = [];
-  let current: (GitBlameLine & { author_tz?: string }) | null = null;
+  let current: (GitBlameLine& { author_tz?: string }) | null = null;
 
   for (const row of rows) {
     if (!row) continue;
@@ -177,15 +177,15 @@ async function readRepositoryBlame(
     else if (row.startsWith("\t")) {
       current.content = row.slice(1);
       lines.push({
-        author_email: current.author_email,
-        author_name: current.author_name,
-        authored_at: formatGitTimestamp(current.authored_at, current.author_tz),
-        commit_hash: current.commit_hash,
-        commit_short_hash: current.commit_short_hash,
-        content: current.content,
-        line_number: current.line_number,
-        original_line_number: current.original_line_number,
-        summary: current.summary,
+          author_email: current.author_email,
+          author_name: current.author_name,
+          authored_at: formatGitTimestamp(current.authored_at, current.author_tz),
+          commit_hash: current.commit_hash,
+          commit_short_hash: current.commit_short_hash,
+          content: current.content,
+          line_number: current.line_number,
+          original_line_number: current.original_line_number,
+          summary: current.summary,
       });
       current = null;
     }

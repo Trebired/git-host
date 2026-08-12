@@ -83,33 +83,33 @@ type DeleteGitForgeReleaseInput = {
 
 type GitForgeReleaseAssetStore = {
   buildAssetDownloadUrl?: (input: {
-    asset: GitForgeReleaseAsset;
-    release: GitForgeRelease;
-    repositoryId: string;
-    repositoryKey?: string;
+      asset: GitForgeReleaseAsset;
+      release: GitForgeRelease;
+      repositoryId: string;
+      repositoryKey?: string;
   }) => string | null | undefined;
   normalizeAssets?: (
     repositoryId: string,
     assets: GitForgeReleaseAsset[],
   ) => MaybePromise<GitForgeReleaseAsset[]>;
   openAssetDownload?: (input: {
-    asset: GitForgeReleaseAsset;
-    release: GitForgeRelease;
-    repositoryId: string;
-    repositoryKey?: string;
-  }) => MaybePromise<GitForgeReleaseAssetDownload | null>;
+      asset: GitForgeReleaseAsset;
+      release: GitForgeRelease;
+      repositoryId: string;
+      repositoryKey?: string;
+  }) => MaybePromise<GitForgeReleaseAssetDownload|null>;
 };
 
 type GitForgeReleaseStorage = {
   createRelease(input: GitForgeRelease): MaybePromise<GitForgeRelease>;
-  deleteRelease(repositoryId: string, releaseId: string): MaybePromise<GitForgeRelease | null>;
+  deleteRelease(repositoryId: string, releaseId: string): MaybePromise<GitForgeRelease|null>;
   listReleases(repositoryId: string): MaybePromise<GitForgeRelease[]>;
-  readRelease(repositoryId: string, releaseId: string): MaybePromise<GitForgeRelease | null>;
+  readRelease(repositoryId: string, releaseId: string): MaybePromise<GitForgeRelease|null>;
   updateRelease(
     repositoryId: string,
     releaseId: string,
-    input: Partial<Omit<GitForgeRelease, "author_id" | "created_at" | "id" | "repository_id" | "tag_name" | "target_ref">>,
-  ): MaybePromise<GitForgeRelease | null>;
+    input: Partial<Omit<GitForgeRelease, "author_id"|"created_at"|"id"|"repository_id"|"tag_name"|"target_ref">>,
+  ): MaybePromise<GitForgeRelease|null>;
 };
 
 export type {

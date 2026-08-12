@@ -10,8 +10,9 @@ import type {
   GitForgeWorkflowPushTrigger,
   GitForgeWorkflowStep,
   GitForgeWorkflowTriggers,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
+import { normalizeStringRecord } from "./records.js";
 
 const SUPPORTED_USES = [
   "actions/checkout",
@@ -30,21 +31,13 @@ const SUPPORTED_USES = [
 
 function slugify(value: string): string {
   const next = text(value)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  .toLowerCase()
+  .replace(/[^a-z0-9]+/g, "-")
+  .replace(/^-+|-+$/g, "");
   return next || "workflow";
 }
 
-function normalizeEnv(value: unknown): Record<string, string> | undefined {
-  if (!value || typeof value !== "object") return undefined;
-  const next = Object.fromEntries(
-    Object.entries(value as Record<string, unknown>)
-      .map(([key, entry]) => [text(key), text(entry)] as const)
-      .filter(([key, entry]) => key && entry),
-  );
-  return Object.keys(next).length ? next : undefined;
-}
+const normalizeEnv = normalizeStringRecord;
 
 function normalizeLegacySource(value: unknown) {
   if (!value || typeof value !== "object") return undefined;
@@ -60,15 +53,8 @@ function normalizeLegacySource(value: unknown) {
   };
 }
 
-function normalizePermissions(value: unknown): GitForgeWorkflowPermissions | undefined {
-  if (!value || typeof value !== "object") return undefined;
-  const next = Object.fromEntries(
-    Object.entries(value as Record<string, unknown>)
-      .map(([key, entry]) => [text(key), text(entry)] as const)
-      .filter(([key, entry]) => key && entry),
-  );
-  return Object.keys(next).length ? next : undefined;
-}
+const normalizePermissions: (value: unknown) => GitForgeWorkflowPermissions | undefined =
+normalizeStringRecord;
 
 function normalizeConcurrency(value: unknown): GitForgeWorkflowConcurrency | undefined {
   if (!value) return undefined;
@@ -93,14 +79,14 @@ function normalizeDispatchInputType(value: unknown): GitForgeWorkflowDispatchInp
 function normalizeDispatchInputs(value: unknown): GitForgeWorkflowDispatchInput[] | undefined {
   if (!value || typeof value !== "object") return undefined;
   const entries = Object.entries(value as Record<string, unknown>)
-    .map(([name, input]) => {
+  .map(([name, input]) => {
       if (!input || typeof input !== "object") return null;
       const record = input as Record<string, unknown>;
       const type = normalizeDispatchInputType(record.type);
       const defaultValue = record.default;
       const normalizedDefault = type === "boolean"
-        ? (defaultValue === true || defaultValue === "true" ? true : (defaultValue === false || defaultValue === "false" ? false : undefined))
-        : (defaultValue == null ? undefined : text(defaultValue));
+      ? (defaultValue === true || defaultValue === "true" ? true : (defaultValue === false || defaultValue === "false" ? false : undefined))
+      : (defaultValue == null ? undefined : text(defaultValue));
       return {
         ...(normalizedDefault !== undefined ? { default: normalizedDefault } : {}),
         description: text(record.description),
@@ -108,8 +94,8 @@ function normalizeDispatchInputs(value: unknown): GitForgeWorkflowDispatchInput[
         required: record.required === true,
         type,
       } satisfies GitForgeWorkflowDispatchInput;
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry?.name));
+  })
+  .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry?.name));
   return entries.length ? entries : undefined;
 }
 
@@ -126,7 +112,10 @@ function normalizePushTrigger(value: unknown): GitForgeWorkflowPushTrigger | und
   };
 }
 
-function normalizeTriggers(value: unknown, legacyTrigger: string, legacySource?: { branches?: string[]; tags?: string[] }): GitForgeWorkflowTriggers | undefined {
+function normalizeTriggers(value: unknown, legacyTrigger: string, legacySource?: {
+    branches?: string[];
+    tags?: string[]
+}): GitForgeWorkflowTriggers | undefined {
   if (typeof value === "string") {
     if (value === "push") return { push: normalizePushTrigger({ branches: legacySource?.branches, tags: legacySource?.tags }) };
     if (value === "workflow_dispatch") return { workflow_dispatch: {} };
@@ -143,13 +132,13 @@ function normalizeTriggers(value: unknown, legacyTrigger: string, legacySource?:
   if (value && typeof value === "object") {
     const record = value as Record<string, unknown>;
     const next: GitForgeWorkflowTriggers = {};
-    if ("push" in record) next.push = normalizePushTrigger(record.push);
-    if ("workflow_dispatch" in record) {
+    if ("push"in record) next.push = normalizePushTrigger(record.push);
+    if ("workflow_dispatch"in record) {
       const workflowDispatch = record.workflow_dispatch === true
-        ? {}
-        : (record.workflow_dispatch && typeof record.workflow_dispatch === "object"
-          ? { inputs: normalizeDispatchInputs((record.workflow_dispatch as Record<string, unknown>).inputs) }
-          : {});
+      ? {}
+      : (record.workflow_dispatch && typeof record.workflow_dispatch === "object"
+        ? { inputs: normalizeDispatchInputs((record.workflow_dispatch as Record<string, unknown>).inputs) }
+        : {});
       next.workflow_dispatch = workflowDispatch;
     }
     return Object.keys(next).length ? next : undefined;
@@ -165,12 +154,12 @@ function normalizeScalar(value: unknown): boolean | number | string | undefined 
   return next ? next : undefined;
 }
 
-function normalizeStepWith(value: unknown): Record<string, boolean | number | string> | undefined {
+function normalizeStepWith(value: unknown): Record<string, boolean|number|string>|undefined {
   if (!value || typeof value !== "object") return undefined;
   const next = Object.fromEntries(
     Object.entries(value as Record<string, unknown>)
-      .map(([key, entry]) => [text(key), normalizeScalar(entry)] as const)
-      .filter(([key, entry]) => key && entry !== undefined),
+    .map(([key, entry]) => [text(key), normalizeScalar(entry)] as const)
+    .filter(([key, entry]) => key && entry !== undefined),
   );
   return Object.keys(next).length ? next : undefined;
 }
@@ -178,7 +167,7 @@ function normalizeStepWith(value: unknown): Record<string, boolean | number | st
 function normalizeLegacySteps(value: unknown): GitForgeWorkflowStep[] {
   if (!Array.isArray(value)) return [];
   return value
-    .map((entry, index) => {
+  .map((entry, index) => {
       if (!entry || typeof entry !== "object") return null;
       const step = entry as Record<string, unknown>;
       const run = text(step.run);
@@ -186,19 +175,19 @@ function normalizeLegacySteps(value: unknown): GitForgeWorkflowStep[] {
       return {
         env: normalizeEnv(step.env),
         id: text(step.id, `step-${index + 1}`),
-        kind: "shell" as const,
+        kind: "shell"as const,
         name: text(step.name, `Step ${index + 1}`),
         run,
         shell: text(step.shell),
       };
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  })
+  .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
 }
 
 function normalizeJobSteps(value: unknown, jobId: string): GitForgeWorkflowJobStep[] {
   if (!Array.isArray(value)) return [];
   return value
-    .map((entry, index) => {
+  .map((entry, index) => {
       if (!entry || typeof entry !== "object") return null;
       const step = entry as Record<string, unknown>;
       const run = text(step.run);
@@ -208,44 +197,44 @@ function normalizeJobSteps(value: unknown, jobId: string): GitForgeWorkflowJobSt
         env: normalizeEnv(step.env),
         id: text(step.id, `${jobId}-step-${index + 1}`),
         if: text(step.if),
-        kind: uses ? "uses" as const : "shell" as const,
+        kind: uses ? "uses"as const : "shell"as const,
         name: text(step.name, uses ? `Use ${uses}` : `Step ${index + 1}`),
         run: run || undefined,
         shell: text(step.shell),
         uses: uses || undefined,
         with: normalizeStepWith(step.with),
       };
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  })
+  .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
 }
 
 function normalizeMatrix(value: unknown): GitForgeWorkflowJobMatrix | undefined {
   if (!value || typeof value !== "object") return undefined;
   const record = value as Record<string, unknown>;
   const include = Array.isArray(record.include)
-    ? record.include
-      .map((entry) => {
-        if (!entry || typeof entry !== "object") return null;
-        const normalized = Object.fromEntries(
-          Object.entries(entry as Record<string, unknown>)
-            .map(([key, item]) => [text(key), normalizeScalar(item)] as const)
-            .filter(([key, item]) => key && item !== undefined),
-        );
-        return Object.keys(normalized).length ? normalized : null;
-      })
-      .filter((entry): entry is Record<string, boolean | number | string> => Boolean(entry))
-    : undefined;
+  ? record.include
+  .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const normalized = Object.fromEntries(
+        Object.entries(entry as Record<string, unknown>)
+        .map(([key, item]) => [text(key), normalizeScalar(item)] as const)
+        .filter(([key, item]) => key && item !== undefined),
+      );
+      return Object.keys(normalized).length ? normalized : null;
+  })
+  .filter((entry): entry is Record<string, boolean|number|string> => Boolean(entry))
+  : undefined;
   const values = Object.fromEntries(
     Object.entries(record)
-      .filter(([key]) => key !== "include")
-      .map(([key, entry]) => {
+    .filter(([key]) => key !== "include")
+    .map(([key, entry]) => {
         const list = Array.isArray(entry) ? entry : [entry];
         return [
           text(key),
           list.map((item) => normalizeScalar(item)).filter((item): item is boolean | number | string => item !== undefined),
         ] as const;
-      })
-      .filter(([key, entry]) => key && entry.length),
+    })
+    .filter(([key, entry]) => key && entry.length),
   );
   if (!Object.keys(values).length && !include?.length) return undefined;
   return {
@@ -274,7 +263,7 @@ function normalizeNeeds(value: unknown): string[] | undefined {
 function normalizeJobs(value: unknown): GitForgeWorkflowJob[] {
   if (!value || typeof value !== "object") return [];
   return Object.entries(value as Record<string, unknown>)
-    .map(([jobId, entry]) => {
+  .map(([jobId, entry]) => {
       if (!entry || typeof entry !== "object") return null;
       const job = entry as Record<string, unknown>;
       const runsOn = normalizeRunsOn(job["runs-on"]);
@@ -290,8 +279,8 @@ function normalizeJobs(value: unknown): GitForgeWorkflowJob[] {
         steps,
         strategy: normalizeStrategy(job.strategy),
       };
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  })
+  .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
 }
 
 export {

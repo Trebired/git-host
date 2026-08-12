@@ -6,7 +6,7 @@ import type {
   GitRepositoryHandle,
   GitRepositorySummary,
   NormalizedGitHostLogger,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { RepositoryLockManager } from "#90040fe3e934";
 import type { GitArchiveService } from "#07a96afa0a48";

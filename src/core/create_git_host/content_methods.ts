@@ -14,7 +14,7 @@ import type {
   ResolveInspectionTargetOptions,
   SearchRepositoryOptions,
   ResolveArchiveOptions,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import {
   listRepositoryTree,
   readRepositoryBlame,
@@ -34,23 +34,23 @@ import {
 import type { GitHostMethodContext } from "./shared.js";
 
 function createContentMethods(context: GitHostMethodContext): Pick<
-  GitHost,
-  | "diff"
-  | "listTree"
-  | "openArchive"
-  | "readArchive"
-  | "readBlame"
-  | "readBlob"
-  | "readCommit"
-  | "readDirectory"
-  | "readFile"
-  | "readLinguist"
-  | "readRepositoryAnalysis"
-  | "readTree"
-  | "resolveArchive"
-  | "resolveArchiveLinks"
-  | "resolveInspectionTarget"
-  | "search"
+GitHost,
+|"diff"
+|"listTree"
+|"openArchive"
+|"readArchive"
+|"readBlame"
+|"readBlob"
+|"readCommit"
+|"readDirectory"
+|"readFile"
+|"readLinguist"
+|"readRepositoryAnalysis"
+|"readTree"
+|"resolveArchive"
+|"resolveArchiveLinks"
+|"resolveInspectionTarget"
+|"search"
 > {
   const { archiveService, resolveRepository } = context;
 

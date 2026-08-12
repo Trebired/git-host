@@ -1,4 +1,4 @@
-import type { GitApiResource } from "#1mbdfxwwqqpa";
+import type { GitApiResource } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { decodeRouteSegment, parseRepositoryRoute } from "#glky615nezhr";
 
@@ -18,14 +18,14 @@ function parseGitApiRoute(pathnameInput: unknown, basePathInput: unknown) {
 
 function isDirectRepositoryAction(action: GitApiResource | "unknown") {
   return action === "summary"
-    || action === "branches"
-    || action === "tree"
-    || action === "blob"
-    || action === "diff"
-    || action === "linguist"
-    || action === "blame"
-    || action === "search"
-    || action === "archive";
+  ||action === "branches"
+  ||action === "tree"
+  ||action === "blob"
+  ||action === "diff"
+  ||action === "linguist"
+  ||action === "blame"
+  ||action === "search"
+  ||action === "archive";
 }
 
 function parseArchiveRoute(action: "tarball" | "zipball", repositoryKey: string, value: string | undefined, length: number) {
@@ -35,17 +35,17 @@ function parseArchiveRoute(action: "tarball" | "zipball", repositoryKey: string,
 }
 
 function parseCommitRoute(repositoryKey: string, segments: string[]) {
-  if (segments.length === 3) return { action: "commits" as const, repositoryKey };
+  if (segments.length === 3) return { action: "commits"as const, repositoryKey };
   if (segments.length !== 4) return null;
   const commitRef = decodeRouteSegment(segments[3] || "");
-  return commitRef ? { action: "commit" as const, commitRef, repositoryKey } : null;
+  return commitRef ? { action: "commit"as const, commitRef, repositoryKey } : null;
 }
 
 function parseTagRoute(repositoryKey: string, segments: string[]) {
-  if (segments.length === 3) return { action: "tags" as const, repositoryKey };
+  if (segments.length === 3) return { action: "tags"as const, repositoryKey };
   if (segments.length !== 4) return null;
   const tagName = decodeRouteSegment(segments[3] || "");
-  return tagName ? { action: "tag" as const, repositoryKey, tagName } : null;
+  return tagName ? { action: "tag"as const, repositoryKey, tagName } : null;
 }
 
 export { parseGitApiRoute };
