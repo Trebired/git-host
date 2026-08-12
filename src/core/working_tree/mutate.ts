@@ -9,7 +9,7 @@ import type {
   RebaseInput,
   StagePathsInput,
   UnstagePathsInput,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { isTruthy, text } from "#62f869522d1f";
 import { readRepositoryOperationState } from "#42f32dd5cd30";
 import { readRepositoryStatus } from "#1fu49obi0gq3";
@@ -20,12 +20,12 @@ async function stageRepositoryPaths(repository: GitRepositoryHandle, input: Stag
   await assertRepositoryReady(repository);
   const paths = normalizePathList(input && input.paths);
   const addRes = await runGit(paths.length ? ["add", "--", ...paths] : ["add", "-A"], {
-    cwd: repository.path,
+      cwd: repository.path,
   });
   if (!addRes.ok) {
     throw new GitHostError("git_command_failed", text(addRes.stderr, "Failed to stage repository changes."), {
-      repositoryId: repository.id,
-      paths,
+        repositoryId: repository.id,
+        paths,
     });
   }
 }
@@ -35,13 +35,13 @@ async function unstageRepositoryPaths(repository: GitRepositoryHandle, input: Un
   const paths = normalizePathList(input && input.paths);
   const hasHead = await repositoryHasHead(repository.path);
   const args = hasHead
-    ? (paths.length ? ["restore", "--staged", "--", ...paths] : ["restore", "--staged", "--", "."])
-    : (paths.length ? ["rm", "-r", "--cached", "--ignore-unmatch", "--", ...paths] : ["rm", "-r", "--cached", "--ignore-unmatch", "."]);
+  ? (paths.length ? ["restore", "--staged", "--", ...paths] : ["restore", "--staged", "--", "."])
+  : (paths.length ? ["rm", "-r", "--cached", "--ignore-unmatch", "--", ...paths] : ["rm", "-r", "--cached", "--ignore-unmatch", "."]);
   const unstageRes = await runGit(args, { cwd: repository.path });
   if (!unstageRes.ok) {
     throw new GitHostError("git_command_failed", text(unstageRes.stderr, "Failed to unstage repository changes."), {
-      repositoryId: repository.id,
-      paths,
+        repositoryId: repository.id,
+        paths,
     });
   }
 }
@@ -54,13 +54,13 @@ async function discardRepositoryPaths(repository: GitRepositoryHandle, input: Di
 
   if (hasHead) {
     const restoreArgs = paths.length
-      ? ["restore", "--staged", "--worktree", "--source=HEAD", "--", ...paths]
-      : ["restore", "--staged", "--worktree", "--source=HEAD", "--", "."];
+    ? ["restore", "--staged", "--worktree", "--source=HEAD", "--", ...paths]
+    : ["restore", "--staged", "--worktree", "--source=HEAD", "--", "."];
     const restoreRes = await runGit(restoreArgs, { cwd: repository.path });
     if (!restoreRes.ok) {
       throw new GitHostError("git_command_failed", text(restoreRes.stderr, "Failed to discard repository changes."), {
-        repositoryId: repository.id,
-        paths,
+          repositoryId: repository.id,
+          paths,
       });
     }
   }
@@ -70,8 +70,8 @@ async function discardRepositoryPaths(repository: GitRepositoryHandle, input: Di
     const cleanRes = await runGit(cleanArgs, { cwd: repository.path });
     if (!cleanRes.ok) {
       throw new GitHostError("git_command_failed", text(cleanRes.stderr, "Failed to remove untracked files."), {
-        repositoryId: repository.id,
-        paths,
+          repositoryId: repository.id,
+          paths,
       });
     }
   }
@@ -83,29 +83,29 @@ async function commitRepository(repository: GitRepositoryHandle, input: CommitIn
   const message = text(input && input.message);
   if (!message) {
     throw new GitHostError("git_command_failed", "Commit message is required.", {
-      repositoryId: repository.id,
+        repositoryId: repository.id,
     });
   }
 
   const status = await readRepositoryStatus(repository.path);
   if (status.clean) {
     throw new GitHostError("git_command_failed", "No repository changes to commit.", {
-      repositoryId: repository.id,
+        repositoryId: repository.id,
     });
   }
   if (!Number(status.staged)) {
     throw new GitHostError("git_command_failed", "Stage changes before creating a commit.", {
-      repositoryId: repository.id,
+        repositoryId: repository.id,
     });
   }
 
   const commitRes = await runGit(["commit", "-m", message], {
-    cwd: repository.path,
-    env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
+      cwd: repository.path,
+      env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
   });
   if (!commitRes.ok) {
     throw new GitHostError("git_command_failed", text(commitRes.stderr, "Failed to create repository commit."), {
-      repositoryId: repository.id,
+        repositoryId: repository.id,
     });
   }
 }
@@ -115,15 +115,15 @@ async function mergeRepository(repository: GitRepositoryHandle, input: MergeInpu
   const ref = text(input && input.ref);
   if (!ref) {
     throw new GitHostError("git_command_failed", "A merge ref is required.", {
-      repositoryId: repository.id,
+        repositoryId: repository.id,
     });
   }
 
   const verifyRes = await runGit(["rev-parse", "--verify", `${ref}^{commit}`], { cwd: repository.path });
   if (!verifyRes.ok) {
     throw new GitHostError("git_command_failed", text(verifyRes.stderr, "That merge ref does not exist."), {
-      ref,
-      repositoryId: repository.id,
+        ref,
+        repositoryId: repository.id,
     });
   }
 
@@ -133,13 +133,13 @@ async function mergeRepository(repository: GitRepositoryHandle, input: MergeInpu
   args.push(ref);
 
   const mergeRes = await runGit(args, {
-    cwd: repository.path,
-    env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
+      cwd: repository.path,
+      env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
   });
   if (!mergeRes.ok) {
     throw new GitHostError("git_command_failed", text(mergeRes.stderr, "Failed to merge repository ref."), {
-      ref,
-      repositoryId: repository.id,
+        ref,
+        repositoryId: repository.id,
     });
   }
 }
@@ -149,15 +149,15 @@ async function rebaseRepository(repository: GitRepositoryHandle, input: RebaseIn
   const ref = text(input && input.ref);
   if (!ref) {
     throw new GitHostError("git_command_failed", "A rebase ref is required.", {
-      repositoryId: repository.id,
+        repositoryId: repository.id,
     });
   }
 
   const verifyRes = await runGit(["rev-parse", "--verify", `${ref}^{commit}`], { cwd: repository.path });
   if (!verifyRes.ok) {
     throw new GitHostError("git_command_failed", text(verifyRes.stderr, "That rebase ref does not exist."), {
-      ref,
-      repositoryId: repository.id,
+        ref,
+        repositoryId: repository.id,
     });
   }
 
@@ -166,22 +166,22 @@ async function rebaseRepository(repository: GitRepositoryHandle, input: RebaseIn
     const ontoVerifyRes = await runGit(["rev-parse", "--verify", `${onto}^{commit}`], { cwd: repository.path });
     if (!ontoVerifyRes.ok) {
       throw new GitHostError("git_command_failed", text(ontoVerifyRes.stderr, "That rebase onto ref does not exist."), {
-        onto,
-        repositoryId: repository.id,
+          onto,
+          repositoryId: repository.id,
       });
     }
   }
 
   const args = onto ? ["rebase", "--onto", onto, ref] : ["rebase", ref];
   const rebaseRes = await runGit(args, {
-    cwd: repository.path,
-    env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
+      cwd: repository.path,
+      env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
   });
   if (!rebaseRes.ok) {
     throw new GitHostError("git_command_failed", text(rebaseRes.stderr, "Failed to rebase repository branch."), {
-      onto,
-      ref,
-      repositoryId: repository.id,
+        onto,
+        ref,
+        repositoryId: repository.id,
     });
   }
 }
@@ -190,11 +190,11 @@ async function cherryPickRepository(repository: GitRepositoryHandle, input: Cher
   await assertRepositoryReady(repository);
   const refsInput = input && input.refs;
   const refs = Array.isArray(refsInput)
-    ? refsInput.map((entry) => text(entry)).filter(Boolean)
-    : [text(refsInput)].filter(Boolean);
+  ? refsInput.map((entry) => text(entry)).filter(Boolean)
+  : [text(refsInput)].filter(Boolean);
   if (!refs.length) {
     throw new GitHostError("git_command_failed", "At least one cherry-pick ref is required.", {
-      repositoryId: repository.id,
+        repositoryId: repository.id,
     });
   }
 
@@ -202,8 +202,8 @@ async function cherryPickRepository(repository: GitRepositoryHandle, input: Cher
     const verifyRes = await runGit(["rev-parse", "--verify", `${ref}^{commit}`], { cwd: repository.path });
     if (!verifyRes.ok) {
       throw new GitHostError("git_command_failed", text(verifyRes.stderr, "That cherry-pick ref does not exist."), {
-        ref,
-        repositoryId: repository.id,
+          ref,
+          repositoryId: repository.id,
       });
     }
   }
@@ -214,13 +214,13 @@ async function cherryPickRepository(repository: GitRepositoryHandle, input: Cher
   args.push(...refs);
 
   const cherryPickRes = await runGit(args, {
-    cwd: repository.path,
-    env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
+      cwd: repository.path,
+      env: buildGitEnv({ actor: input && input.actor ? input.actor : null }),
   });
   if (!cherryPickRes.ok) {
     throw new GitHostError("git_command_failed", text(cherryPickRes.stderr, "Failed to cherry-pick repository commit."), {
-      refs,
-      repositoryId: repository.id,
+        refs,
+        repositoryId: repository.id,
     });
   }
 }
@@ -231,7 +231,7 @@ async function continueRepositoryOperation(repository: GitRepositoryHandle, inpu
   const operation = readRepositoryOperationState(repository.path);
   if (!operation.in_progress) {
     throw new GitHostError("git_command_failed", "No repository operation is in progress.", {
-      repositoryId: repository.id,
+        repositoryId: repository.id,
     });
   }
 
@@ -244,24 +244,24 @@ async function continueRepositoryOperation(repository: GitRepositoryHandle, inpu
   const args = commands[operation.kind] || [];
   if (!args.length) {
     throw new GitHostError("git_command_failed", "That repository operation cannot be continued.", {
-      repositoryId: repository.id,
-      operation: operation.kind,
+        repositoryId: repository.id,
+        operation: operation.kind,
     });
   }
 
   const continueRes = await runGit(args, {
-    cwd: repository.path,
-    env: buildGitEnv({
-      actor: input && input.actor ? input.actor : null,
-      extraEnv: {
-        GIT_EDITOR: "true",
-      },
-    }),
+      cwd: repository.path,
+      env: buildGitEnv({
+          actor: input && input.actor ? input.actor : null,
+          extraEnv: {
+            GIT_EDITOR: "true",
+          },
+      }),
   });
   if (!continueRes.ok) {
     throw new GitHostError("git_command_failed", text(continueRes.stderr, "Failed to continue repository operation."), {
-      repositoryId: repository.id,
-      operation: operation.kind,
+        repositoryId: repository.id,
+        operation: operation.kind,
     });
   }
 }
@@ -272,7 +272,7 @@ async function abortRepositoryOperation(repository: GitRepositoryHandle): Promis
   const operation = readRepositoryOperationState(repository.path);
   if (!operation.in_progress) {
     throw new GitHostError("git_command_failed", "No repository operation is in progress.", {
-      repositoryId: repository.id,
+        repositoryId: repository.id,
     });
   }
 
@@ -285,16 +285,16 @@ async function abortRepositoryOperation(repository: GitRepositoryHandle): Promis
   const args = commands[operation.kind] || [];
   if (!args.length) {
     throw new GitHostError("git_command_failed", "That repository operation cannot be aborted.", {
-      repositoryId: repository.id,
-      operation: operation.kind,
+        repositoryId: repository.id,
+        operation: operation.kind,
     });
   }
 
   const abortRes = await runGit(args, { cwd: repository.path });
   if (!abortRes.ok) {
     throw new GitHostError("git_command_failed", text(abortRes.stderr, "Failed to abort repository operation."), {
-      repositoryId: repository.id,
-      operation: operation.kind,
+        repositoryId: repository.id,
+        operation: operation.kind,
     });
   }
 }

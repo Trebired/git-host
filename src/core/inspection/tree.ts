@@ -2,13 +2,13 @@ import type {
   GitDirectoryEntry,
   GitTreeEntry,
   GitTreeNode,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 
 function toTreeNodeKind(entry: GitTreeEntry): "dir" | "file" {
   return entry.type === "tree" ? "dir" : "file";
 }
 
-function normalizeDirectoryEntry(entry: GitTreeEntry): GitDirectoryEntry {
+function normalizeTreeEntryBase(entry: GitTreeEntry) {
   return {
     icon: entry.icon ?? null,
     kind: toTreeNodeKind(entry),
@@ -21,20 +21,13 @@ function normalizeDirectoryEntry(entry: GitTreeEntry): GitDirectoryEntry {
   };
 }
 
-function normalizeTreeNode(entry: GitTreeEntry): GitTreeNode {
-  return {
-    icon: entry.icon ?? null,
-    kind: toTreeNodeKind(entry),
-    language: entry.language ?? null,
-    mode: entry.mode,
-    name: entry.name,
-    object: entry.object,
-    path: entry.path,
-    size: entry.size,
-  };
-}
+const normalizeDirectoryEntry: (entry: GitTreeEntry) => GitDirectoryEntry =
+normalizeTreeEntryBase;
 
-type InternalTreeNode = Omit<GitTreeNode, "children"> & {
+const normalizeTreeNode: (entry: GitTreeEntry) => GitTreeNode =
+normalizeTreeEntryBase;
+
+type InternalTreeNode = Omit<GitTreeNode, "children">& {
   child_map?: Map<string, InternalTreeNode>;
 };
 
@@ -45,18 +38,18 @@ function ensureTreeDirectory(root: { child_map: Map<string, InternalTreeNode> },
     currentPath = currentPath ? `${currentPath}/${part}` : part;
     if (!cursor.child_map.has(part)) {
       cursor.child_map.set(part, {
-        child_map: new Map(),
-        kind: "dir",
-        icon: null,
-        language: null,
-        mode: "040000",
-        name: part,
-        object: "",
-        path: currentPath,
-        size: null,
+          child_map: new Map(),
+          kind: "dir",
+          icon: null,
+          language: null,
+          mode: "040000",
+          name: part,
+          object: "",
+          path: currentPath,
+          size: null,
       });
     }
-    cursor = cursor.child_map.get(part) as InternalTreeNode & { child_map: Map<string, InternalTreeNode> };
+    cursor = cursor.child_map.get(part) as InternalTreeNode& { child_map: Map<string, InternalTreeNode> };
   }
   return cursor as InternalTreeNode;
 }
@@ -73,8 +66,8 @@ function toPublicTreeNode(node: InternalTreeNode): GitTreeNode {
 function sortTreeNodes(node: { child_map: Map<string, InternalTreeNode> }): GitTreeNode[] {
   const values = Array.from(node.child_map.values());
   values.sort((left, right) => {
-    if (left.kind !== right.kind) return left.kind === "dir" ? -1 : 1;
-    return left.name.localeCompare(right.name);
+      if (left.kind !== right.kind) return left.kind === "dir" ? -1 : 1;
+      return left.name.localeCompare(right.name);
   });
   return values.map(toPublicTreeNode);
 }

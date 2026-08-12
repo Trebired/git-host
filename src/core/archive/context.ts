@@ -14,7 +14,7 @@ import type {
   ReadArchiveOptions,
   ResolveArchiveLinksInput,
   ResolveArchiveOptions,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { createFileSystemGitArchiveCache } from "#42965357d713";
 import { buildArchiveMetadata } from "./shared.js";
@@ -30,7 +30,7 @@ type CreateGitArchiveServiceOptions = {
 type GitArchiveService = {
   open(repository: GitRepositoryHandle, options?: OpenArchiveOptions): Promise<GitArchiveDownload>;
   read(repository: GitRepositoryHandle, options?: ReadArchiveOptions): Promise<GitArchive>;
-  resolve(repository: GitRepositoryHandle, options?: ResolveArchiveOptions): Promise<import("#1mbdfxwwqqpa").GitArchiveMetadata>;
+  resolve(repository: GitRepositoryHandle, options?: ResolveArchiveOptions): Promise<import("#14021226ec9b").GitArchiveMetadata>;
   resolveLinks(repositoryKey: string, input?: ResolveArchiveLinksInput): GitSourceArchiveLinks;
 };
 
@@ -53,7 +53,7 @@ function readPositiveNumber(value: unknown, fallback: number) {
 function defaultArchiveCache(options?: GitHostArchiveOptions): GitArchiveCacheBackend {
   if (options?.cache) return options.cache;
   return createFileSystemGitArchiveCache({
-    rootDir: path.join(os.tmpdir(), "@package-git-host", "archive-cache"),
+      rootDir: path.join(os.tmpdir(), "@package-git-host", "archive-cache"),
   });
 }
 
@@ -74,7 +74,7 @@ function createArchiveServiceContext(options: CreateGitArchiveServiceOptions): A
 
 function createMaybeCleanupCache(context: ArchiveServiceContext) {
   let lastCleanupAt = 0;
-  return async () => {
+  return async() => {
     if (!context.cache.cleanupExpired) return;
     const now = Date.now();
     if ((now - lastCleanupAt) < context.cleanupIntervalMs) return;
@@ -84,7 +84,7 @@ function createMaybeCleanupCache(context: ArchiveServiceContext) {
     } catch (error) {
       if (!context.verbose) return;
       context.logger.warn(context.logGroup, "archive cache cleanup failed", {
-        error: error instanceof Error ? error.message : String(error),
+          error: error instanceof Error ? error.message : String(error),
       });
     }
   };

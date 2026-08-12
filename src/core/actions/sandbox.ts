@@ -1,9 +1,7 @@
 import fs from "node:fs";
 
-import type { GitForgeBubblewrapSandboxOptions, GitForgeLocalRunnerChildSpec } from "#1mbdfxwwqqpa";
+import type { GitForgeBubblewrapSandboxOptions, GitForgeLocalRunnerChildSpec } from "#14021226ec9b";
 
-// System paths bound read-only so a shell and common tooling can run while the
-// rest of the host filesystem stays invisible to the sandboxed step.
 const DEFAULT_SYSTEM_PATHS = ["/usr", "/bin", "/sbin", "/lib", "/lib64", "/etc"];
 
 function roBindArgs(paths: string[]) {
@@ -35,10 +33,6 @@ function buildBubblewrapArgs(child: GitForgeLocalRunnerChildSpec, options: GitFo
   ];
 }
 
-// Returns a `localRunner.beforeSpawn` hook that wraps each step in bubblewrap
-// (`bwrap`). By default the step gets an isolated filesystem view (read-only
-// system paths plus a writable job workspace), no network, and fresh
-// pid/ipc/uts/user namespaces. Linux-only; requires `bwrap` on PATH.
 function createBubblewrapSandbox(options: GitForgeBubblewrapSandboxOptions = {}) {
   const bwrapPath = options.bwrapPath || "bwrap";
   return function beforeSpawn(child: GitForgeLocalRunnerChildSpec): GitForgeLocalRunnerChildSpec {

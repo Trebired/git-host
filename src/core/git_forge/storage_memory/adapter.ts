@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import type {
   GitForgeActivityEntry,
   GitForgeStorageAdapter,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { matchesActivityFilters, sortActivityEntries } from "#yotdvtav6ika";
 
@@ -88,8 +88,8 @@ function createForkStorage(state: ReturnType<typeof createInMemoryGitForgeState>
     },
     async listForks(repositoryId: string) {
       return Array.from(relationSet(state, repositoryId))
-        .map((forkRepositoryId) => state.forks.get(forkRepositoryId) || null)
-        .filter(Boolean);
+      .map((forkRepositoryId) => state.forks.get(forkRepositoryId) || null)
+      .filter(Boolean);
     },
     async readFork(forkRepositoryId: string) {
       return state.forks.get(text(forkRepositoryId)) || null;

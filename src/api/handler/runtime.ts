@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { buildGitHostLogGroup } from "#0bba403f3e43";
 import { resolveLogger } from "#5a29135e56c1";
-import type { CreateGitApiHandlerOptions } from "#1mbdfxwwqqpa";
+import type { CreateGitApiHandlerOptions } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { enrichRepositoryDataWithArchives, isArchiveDownloadAction, writeArchiveDownload } from "./archive.js";
 import { runGitApiAction } from "./action.js";
@@ -61,16 +61,16 @@ async function rejectUnsupportedMethod(
 ): Promise<boolean> {
   if (request.method === "GET" || request.method === "HEAD") return false;
   request.logger.warn(request.logGroup, "rejected unsupported api method", {
-    method: request.method,
-    pathname: String(req.url || "/"),
+      method: request.method,
+      pathname: String(req.url || "/"),
   });
   res.setHeader("allow", "GET, HEAD");
   writeJson(req, res, 405, {
-    ok: false,
-    error: {
-      code: "method_not_allowed",
-      message: "Only GET and HEAD are supported.",
-    },
+      ok: false,
+      error: {
+        code: "method_not_allowed",
+        message: "Only GET and HEAD are supported.",
+      },
   });
   return true;
 }
@@ -86,16 +86,16 @@ async function resolveRepositoryContext(
   if (repositoryId) return { repositoryId, repositoryKey };
 
   request.logger.warn(request.logGroup, "api repository not found", {
-    method: request.method,
-    pathname: request.url.pathname,
-    repositoryKey,
+      method: request.method,
+      pathname: request.url.pathname,
+      repositoryKey,
   });
   writeJson(req, res, 404, {
-    ok: false,
-    error: {
-      code: "repository_not_found",
-      message: "Repository not found.",
-    },
+      ok: false,
+      error: {
+        code: "repository_not_found",
+        message: "Repository not found.",
+      },
   });
   return null;
 }
@@ -108,19 +108,19 @@ async function authorizeApiRequest(
   repositoryContext: { repositoryId: string; repositoryKey: string },
 ) {
   const result = options.authorize
-    ? await options.authorize({
+  ? await options.authorize({
       action: route.action,
-      commitRef: "commitRef" in route ? route.commitRef : undefined,
+      commitRef: "commitRef"in route ? route.commitRef : undefined,
       method: request.method,
       pathname: request.url.pathname,
       remoteAddress: text(req.socket && req.socket.remoteAddress),
       repositoryId: repositoryContext.repositoryId,
       repositoryKey: repositoryContext.repositoryKey,
-      refName: "refName" in route ? route.refName : undefined,
+      refName: "refName"in route ? route.refName : undefined,
       request: req,
       searchParams: request.url.searchParams,
-    })
-    : undefined;
+  })
+  : undefined;
   return authorizationAllowed(result);
 }
 
@@ -134,29 +134,29 @@ function writeAuthorizationDenied(
 ): void {
   applyAuthorizationHeaders(res, auth.headers);
   request.logger.warn(request.logGroup, "api permission denied", {
-    action,
-    method: request.method,
-    pathname: request.url.pathname,
-    repositoryId: repositoryContext.repositoryId,
-    repositoryKey: repositoryContext.repositoryKey,
-    status: auth.status || 403,
-  });
-  if (isArchiveDownloadAction(action)) {
-    request.logger.warn(request.logGroup, "archive download denied", {
       action,
       method: request.method,
       pathname: request.url.pathname,
       repositoryId: repositoryContext.repositoryId,
       repositoryKey: repositoryContext.repositoryKey,
       status: auth.status || 403,
+  });
+  if (isArchiveDownloadAction(action)) {
+    request.logger.warn(request.logGroup, "archive download denied", {
+        action,
+        method: request.method,
+        pathname: request.url.pathname,
+        repositoryId: repositoryContext.repositoryId,
+        repositoryKey: repositoryContext.repositoryKey,
+        status: auth.status || 403,
     });
   }
   writeJson(req, res, auth.status || 403, {
-    ok: false,
-    error: {
-      code: "permission_denied",
-      message: auth.message || "Permission denied.",
-    },
+      ok: false,
+      error: {
+        code: "permission_denied",
+        message: auth.message || "Permission denied.",
+      },
   });
 }
 
@@ -170,17 +170,17 @@ async function maybeWriteArchive(
 ): Promise<boolean> {
   if (!isArchiveDownloadAction(route.action)) return false;
   request.logger.info(request.logGroup, "archive download authorized", {
-    action: route.action,
-    method: request.method,
-    pathname: request.url.pathname,
-    repositoryId: repositoryContext.repositoryId,
-    repositoryKey: repositoryContext.repositoryKey,
+      action: route.action,
+      method: request.method,
+      pathname: request.url.pathname,
+      repositoryId: repositoryContext.repositoryId,
+      repositoryKey: repositoryContext.repositoryKey,
   });
   await writeArchiveDownload(req, res, options.gitHost, {
-    ref: "refName" in route ? route.refName : "HEAD",
-    repositoryId: repositoryContext.repositoryId,
-    repositoryKey: repositoryContext.repositoryKey,
-    routeAction: route.action,
+      ref: "refName"in route ? route.refName : "HEAD",
+      repositoryId: repositoryContext.repositoryId,
+      repositoryKey: repositoryContext.repositoryKey,
+      routeAction: route.action,
   });
   return true;
 }
@@ -195,19 +195,19 @@ function writeActionSuccess(
 ): void {
   if (request.verbose) {
     request.logger.info(request.logGroup, "api action completed", {
-      action,
-      method: request.method,
-      pathname: request.url.pathname,
-      repositoryId: repositoryContext.repositoryId,
-      repositoryKey: repositoryContext.repositoryKey,
+        action,
+        method: request.method,
+        pathname: request.url.pathname,
+        repositoryId: repositoryContext.repositoryId,
+        repositoryKey: repositoryContext.repositoryKey,
     });
   }
   writeJson(req, res, 200, {
-    ok: true,
-    action,
-    data,
-    repository_id: repositoryContext.repositoryId,
-    repository_key: repositoryContext.repositoryKey,
+      ok: true,
+      action,
+      data,
+      repository_id: repositoryContext.repositoryId,
+      repository_key: repositoryContext.repositoryKey,
   });
 }
 
@@ -220,12 +220,12 @@ function writeActionError(
   error: unknown,
 ): void {
   request.logger.error(request.logGroup, "api action failed", {
-    action,
-    error: error instanceof Error ? error.message : String(error),
-    method: request.method,
-    pathname: request.url.pathname,
-    repositoryId: repositoryContext.repositoryId,
-    repositoryKey: repositoryContext.repositoryKey,
+      action,
+      error: error instanceof Error ? error.message : String(error),
+      method: request.method,
+      pathname: request.url.pathname,
+      repositoryId: repositoryContext.repositoryId,
+      repositoryKey: repositoryContext.repositoryKey,
   });
   writeJson(req, res, statusForError(error), serializeError(error));
 }
@@ -237,16 +237,16 @@ function writeRouteNotFound(
 ): void {
   if (request.verbose) {
     request.logger.warn(request.logGroup, "api route not found", {
-      method: request.method,
-      pathname: request.url.pathname,
+        method: request.method,
+        pathname: request.url.pathname,
     });
   }
   writeJson(req, res, 404, {
-    ok: false,
-    error: {
-      code: "route_not_found",
-      message: "Git API route not found.",
-    },
+      ok: false,
+      error: {
+        code: "route_not_found",
+        message: "Git API route not found.",
+      },
   });
 }
 

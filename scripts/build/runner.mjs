@@ -18,22 +18,22 @@ const outputPath = path.join(rootDir, "native", binaryName);
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
 const result = spawnSync("go", [
-  "build",
-  "-trimpath",
-  "-ldflags",
-  "-s -w",
-  "-o",
-  outputPath,
-  "./go/cmd/git-host-actions-runner",
-], {
-  cwd: rootDir,
-  stdio: "inherit",
-  env: {
-    ...process.env,
-    CGO_ENABLED: "0",
-    GOARCH: buildConfig.GOARCH,
-    GOOS: buildConfig.GOOS,
-  },
+    "build",
+    "-trimpath",
+    "-ldflags",
+    "-s -w",
+    "-o",
+    outputPath,
+    "./go/cmd/git-host-actions-runner",
+  ], {
+    cwd: rootDir,
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      CGO_ENABLED: "0",
+      GOARCH: buildConfig.GOARCH,
+      GOOS: buildConfig.GOOS,
+    },
 });
 
 if (result.status !== 0) {

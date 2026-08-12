@@ -1,5 +1,5 @@
 import { GitHostError } from "#8974ac53d713";
-import type { GitForgeWorkflowRunEvent, GitForgeWorkflowRunStep } from "#1mbdfxwwqqpa";
+import type { GitForgeWorkflowRunEvent, GitForgeWorkflowRunStep } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 
 import type {
@@ -9,14 +9,14 @@ import type {
   RunnerStepState,
 } from "#hzv9f3wx9ez9";
 
-function normalizeStepEnv(step: GitForgeWorkflowRunStep): Record<string, string> | undefined {
+function normalizeStepEnv(step: GitForgeWorkflowRunStep): Record<string, string>|undefined {
   if (!step.metadata?.env || typeof step.metadata.env !== "object") {
     return undefined;
   }
   return Object.fromEntries(
     Object.entries(step.metadata.env as Record<string, unknown>)
-      .map(([key, value]) => [text(key), text(value)] as const)
-      .filter(([key, value]) => key && value),
+    .map(([key, value]) => [text(key), text(value)] as const)
+    .filter(([key, value]) => key && value),
   );
 }
 
@@ -33,12 +33,12 @@ function normalizeRunnerInput(input: ExecuteActionsRunnerInput): ActionsRunnerIn
     run_id: input.run.id,
     shell: text(input.actions?.shell, "bash"),
     steps: input.steps.map((step) => ({
-      command: step.command,
-      env: normalizeStepEnv(step),
-      id: step.id,
-      index: step.index,
-      name: step.name,
-      shell: text(step.metadata?.shell),
+          command: step.command,
+          env: normalizeStepEnv(step),
+          id: step.id,
+          index: step.index,
+          name: step.name,
+          shell: text(step.metadata?.shell),
     })),
     workflow_id: input.run.workflow_id,
     workspace_root: input.workspaceRoot,
@@ -49,30 +49,37 @@ function parseRunnerEvent(line: string): ActionsRunnerEvent {
   const parsed = JSON.parse(line) as ActionsRunnerEvent | GitForgeWorkflowRunEvent;
   if (!parsed || typeof parsed !== "object" || typeof parsed.type !== "string") {
     throw new GitHostError("forge_actions_runner_protocol_error", "Actions runner emitted an invalid event payload.", {
-      line,
+        line,
     });
   }
   if (
     parsed.type !== "run.status"
-    && parsed.type !== "step.started"
-    && parsed.type !== "step.output"
-    && parsed.type !== "step.heartbeat"
-    && parsed.type !== "step.finished"
+    &&parsed.type !== "step.started"
+    &&parsed.type !== "step.output"
+    &&parsed.type !== "step.heartbeat"
+    &&parsed.type !== "step.finished"
   ) {
     throw new GitHostError("forge_actions_runner_protocol_error", `Actions runner emitted unsupported event "${parsed.type}".`, {
-      line,
+        line,
     });
   }
   return parsed as ActionsRunnerEvent;
 }
 
 function updateLastStep(event: ActionsRunnerEvent, state: RunnerStepState) {
-  if ("step_index" in event && typeof event.step_index === "number") {
+  if ("step_index"in event && typeof event.step_index === "number") {
     state.lastStepIndex = event.step_index;
   }
-  if ("step_name" in event && typeof event.step_name === "string") {
+  if ("step_name"in event && typeof event.step_name === "string") {
     state.lastStepName = event.step_name;
   }
+}
+
+function createRunnerState(): RunnerStepState {
+  return {
+    lastStepIndex: -1,
+    lastStepName: "",
+  };
 }
 
 function appendPreview(current: string, chunk: string) {
@@ -82,6 +89,7 @@ function appendPreview(current: string, chunk: string) {
 
 export {
   appendPreview,
+  createRunnerState,
   normalizeRunnerInput,
   parseRunnerEvent,
   updateLastStep,

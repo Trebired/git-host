@@ -1,10 +1,5 @@
 import { text } from "#62f869522d1f";
-
-function normalizeBasePath(value: unknown): string {
-  const next = text(value).replace(/\/+$/g, "");
-  if (!next || next === "/") return "";
-  return next.startsWith("/") ? next : `/${next}`;
-}
+import { normalizeHttpBasePath } from "#omwpz9vv7et8";
 
 function decodeRouteSegment(value: string): string | null {
   try {
@@ -16,12 +11,12 @@ function decodeRouteSegment(value: string): string | null {
 
 function parseRepositoryRoute(pathnameInput: unknown, basePathInput: unknown) {
   const pathname = text(pathnameInput, "/");
-  const basePath = normalizeBasePath(basePathInput);
+  const basePath = normalizeHttpBasePath(basePathInput);
   if (basePath && !pathname.startsWith(`${basePath}/`) && pathname !== basePath) return null;
 
   const remainder = basePath
-    ? pathname.slice(basePath.length).replace(/^\/+/, "")
-    : pathname.replace(/^\/+/, "");
+  ? pathname.slice(basePath.length).replace(/^\/+/, "")
+  : pathname.replace(/^\/+/, "");
   if (!remainder) return null;
 
   const segments = remainder.split("/").filter(Boolean);
@@ -35,6 +30,6 @@ function parseRepositoryRoute(pathnameInput: unknown, basePathInput: unknown) {
 
 export {
   decodeRouteSegment,
-  normalizeBasePath,
+  normalizeHttpBasePath as normalizeBasePath,
   parseRepositoryRoute,
 };

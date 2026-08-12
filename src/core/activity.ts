@@ -10,13 +10,10 @@ import type {
   GitHttpAuditEvent,
   GitRepositoryHandle,
   GitSshAuditEvent,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
+import { nowIso } from "#7h6tal11dmqz";
 import { runGit } from "./run_git.js";
-
-function nowIso(): string {
-  return new Date().toISOString();
-}
 
 function normalizeActivityValues<T extends string>(value: T | T[] | undefined): string[] {
   if (Array.isArray(value)) return value.map((entry) => text(entry)).filter(Boolean);
@@ -24,12 +21,12 @@ function normalizeActivityValues<T extends string>(value: T | T[] | undefined): 
   return single ? [single] : [];
 }
 
-function normalizeActivityMetadata(metadata: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+function normalizeActivityMetadata(metadata: Record<string, unknown>|undefined): Record<string, unknown>|undefined {
   if (!metadata || typeof metadata !== "object") return undefined;
   const next = Object.fromEntries(
     Object.entries(metadata).filter(([key, value]) => {
-      if (!text(key) || value === undefined) return false;
-      return typeof value !== "string" || value.trim() !== "";
+        if (!text(key) || value === undefined) return false;
+        return typeof value !== "string" || value.trim() !== "";
     }),
   );
   return Object.keys(next).length ? next : undefined;
@@ -46,9 +43,9 @@ function compareActivityDates(left: string, right: string): number {
 
 function sortActivityEntries(entries: GitForgeActivityEntry[]): GitForgeActivityEntry[] {
   return Array.from(entries).sort((left, right) => {
-    const timestampDelta = compareActivityDates(text(right.created_at), text(left.created_at));
-    if (timestampDelta !== 0) return timestampDelta;
-    return text(right.id).localeCompare(text(left.id));
+      const timestampDelta = compareActivityDates(text(right.created_at), text(left.created_at));
+      if (timestampDelta !== 0) return timestampDelta;
+      return text(right.id).localeCompare(text(left.id));
   });
 }
 
@@ -74,35 +71,35 @@ function matchesActivityFilters(entry: GitForgeActivityEntry, filters: GitForgeA
 function buildActivitySummary(kind: GitForgeActivityKind, repositoryId: string, metadata: Record<string, unknown>): string {
   switch (kind) {
     case "repository.push":
-      return text(metadata.branch)
-        ? `Pushed ${text(metadata.branch)} in ${repositoryId}.`
-        : `Pushed updates to ${repositoryId}.`;
+    return text(metadata.branch)
+    ? `Pushed ${text(metadata.branch)} in ${repositoryId}.`
+    : `Pushed updates to ${repositoryId}.`;
     case "repository.pull":
-      return text(metadata.branch)
-        ? `Pulled ${text(metadata.branch)} in ${repositoryId}.`
-        : `Pulled updates into ${repositoryId}.`;
+    return text(metadata.branch)
+    ? `Pulled ${text(metadata.branch)} in ${repositoryId}.`
+    : `Pulled updates into ${repositoryId}.`;
     case "repository.fetch":
-      return `Fetched updates for ${repositoryId}.`;
+    return `Fetched updates for ${repositoryId}.`;
     case "release.create":
-      return `Published release ${text(metadata.tag_name)} in ${repositoryId}.`;
+    return `Published release ${text(metadata.tag_name)} in ${repositoryId}.`;
     case "release.update":
-      return `Updated release ${text(metadata.release_id)} in ${repositoryId}.`;
+    return `Updated release ${text(metadata.release_id)} in ${repositoryId}.`;
     case "release.delete":
-      return `Deleted release ${text(metadata.release_id)} in ${repositoryId}.`;
+    return `Deleted release ${text(metadata.release_id)} in ${repositoryId}.`;
     case "fork.create":
-      return `Created fork ${text(metadata.fork_repository_id)} from ${repositoryId}.`;
+    return `Created fork ${text(metadata.fork_repository_id)} from ${repositoryId}.`;
     case "fork.sync":
-      return `Synced fork ${text(metadata.fork_repository_id)} with ${repositoryId}.`;
+    return `Synced fork ${text(metadata.fork_repository_id)} with ${repositoryId}.`;
     case "star":
-      return `Starred ${repositoryId}.`;
+    return `Starred ${repositoryId}.`;
     case "unstar":
-      return `Unstarred ${repositoryId}.`;
+    return `Unstarred ${repositoryId}.`;
     case "watch":
-      return `Started watching ${repositoryId}.`;
+    return `Started watching ${repositoryId}.`;
     case "unwatch":
-      return `Stopped watching ${repositoryId}.`;
+    return `Stopped watching ${repositoryId}.`;
     default:
-      return `Updated ${repositoryId}.`;
+    return `Updated ${repositoryId}.`;
   }
 }
 
@@ -112,8 +109,8 @@ async function readRepositoryActivityContext(repository: GitRepositoryHandle): P
   const branch = branchRes.ok ? text(branchRes.stdout) : "";
   const headCommit = headRes.ok ? text(headRes.stdout) : "";
   return normalizeActivityMetadata({
-    branch,
-    head_commit: headCommit,
+      branch,
+      head_commit: headCommit,
   }) || {};
 }
 
@@ -141,29 +138,29 @@ function deriveTransportActor(identity: unknown, fallbackLabelInput: unknown) {
 
 function buildHttpActivityMetadata(event: GitHttpAuditEvent, repositoryContext: Record<string, unknown>): Record<string, unknown> {
   return normalizeActivityMetadata({
-    ...repositoryContext,
-    auth_identity: event.identity,
-    method: event.method,
-    pathname: event.pathname,
-    remote_user: event.remoteUser,
-    repository_key: event.repositoryKey,
-    service: event.service,
-    transport: "http",
-    wants_write: event.wantsWrite,
+      ...repositoryContext,
+      auth_identity: event.identity,
+      method: event.method,
+      pathname: event.pathname,
+      remote_user: event.remoteUser,
+      repository_key: event.repositoryKey,
+      service: event.service,
+      transport: "http",
+      wants_write: event.wantsWrite,
   }) || {};
 }
 
 function buildSshActivityMetadata(event: GitSshAuditEvent, repositoryContext: Record<string, unknown>): Record<string, unknown> {
   return normalizeActivityMetadata({
-    ...repositoryContext,
-    auth_identity: event.identity,
-    command: event.command,
-    remote_user: event.remoteUser,
-    repository_key: event.repositoryKey,
-    service: event.service,
-    transport: "ssh",
-    username: event.username,
-    wants_write: event.wantsWrite,
+      ...repositoryContext,
+      auth_identity: event.identity,
+      command: event.command,
+      remote_user: event.remoteUser,
+      repository_key: event.repositoryKey,
+      service: event.service,
+      transport: "ssh",
+      username: event.username,
+      wants_write: event.wantsWrite,
   }) || {};
 }
 
@@ -197,11 +194,7 @@ function createListActivity(storage: GitForgeActivityStorage) {
   };
 }
 
-function httpActivityKind(event: GitHttpAuditEvent) {
-  return event.service === "git-receive-pack" ? "repository.push" : "repository.fetch";
-}
-
-function sshActivityKind(event: GitSshAuditEvent) {
+function transportActivityKind(event: GitHttpAuditEvent | GitSshAuditEvent) {
   return event.service === "git-receive-pack" ? "repository.push" : "repository.fetch";
 }
 
@@ -214,12 +207,12 @@ function createRecordHttpAuditEvent(
     const repositoryContext = await readRepositoryActivityContext(event.repository);
     const actor = deriveTransportActor(event.identity, event.remoteUser);
     return await recordActivity({
-      actor_id: actor.actor_id,
-      actor_label: actor.actor_label,
-      kind: httpActivityKind(event),
-      metadata: buildHttpActivityMetadata(event, repositoryContext),
-      repository_id: event.repository.id,
-      source: "http",
+        actor_id: actor.actor_id,
+        actor_label: actor.actor_label,
+        kind: transportActivityKind(event),
+        metadata: buildHttpActivityMetadata(event, repositoryContext),
+        repository_id: event.repository.id,
+        source: "http",
     });
   };
 }
@@ -232,19 +225,19 @@ function createRecordSshAuditEvent(
     const repositoryContext = await readRepositoryActivityContext(event.repository);
     const actor = deriveTransportActor(event.identity, event.remoteUser || event.username);
     return await recordActivity({
-      actor_id: actor.actor_id,
-      actor_label: actor.actor_label,
-      kind: sshActivityKind(event),
-      metadata: buildSshActivityMetadata(event, repositoryContext),
-      repository_id: event.repository.id,
-      source: "ssh",
+        actor_id: actor.actor_id,
+        actor_label: actor.actor_label,
+        kind: transportActivityKind(event),
+        metadata: buildSshActivityMetadata(event, repositoryContext),
+        repository_id: event.repository.id,
+        source: "ssh",
     });
   };
 }
 
 function createGitForgeActivityRecorder(options: {
-  now?: () => string;
-  storage: GitForgeActivityStorage;
+    now?: () => string;
+    storage: GitForgeActivityStorage;
 }): GitForgeTransportActivityRecorder {
   const now = typeof options.now === "function" ? options.now : nowIso;
   const recordActivity = createRecordActivity(now, options.storage);

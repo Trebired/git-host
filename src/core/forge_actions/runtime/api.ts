@@ -4,7 +4,7 @@ import type {
   GitForgeActivityEntry,
   GitForgeActor,
   RunGitForgeWorkflowInput,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 
 import { listRepositoryWorkflows, matchesWorkflowTrigger, resolveRepositoryWorkflowRoot } from "#nj0t6f5vyy3x";
@@ -30,33 +30,33 @@ async function enqueueWorkflowsForTrigger(
   context: RuntimeContext,
   queueWorkflowRun: QueueWorkflowRun,
   repositoryId: string,
-  triggerKind: import("#1mbdfxwwqqpa").GitForgeWorkflowTriggerKind,
+  triggerKind: import("#14021226ec9b").GitForgeWorkflowTriggerKind,
   actor: GitForgeActor,
   triggerContext: Record<string, unknown>,
 ) {
   const target = await context.runtimeSupport.resolveRunTarget(repositoryId, {
-    branch: text(triggerContext.branch),
-    commitHash: text(triggerContext.commit_hash, text(triggerContext.head_commit)),
-    ref: text(triggerContext.ref, text(triggerContext.tag_name, text(triggerContext.branch, "HEAD"))),
+      branch: text(triggerContext.branch),
+      commitHash: text(triggerContext.commit_hash, text(triggerContext.head_commit)),
+      ref: text(triggerContext.ref, text(triggerContext.tag_name, text(triggerContext.branch, "HEAD"))),
   });
   const workflowRoot = await resolveRepositoryWorkflowRoot(context.options.actions, repositoryId);
   const workflows = await listRepositoryWorkflows({
-    filters: { enabled: true },
-    ref: target.ref,
-    repositoryId,
-    repositoryPath: target.repositoryPath,
-    workflowRoot,
+      filters: { enabled: true },
+      ref: target.ref,
+      repositoryId,
+      repositoryPath: target.repositoryPath,
+      workflowRoot,
   });
   const createdRuns = [];
   for (const workflow of workflows) {
     if (!matchesWorkflowTrigger(workflow, triggerKind, triggerContext)) continue;
     createdRuns.push(await queueWorkflowRun(repositoryId, workflow, {
-      actor,
-      branch: target.branch || undefined,
-      commitHash: target.commitHash,
-      ref: target.ref,
-      triggerContext,
-      triggerKind,
+          actor,
+          branch: target.branch || undefined,
+          commitHash: target.commitHash,
+          ref: target.ref,
+          triggerContext,
+          triggerKind,
     }));
   }
   return createdRuns;
@@ -74,45 +74,45 @@ async function handleReleaseActivity(
   const repositoryPath = await context.runtimeSupport.readRepositoryPath(entry.repository_id);
   const commitHash = targetRef ? await context.runtimeSupport.resolveCommit(repositoryPath, targetRef) : "";
   await enqueueWorkflowsForTrigger(context, queueWorkflowRun, entry.repository_id, entry.kind as "release.create" | "release.update", actor, {
-    ...(entry.metadata || {}),
-    activity_id: entry.id,
-    commit_hash: commitHash,
-    ref: text(release?.tag_name, targetRef),
-    release_id: release?.id,
-    tag_name: text(release?.tag_name, text(entry.metadata?.tag_name)),
+      ...(entry.metadata || {}),
+      activity_id: entry.id,
+      commit_hash: commitHash,
+      ref: text(release?.tag_name, targetRef),
+      release_id: release?.id,
+      tag_name: text(release?.tag_name, text(entry.metadata?.tag_name)),
   });
 }
 
 function createBindActivityStorage(context: RuntimeContext, queueWorkflowRun: QueueWorkflowRun) {
   return (activityStorage: CreateGitForgeOptions["storage"]["activity"]) => {
-    const store = activityStorage as typeof activityStorage & {
-      [ACTIVITY_LISTENER_SYMBOL]?: Set<(entry: GitForgeActivityEntry) => Promise<void>>;
+    const store = activityStorage as typeof activityStorage& {
+      [ACTIVITY_LISTENER_SYMBOL]?: Set<(entry:GitForgeActivityEntry)=>Promise<void>>;
       [ACTIVITY_WRAPPED_SYMBOL]?: boolean;
     };
     if (!store[ACTIVITY_LISTENER_SYMBOL]) store[ACTIVITY_LISTENER_SYMBOL] = new Set();
-    store[ACTIVITY_LISTENER_SYMBOL]!.add(async (entry) => {
-      const actor = createActor(entry);
-      if (entry.kind === "repository.push") {
-        await enqueueWorkflowsForTrigger(context, queueWorkflowRun, entry.repository_id, "push", actor, {
-          ...(entry.metadata || {}),
-          activity_id: entry.id,
-        });
-        return;
-      }
-      if (entry.kind === "release.create" || entry.kind === "release.update") {
-        await handleReleaseActivity(context, queueWorkflowRun, entry, actor);
-      }
+    store[ACTIVITY_LISTENER_SYMBOL]!.add(async(entry) => {
+        const actor = createActor(entry);
+        if (entry.kind === "repository.push") {
+          await enqueueWorkflowsForTrigger(context, queueWorkflowRun, entry.repository_id, "push", actor, {
+              ...(entry.metadata || {}),
+              activity_id: entry.id,
+          });
+          return;
+        }
+        if (entry.kind === "release.create" || entry.kind === "release.update") {
+          await handleReleaseActivity(context, queueWorkflowRun, entry, actor);
+        }
     });
     if (store[ACTIVITY_WRAPPED_SYMBOL]) return;
     store[ACTIVITY_WRAPPED_SYMBOL] = true;
     const original = activityStorage.createActivity.bind(activityStorage);
-    activityStorage.createActivity = async (input) => {
+    activityStorage.createActivity = async(input) => {
       const entry = await original(input);
       const listeners = Array.from(store[ACTIVITY_LISTENER_SYMBOL] || []);
-      await Promise.all(listeners.map(async (listener) => {
-        try {
-          await listener(entry);
-        } catch {}
+      await Promise.all(listeners.map(async(listener) => {
+            try {
+              await listener(entry);
+            } catch {}
       }));
       return entry;
     };
@@ -120,15 +120,15 @@ function createBindActivityStorage(context: RuntimeContext, queueWorkflowRun: Qu
 }
 
 function createCancelWorkflowRun(context: RuntimeContext) {
-  return async (repositoryId: string, runId: string, actor: GitForgeActor) => {
+  return async(repositoryId: string, runId: string, actor: GitForgeActor) => {
     const run = await context.runtimeSupport.readRequiredRun(repositoryId, runId);
     if (isTerminalRunStatus(run.status)) return run;
     const active = context.activeRuns.get(run.id);
     await context.runtimeSupport.emitRunEvent(run, {
-      metadata: { actor_id: actor.id },
-      status: "running",
-      summary: `Cancellation requested by ${text(actor.id)}.`,
-      type: "run.cancellation_requested",
+        metadata: { actor_id: actor.id },
+        status: "running",
+        summary: `Cancellation requested by ${text(actor.id)}.`,
+        type: "run.cancellation_requested",
     });
     if (active) {
       active.cancelRequested = true;
@@ -136,19 +136,19 @@ function createCancelWorkflowRun(context: RuntimeContext) {
         try { active.child.kill("SIGTERM"); } catch {}
       }
       return await context.runtimeSupport.updateRun(repositoryId, runId, {
-        summary: `Cancellation requested by ${text(actor.id)}.`,
+          summary: `Cancellation requested by ${text(actor.id)}.`,
       });
     }
     await context.runtimeSupport.markQueuedJobsAndSteps(run.id, "cancelled");
     const cancelled = await context.runtimeSupport.updateRun(repositoryId, runId, {
-      finished_at: nowIso(),
-      status: "cancelled",
-      summary: `Cancelled by ${text(actor.id)}.`,
+        finished_at: nowIso(),
+        status: "cancelled",
+        summary: `Cancelled by ${text(actor.id)}.`,
     });
     await context.runtimeSupport.emitRunEvent(cancelled, {
-      status: "cancelled",
-      summary: cancelled.summary,
-      type: "run.cancelled",
+        status: "cancelled",
+        summary: cancelled.summary,
+        type: "run.cancelled",
     });
     return cancelled;
   };
@@ -156,7 +156,7 @@ function createCancelWorkflowRun(context: RuntimeContext) {
 
 function createReadApi(context: RuntimeContext) {
   return {
-    async listWorkflows(repositoryId: string, filters?: import("#1mbdfxwwqqpa").GitForgeWorkflowFilters) {
+    async listWorkflows(repositoryId: string, filters?: import("#14021226ec9b").GitForgeWorkflowFilters) {
       const repositoryPath = await context.runtimeSupport.readRepositoryPath(repositoryId);
       const workflowRoot = await resolveRepositoryWorkflowRoot(context.options.actions, repositoryId);
       return await listRepositoryWorkflows({ filters, repositoryId, repositoryPath, workflowRoot });
@@ -165,17 +165,20 @@ function createReadApi(context: RuntimeContext) {
       const repositoryPath = await context.runtimeSupport.readRepositoryPath(repositoryId);
       return await context.runtimeSupport.readWorkflowAtRef(repositoryId, repositoryPath, undefined, workflowId);
     },
-    async listWorkflowRuns(repositoryId: string, filters?: import("#1mbdfxwwqqpa").GitForgeWorkflowRunFilters) {
+    async listWorkflowRuns(repositoryId: string, filters?: import("#14021226ec9b").GitForgeWorkflowRunFilters) {
       return await context.storage.listWorkflowRuns(repositoryId, filters);
     },
     async readWorkflowRun(repositoryId: string, runId: string) {
       return await context.runtimeSupport.readRequiredRun(repositoryId, runId);
     },
-    async listWorkflowRunJobs(repositoryId: string, runId: string, filters?: { jobId?: string; status?: import("#1mbdfxwwqqpa").GitForgeWorkflowRunJobStatus | import("#1mbdfxwwqqpa").GitForgeWorkflowRunJobStatus[] }) {
+    async listWorkflowRunJobs(repositoryId: string, runId: string, filters?: {
+        jobId?: string;
+        status?: import("#14021226ec9b").GitForgeWorkflowRunJobStatus | import("#14021226ec9b").GitForgeWorkflowRunJobStatus[]
+    }) {
       await context.runtimeSupport.readRequiredRun(repositoryId, runId);
       return await context.storage.listWorkflowRunJobs(runId, filters);
     },
-    async listWorkflowRunSteps(repositoryId: string, runId: string, filters?: import("#1mbdfxwwqqpa").GitForgeWorkflowRunStepFilters) {
+    async listWorkflowRunSteps(repositoryId: string, runId: string, filters?: import("#14021226ec9b").GitForgeWorkflowRunStepFilters) {
       await context.runtimeSupport.readRequiredRun(repositoryId, runId);
       return await context.storage.listWorkflowRunSteps(runId, filters);
     },
@@ -183,7 +186,7 @@ function createReadApi(context: RuntimeContext) {
       await context.runtimeSupport.readRequiredRun(repositoryId, runId);
       return await context.storage.listWorkflowRunArtifacts(runId, filters);
     },
-    async listWorkflowRunEvents(repositoryId: string, runId: string, filters?: import("#1mbdfxwwqqpa").GitForgeWorkflowRunEventFilters) {
+    async listWorkflowRunEvents(repositoryId: string, runId: string, filters?: import("#14021226ec9b").GitForgeWorkflowRunEventFilters) {
       await context.runtimeSupport.readRequiredRun(repositoryId, runId);
       return await context.storage.listWorkflowRunEvents(runId, filters);
     },
@@ -201,15 +204,15 @@ function createRunApi(
       const workflow = await context.runtimeSupport.readWorkflowAtRef(repositoryId, target.repositoryPath, target.ref, workflowId);
       if (!workflow.on?.workflow_dispatch && workflow.trigger !== "manual") {
         throw new GitHostError("forge_invalid_workflow_definition", `Workflow "${workflowId}" does not support manual dispatch.`, {
-          workflowId,
+            workflowId,
         });
       }
       return await queueWorkflowRun(repositoryId, workflow, {
-        ...input,
-        branch: target.branch || undefined,
-        commitHash: target.commitHash,
-        ref: target.ref,
-        triggerKind: "manual",
+          ...input,
+          branch: target.branch || undefined,
+          commitHash: target.commitHash,
+          ref: target.ref,
+          triggerKind: "manual",
       });
     },
     cancelWorkflowRun,

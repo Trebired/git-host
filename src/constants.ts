@@ -9,13 +9,13 @@ const GIT_HOST_LOG_GROUP = buildPackageLogGroup();
 const GIT_HOST_PACKAGE_NAME = PACKAGE_NAME;
 
 const DEFAULT_MANAGED_EXCLUDE_PATTERNS = Object.freeze([
-  "node_modules/",
-  ".DS_Store",
-  "dist/",
-  "coverage/",
-  ".turbo/",
-  ".next/",
-  ".svelte-kit/",
+    "node_modules/",
+    ".DS_Store",
+    "dist/",
+    "coverage/",
+    ".turbo/",
+    ".next/",
+    ".svelte-kit/",
 ]);
 
 function buildGitHostLogGroup(...parts: string[]): string {

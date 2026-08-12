@@ -3,7 +3,7 @@ import type {
   CancelGitForgeWorkflowRunInput,
   CreateGitForgeApiHandlerOptions,
   GitForgeActor,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { runGitApiAction } from "#53fe5bbf2789";
 import type { GitForgeApiRoute } from "#e8559447ec5f";
@@ -22,8 +22,8 @@ function normalizeStringMap(value: unknown) {
   if (!value || typeof value !== "object") return undefined;
   return Object.fromEntries(
     Object.entries(value as Record<string, unknown>)
-      .map(([key, entry]) => [text(key), text(entry)] as const)
-      .filter(([key, entry]) => key && entry),
+    .map(([key, entry]) => [text(key), text(entry)] as const)
+    .filter(([key, entry]) => key && entry),
   );
 }
 
@@ -48,15 +48,15 @@ async function runReleaseCollectionAction(
     return await options.forge.listReleases(repositoryId);
   }
   return await options.forge.createRelease(repositoryId, {
-    actor: actor as GitForgeActor,
-    assets: Array.isArray(body.assets) ? body.assets as any[] : undefined,
-    createTag: buildCreateTagInput(body.createTag),
-    draft: body.draft === true,
-    existingTagName: text(body.existingTagName),
-    notes: text(body.notes),
-    prerelease: body.prerelease === true,
-    publishedAt: body.publishedAt === null ? null : text(body.publishedAt),
-    title: text(body.title),
+      actor: actor as GitForgeActor,
+      assets: Array.isArray(body.assets) ? body.assets as any[] : undefined,
+      createTag: buildCreateTagInput(body.createTag),
+      draft: body.draft === true,
+      existingTagName: text(body.existingTagName),
+      notes: text(body.notes),
+      prerelease: body.prerelease === true,
+      publishedAt: body.publishedAt === null ? null : text(body.publishedAt),
+      title: text(body.title),
   });
 }
 
@@ -70,19 +70,19 @@ async function runReleaseAction(
   if (route.action !== "release") throw new GitHostError("git_command_failed", "release route is required.");
   if (body._method === "PATCH") {
     return await options.forge.updateRelease(repositoryId, route.releaseId, {
-      actor: actor as GitForgeActor,
-      assets: Array.isArray(body.assets) ? body.assets as any[] : undefined,
-      draft: body.draft === true,
-      notes: text(body.notes),
-      prerelease: body.prerelease === true,
-      publishedAt: body.publishedAt === null ? null : (body.publishedAt === undefined ? undefined : text(body.publishedAt)),
-      title: body.title === undefined ? undefined : text(body.title),
+        actor: actor as GitForgeActor,
+        assets: Array.isArray(body.assets) ? body.assets as any[] : undefined,
+        draft: body.draft === true,
+        notes: text(body.notes),
+        prerelease: body.prerelease === true,
+        publishedAt: body.publishedAt === null ? null : (body.publishedAt === undefined ? undefined : text(body.publishedAt)),
+        title: body.title === undefined ? undefined : text(body.title),
     });
   }
   if (body._method === "DELETE") {
     await options.forge.deleteRelease(repositoryId, route.releaseId, {
-      actor: actor as GitForgeActor,
-      deleteTag: body.deleteTag === true,
+        actor: actor as GitForgeActor,
+        deleteTag: body.deleteTag === true,
     });
     return { deleted: true, release_id: route.releaseId };
   }
@@ -100,15 +100,15 @@ async function runWorkflowRunCollectionAction(
     return await options.forge.listWorkflowRuns(repositoryId, readWorkflowRunFilters(searchParams));
   }
   return await options.forge.runWorkflow(repositoryId, text(body.workflowId), {
-    actor: actor as GitForgeActor,
-    branch: text(body.branch),
-    commitHash: text(body.commitHash),
-    env: normalizeStringMap(body.env),
-    executionContext: body.executionContext && typeof body.executionContext === "object" ? body.executionContext as any : undefined,
-    inputs: body.inputs && typeof body.inputs === "object" ? body.inputs as Record<string, boolean | string> : undefined,
-    ref: text(body.ref),
-    secrets: normalizeStringMap(body.secrets),
-    triggerContext: body.triggerContext && typeof body.triggerContext === "object" ? body.triggerContext as Record<string, unknown> : undefined,
+      actor: actor as GitForgeActor,
+      branch: text(body.branch),
+      commitHash: text(body.commitHash),
+      env: normalizeStringMap(body.env),
+      executionContext: body.executionContext && typeof body.executionContext === "object" ? body.executionContext as any : undefined,
+      inputs: body.inputs && typeof body.inputs === "object" ? body.inputs as Record<string, boolean|string> : undefined,
+      ref: text(body.ref),
+      secrets: normalizeStringMap(body.secrets),
+      triggerContext: body.triggerContext && typeof body.triggerContext === "object" ? body.triggerContext as Record<string, unknown> : undefined,
   });
 }
 
@@ -122,52 +122,56 @@ async function runForgeAction(
 ) {
   switch (route.action) {
     case "actions":
-      return await options.forge.listWorkflows(repositoryId, readWorkflowFilters(searchParams));
+    return await options.forge.listWorkflows(repositoryId, readWorkflowFilters(searchParams));
     case "action":
-      return await options.forge.readWorkflow(repositoryId, route.workflowId);
+    return await options.forge.readWorkflow(repositoryId, route.workflowId);
     case "action_runs":
-      return await runWorkflowRunCollectionAction(options, repositoryId, actor, body, searchParams);
+    return await runWorkflowRunCollectionAction(options, repositoryId, actor, body, searchParams);
     case "action_run":
-      return await options.forge.readWorkflowRun(repositoryId, route.runId);
+    return await options.forge.readWorkflowRun(repositoryId, route.runId);
     case "action_run_artifacts":
-      return await options.forge.listWorkflowRunArtifacts(repositoryId, route.runId, readWorkflowRunArtifactFilters(searchParams));
+    return await options.forge.listWorkflowRunArtifacts(repositoryId, route.runId, readWorkflowRunArtifactFilters(searchParams));
     case "action_run_steps":
-      return await options.forge.listWorkflowRunSteps(repositoryId, route.runId, readWorkflowRunStepFilters(searchParams));
+    return await options.forge.listWorkflowRunSteps(repositoryId, route.runId, readWorkflowRunStepFilters(searchParams));
     case "action_run_jobs":
-      return await options.forge.listWorkflowRunJobs(repositoryId, route.runId, readWorkflowRunJobFilters(searchParams));
+    return await options.forge.listWorkflowRunJobs(repositoryId, route.runId, readWorkflowRunJobFilters(searchParams));
     case "action_run_events":
-      return await options.forge.listWorkflowRunEvents(repositoryId, route.runId, readWorkflowRunEventFilters(searchParams));
+    return await options.forge.listWorkflowRunEvents(repositoryId, route.runId, readWorkflowRunEventFilters(searchParams));
     case "action_run_cancel":
-      return await options.forge.cancelWorkflowRun(repositoryId, route.runId, { actor: actor as GitForgeActor } satisfies CancelGitForgeWorkflowRunInput);
+    return await options.forge.cancelWorkflowRun(
+      repositoryId,
+      route.runId,
+      { actor: actor as GitForgeActor } satisfies CancelGitForgeWorkflowRunInput
+    );
     case "overview":
-      return await options.forge.readOverview(repositoryId, { actorId: actor?.id });
+    return await options.forge.readOverview(repositoryId, { actorId: actor?.id });
     case "social":
-      return await options.forge.readSocialState(repositoryId, { actorId: actor?.id });
+    return await options.forge.readSocialState(repositoryId, { actorId: actor?.id });
     case "stars":
-      return body._method === "DELETE"
-        ? await options.forge.unstarRepository(repositoryId, { actor: actor as GitForgeActor })
-        : await options.forge.starRepository(repositoryId, { actor: actor as GitForgeActor });
+    return body._method === "DELETE"
+    ? await options.forge.unstarRepository(repositoryId, { actor: actor as GitForgeActor })
+    : await options.forge.starRepository(repositoryId, { actor: actor as GitForgeActor });
     case "watch":
-      return body._method === "DELETE"
-        ? await options.forge.unwatchRepository(repositoryId, { actor: actor as GitForgeActor })
-        : await options.forge.watchRepository(repositoryId, { actor: actor as GitForgeActor });
+    return body._method === "DELETE"
+    ? await options.forge.unwatchRepository(repositoryId, { actor: actor as GitForgeActor })
+    : await options.forge.watchRepository(repositoryId, { actor: actor as GitForgeActor });
     case "releases":
-      return await runReleaseCollectionAction(options, route, repositoryId, actor, body);
+    return await runReleaseCollectionAction(options, route, repositoryId, actor, body);
     case "release":
-      return await runReleaseAction(options, route, repositoryId, actor, body);
+    return await runReleaseAction(options, route, repositoryId, actor, body);
     case "forks":
-      return body._method === "POST"
-        ? await options.forge.createFork(repositoryId, { actor: actor as GitForgeActor })
-        : await options.forge.listForks(repositoryId);
+    return body._method === "POST"
+    ? await options.forge.createFork(repositoryId, { actor: actor as GitForgeActor })
+    : await options.forge.listForks(repositoryId);
     case "fork_sync":
-      return await options.forge.syncFork(route.forkId, {
+    return await options.forge.syncFork(route.forkId, {
         actor: actor as GitForgeActor,
         strategy: text(body.strategy) === "merge" ? "merge" : undefined,
-      });
+    });
     case "activity":
-      return await options.forge.listActivity(repositoryId, readActivityFilters(searchParams));
+    return await options.forge.listActivity(repositoryId, readActivityFilters(searchParams));
     default:
-      return await runGitApiAction({ gitHost: options.gitHost } as any, route as any, repositoryId, new URLSearchParams());
+    return await runGitApiAction({ gitHost: options.gitHost } as any, route as any, repositoryId, new URLSearchParams());
   }
 }
 

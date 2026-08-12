@@ -5,7 +5,7 @@ import type {
   GitLinguistProgressStage,
   GitRepositoryHandle,
   MaybePromise,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 
 type GitLinguistProgressCallback = (event: GitLinguistProgressEvent) => MaybePromise<void>;
@@ -46,23 +46,23 @@ function computeLinguistPercent(stage: GitLinguistProgressStage, state: Linguist
 function defaultLinguistMessage(stage: GitLinguistProgressStage, state: LinguistProgressState): string {
   switch (stage) {
     case "queued":
-      return "Queued linguist scan.";
+    return "Queued linguist scan.";
     case "resolving_ref":
-      return "Resolving repository ref.";
+    return "Resolving repository ref.";
     case "listing_tree":
-      return "Listing repository tree.";
+    return "Listing repository tree.";
     case "reading_blobs":
-      return state.total_blobs > 0
-        ? `Reading repository files (${state.processed_blobs}/${state.total_blobs}).`
-        : "Reading repository files.";
+    return state.total_blobs > 0
+    ? `Reading repository files (${state.processed_blobs}/${state.total_blobs}).`
+    : "Reading repository files.";
     case "analyzing":
-      return "Analyzing repository languages.";
+    return "Analyzing repository languages.";
     case "completed":
-      return "Completed linguist scan.";
+    return "Completed linguist scan.";
     case "failed":
-      return "Linguist scan failed.";
+    return "Linguist scan failed.";
     default:
-      return "Processing linguist scan.";
+    return "Processing linguist scan.";
   }
 }
 
@@ -79,7 +79,7 @@ function createLinguistProgressReporter(options: CreateLinguistProgressReporterO
 
   async function emit(
     stage: GitLinguistProgressStage,
-    update: Partial<Omit<GitLinguistProgressEvent, "emitted_at" | "percent" | "repository_id" | "scan_id" | "stage">> = {},
+    update: Partial<Omit<GitLinguistProgressEvent, "emitted_at"|"percent"|"repository_id"|"scan_id"|"stage">> = {},
   ): Promise<void> {
     if (!onProgress) return;
 
@@ -90,18 +90,18 @@ function createLinguistProgressReporter(options: CreateLinguistProgressReporterO
     if (typeof update.processed_blobs === "number") state.processed_blobs = Math.max(0, Number(update.processed_blobs) || 0);
 
     await onProgress({
-      commit: text(update.commit, state.commit) || undefined,
-      emitted_at: new Date().toISOString(),
-      error: update.error,
-      message: text(update.message, defaultLinguistMessage(stage, state)),
-      percent: computeLinguistPercent(stage, state),
-      processed_blobs: state.processed_blobs,
-      ref: text(update.ref, state.ref),
-      repository_id: options.repository.id,
-      scan_id: scanId,
-      stage,
-      total_blobs: state.total_blobs,
-      total_entries: state.total_entries,
+        commit: text(update.commit, state.commit) || undefined,
+        emitted_at: new Date().toISOString(),
+        error: update.error,
+        message: text(update.message, defaultLinguistMessage(stage, state)),
+        percent: computeLinguistPercent(stage, state),
+        processed_blobs: state.processed_blobs,
+        ref: text(update.ref, state.ref),
+        repository_id: options.repository.id,
+        scan_id: scanId,
+        stage,
+        total_blobs: state.total_blobs,
+        total_entries: state.total_entries,
     });
   }
 

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { IncomingMessage, ServerResponse } from "node:http";
+import { IncomingMessage } from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -12,18 +12,15 @@ import type {
   GitHttpResolvedRepository,
   GitHttpService,
   GitRepositoryHandle,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
-
-function normalizeBasePath(value: unknown): string {
-  const next = text(value).replace(/\/+$/g, "");
-  if (!next || next === "/") return "";
-  return next.startsWith("/") ? next : `/${next}`;
-}
+import { emitAsyncEvent } from "#38ephfxhlt3m";
+import { applyHeaders } from "#ha60kf0g69sv";
+import { normalizeHttpBasePath } from "#omwpz9vv7et8";
 
 function parseGitHttpRoute(pathnameInput: unknown, basePathInput: unknown) {
   const pathname = text(pathnameInput, "/");
-  const basePath = normalizeBasePath(basePathInput);
+  const basePath = normalizeHttpBasePath(basePathInput);
   if (basePath && !pathname.startsWith(`${basePath}/`) && pathname !== basePath) return null;
 
   const remainder = basePath ? pathname.slice(basePath.length).replace(/^\/+/, "") : pathname.replace(/^\/+/, "");
@@ -93,8 +90,8 @@ function ensureHttpExportPath(repository: GitRepositoryHandle, exportNameInput: 
         if (resolvedTarget === repositoryPath) return exportPath;
       }
       throw new GitHostError("invalid_repository_path", "Repository export path is occupied by a different filesystem entry.", {
-        exportPath,
-        repositoryId: repository.id,
+          exportPath,
+          repositoryId: repository.id,
       });
     }
 
@@ -103,20 +100,14 @@ function ensureHttpExportPath(repository: GitRepositoryHandle, exportNameInput: 
   } catch (error) {
     if (error instanceof GitHostError) throw error;
     throw new GitHostError("invalid_repository_path", "Failed to prepare the repository export path.", {
-      exportPath,
-      message: error instanceof Error ? error.message : String(error),
-      repositoryId: repository.id,
+        exportPath,
+        message: error instanceof Error ? error.message : String(error),
+        repositoryId: repository.id,
     });
   }
 }
 
-function applyAuthorizationHeaders(res: ServerResponse, headers: Record<string, string> | undefined) {
-  const nextHeaders = headers && typeof headers === "object" ? headers : {};
-  for (const [name, value] of Object.entries(nextHeaders)) {
-    if (!name || typeof value !== "string") continue;
-    res.setHeader(name, value);
-  }
-}
+const applyAuthorizationHeaders = applyHeaders;
 
 function normalizeAuthenticationResult(value: GitHttpAuthenticationResult | undefined) {
   if (value == null) return { identity: undefined, remoteUser: "anonymous" };
@@ -137,18 +128,17 @@ function authorizationAllowed(value: GitHttpAuthorizationResult | undefined) {
 }
 
 function emitHttpAuditEvent(onAuditEvent: ((event: GitHttpAuditEvent) => unknown) | undefined, event: GitHttpAuditEvent) {
-  if (typeof onAuditEvent !== "function") return;
-  void Promise.resolve(onAuditEvent(event)).catch(() => {});
+  emitAsyncEvent(onAuditEvent, event);
 }
 
 async function resolveRepositoryResult(
   options: CreateGitHttpHandlerOptions,
   repositoryKey: string,
   request: IncomingMessage,
-): Promise<GitHttpResolvedRepository | null> {
+): Promise<GitHttpResolvedRepository|null> {
   const resolved = await options.resolveRepository(repositoryKey, request);
   if (!resolved) return null;
-  if ("repository" in resolved) {
+  if ("repository"in resolved) {
     return {
       exportName: resolved.exportName,
       repository: resolved.repository,

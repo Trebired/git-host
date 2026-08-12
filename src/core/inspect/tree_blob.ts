@@ -4,7 +4,7 @@ import type {
   GitLinguistProgressEvent,
   GitRepositoryHandle,
   GitTreeEntry,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { normalizeRepositoryRelativePath } from "#390741ebf5ab";
 import { text } from "#62f869522d1f";
 import { resolveTreeEntryIcon } from "./icon_theme.js";
@@ -17,7 +17,7 @@ async function listRepositoryTree(
   options: {
     icons?: boolean;
     linguist?: boolean;
-    onLinguistProgress?: (event: GitLinguistProgressEvent) => Promise<void> | void;
+    onLinguistProgress?: (event: GitLinguistProgressEvent) => Promise<void>|void;
     path?: string;
     recursive?: boolean;
     ref?: string;
@@ -26,25 +26,28 @@ async function listRepositoryTree(
   await assertRepositoryReady(repository);
   const ref = text(options.ref, "HEAD");
   const entries = await readRepositoryTreeEntries(repository, {
-    path: options.path,
-    recursive: options.recursive,
-    ref,
+      path: options.path,
+      recursive: options.recursive,
+      ref,
   });
   if (options.icons !== true && options.linguist !== true) return entries;
 
   const linguist = options.linguist === true
-    ? await readRepositoryLinguist(repository, {
+  ? await readRepositoryLinguist(repository, {
       onProgress: options.onLinguistProgress,
       ref,
-    })
-    : null;
+  })
+  : null;
 
   return entries.map((entry) => ({
-    ...entry,
-    ...(options.icons === true ? { icon: resolveTreeEntryIcon(entry) } : {}),
-    ...(options.linguist === true
-      ? { language: linguist && Object.prototype.hasOwnProperty.call(linguist.files.results, entry.path) ? linguist.files.results[entry.path] : null }
-      : {}),
+        ...entry,
+        ...(options.icons === true ? { icon: resolveTreeEntryIcon(entry) } : {}),
+        ...(options.linguist === true
+          ? { language: linguist && Object.prototype.hasOwnProperty.call(
+              linguist.files.results,
+              entry.path
+            ) ? linguist.files.results[entry.path] : null }
+          : {}),
   }));
 }
 
@@ -61,38 +64,38 @@ async function readRepositoryBlob(
   const objectSpec = `${ref}:${blobPath}`;
 
   const [revRes, typeRes, sizeRes, contentRes] = await Promise.all([
-    runGit(["rev-parse", "--verify", objectSpec], { cwd: repository.path }),
-    runGit(["cat-file", "-t", objectSpec], { cwd: repository.path }),
-    runGit(["cat-file", "-s", objectSpec], { cwd: repository.path }),
-    runGitBuffer(["show", objectSpec], { cwd: repository.path }),
+      runGit(["rev-parse", "--verify", objectSpec], { cwd: repository.path }),
+      runGit(["cat-file", "-t", objectSpec], { cwd: repository.path }),
+      runGit(["cat-file", "-s", objectSpec], { cwd: repository.path }),
+      runGitBuffer(["show", objectSpec], { cwd: repository.path }),
   ]);
 
   if (!revRes.ok) {
     throw new GitHostError("path_not_found", text(revRes.stderr, "Blob does not exist."), {
-      path: blobPath,
-      ref,
-      repositoryId: repository.id,
+        path: blobPath,
+        ref,
+        repositoryId: repository.id,
     });
   }
   if (!typeRes.ok || text(typeRes.stdout) !== "blob") {
     throw new GitHostError("path_not_blob", text(typeRes.stderr, "Requested path is not a blob."), {
-      path: blobPath,
-      ref,
-      repositoryId: repository.id,
+        path: blobPath,
+        ref,
+        repositoryId: repository.id,
     });
   }
   if (!sizeRes.ok) {
     throw new GitHostError("git_command_failed", text(sizeRes.stderr, "Failed to read blob size."), {
-      path: blobPath,
-      ref,
-      repositoryId: repository.id,
+        path: blobPath,
+        ref,
+        repositoryId: repository.id,
     });
   }
   if (!contentRes.ok) {
     throw new GitHostError("git_command_failed", text(contentRes.stderr, "Failed to read blob content."), {
-      path: blobPath,
-      ref,
-      repositoryId: repository.id,
+        path: blobPath,
+        ref,
+        repositoryId: repository.id,
     });
   }
 

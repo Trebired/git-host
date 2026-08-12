@@ -3,7 +3,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { text } from "#62f869522d1f";
 
 import { buildStepBaseEnv } from "./environment.js";
-import { appendPreview, normalizeRunnerInput } from "./runner/protocol.js";
+import { appendPreview, createRunnerState, normalizeRunnerInput } from "./runner/protocol.js";
 import type {
   ActionsRunnerExecution,
   ActionsRunnerHandle,
@@ -11,13 +11,6 @@ import type {
   RunnerStepState,
 } from "./types.js";
 import { materializeWorkspace } from "./workspace.js";
-
-function createRunnerState(): RunnerStepState {
-  return {
-    lastStepIndex: -1,
-    lastStepName: "",
-  };
-}
 
 function buildStepEnv(
   input: ExecuteActionsRunnerInput,
@@ -64,11 +57,11 @@ function emitNodeStepStarted(
   step: ReturnType<typeof normalizeRunnerInput>["steps"][number],
 ) {
   return input.onEvent({
-    command: step.command,
-    step_id: step.id,
-    step_index: step.index,
-    step_name: step.name,
-    type: "step.started",
+      command: step.command,
+      step_id: step.id,
+      step_index: step.index,
+      step_name: step.name,
+      type: "step.started",
   });
 }
 
@@ -79,12 +72,12 @@ function emitNodeStepOutput(
   chunk: string,
 ) {
   return input.onEvent({
-    chunk,
-    step_id: step.id,
-    step_index: step.index,
-    step_name: step.name,
-    stream,
-    type: "step.output",
+      chunk,
+      step_id: step.id,
+      step_index: step.index,
+      step_name: step.name,
+      stream,
+      type: "step.output",
   });
 }
 
@@ -94,19 +87,19 @@ function createNodeStepHeartbeat(
   step: ReturnType<typeof normalizeRunnerInput>["steps"][number],
 ) {
   return setInterval(() => {
-    void input.onEvent({
-      step_id: step.id,
-      step_index: step.index,
-      step_name: step.name,
-      type: "step.heartbeat",
-    });
-  }, Math.max(250, heartbeatIntervalMs));
+      void input.onEvent({
+          step_id: step.id,
+          step_index: step.index,
+          step_name: step.name,
+          type: "step.heartbeat",
+      });
+    }, Math.max(250, heartbeatIntervalMs));
 }
 
 function resolveNodeStepExitCode(code: number | null, signal: NodeJS.Signals | null, isCancelled: () => boolean) {
   return typeof code === "number"
-    ? code
-    : (signal === "SIGTERM" || signal === "SIGINT" || isCancelled() ? 130 : 1);
+  ? code
+  : (signal === "SIGTERM" || signal === "SIGINT" || isCancelled() ? 130 : 1);
 }
 
 async function emitNodeStepFinished(
@@ -118,16 +111,16 @@ async function emitNodeStepFinished(
 ) {
   const cancelled = isCancelled();
   await input.onEvent({
-    exit_code: exitCode,
-    output_preview: outputPreview,
-    status: cancelled ? "cancelled" : (exitCode === 0 ? "success" : "failed"),
-    step_id: step.id,
-    step_index: step.index,
-    step_name: step.name,
-    summary: cancelled
+      exit_code: exitCode,
+      output_preview: outputPreview,
+      status: cancelled ? "cancelled" : (exitCode === 0 ? "success" : "failed"),
+      step_id: step.id,
+      step_index: step.index,
+      step_name: step.name,
+      summary: cancelled
       ? `Cancelled during step ${step.name}.`
       : (exitCode === 0 ? `Completed step ${step.name}.` : `Failed step ${step.name}.`),
-    type: "step.finished",
+      type: "step.finished",
   });
 }
 
@@ -144,33 +137,33 @@ function spawnNodeStep(
   let outputPreview = "";
 
   const exitCode = new Promise<number>((resolve, reject) => {
-    const child = spawn(shell, ["-lc", step.command], {
-      cwd: workspaceDirectory,
-      env,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    setChild(child);
-    const heartbeat = createNodeStepHeartbeat(input, heartbeatIntervalMs, step);
+      const child = spawn(shell, ["-lc", step.command], {
+          cwd: workspaceDirectory,
+          env,
+          stdio: ["ignore", "pipe", "pipe"],
+      });
+      setChild(child);
+      const heartbeat = createNodeStepHeartbeat(input, heartbeatIntervalMs, step);
 
-    child.stdout?.setEncoding("utf8");
-    child.stdout?.on("data", (chunk: string) => {
-      outputPreview = appendPreview(outputPreview, chunk);
-      void emitNodeStepOutput(input, step, "stdout", chunk);
-    });
-    child.stderr?.setEncoding("utf8");
-    child.stderr?.on("data", (chunk: string) => {
-      outputPreview = appendPreview(outputPreview, chunk);
-      void emitNodeStepOutput(input, step, "stderr", chunk);
-    });
-    child.on("error", (error) => {
-      clearInterval(heartbeat);
-      reject(error);
-    });
-    child.on("close", (code, signal) => {
-      clearInterval(heartbeat);
-      setChild(null);
-      resolve(resolveNodeStepExitCode(code, signal, isCancelled));
-    });
+      child.stdout?.setEncoding("utf8");
+      child.stdout?.on("data", (chunk: string) => {
+          outputPreview = appendPreview(outputPreview, chunk);
+          void emitNodeStepOutput(input, step, "stdout", chunk);
+      });
+      child.stderr?.setEncoding("utf8");
+      child.stderr?.on("data", (chunk: string) => {
+          outputPreview = appendPreview(outputPreview, chunk);
+          void emitNodeStepOutput(input, step, "stderr", chunk);
+      });
+      child.on("error", (error) => {
+          clearInterval(heartbeat);
+          reject(error);
+      });
+      child.on("close", (code, signal) => {
+          clearInterval(heartbeat);
+          setChild(null);
+          resolve(resolveNodeStepExitCode(code, signal, isCancelled));
+      });
   });
 
   return {
@@ -204,42 +197,42 @@ function executeNodeRunner(input: ExecuteActionsRunnerInput): ActionsRunnerExecu
   let currentChild: ChildProcess | null = null;
   const { cancelled: isCancelled, handle } = createRunnerHandle(() => currentChild);
 
-  const completed = (async () => {
-    const workspaceDirectory = await materializeWorkspace(runnerInput);
-    await input.onEvent({
-      status: "running",
-      summary: "Running workflow steps.",
-      type: "run.status",
-    });
+  const completed = (async() => {
+      const workspaceDirectory = await materializeWorkspace(runnerInput);
+      await input.onEvent({
+          status: "running",
+          summary: "Running workflow steps.",
+          type: "run.status",
+      });
 
-    for (const step of runnerInput.steps) {
-      const exitCode = await runNodeStep(
-        input,
-        runnerInput.heartbeat_interval_ms,
-        workspaceDirectory,
-        state,
-        (child) => {
-          currentChild = child;
-        },
-        isCancelled,
-        step,
-      );
-      if (isCancelled() || exitCode !== 0) {
-        return {
-          cancelled: isCancelled(),
-          exitCode,
-          lastStepIndex: state.lastStepIndex,
-          lastStepName: state.lastStepName,
-        };
+      for (const step of runnerInput.steps) {
+        const exitCode = await runNodeStep(
+          input,
+          runnerInput.heartbeat_interval_ms,
+          workspaceDirectory,
+          state,
+          (child) => {
+            currentChild = child;
+          },
+          isCancelled,
+          step,
+        );
+        if (isCancelled() || exitCode !== 0) {
+          return {
+            cancelled: isCancelled(),
+            exitCode,
+            lastStepIndex: state.lastStepIndex,
+            lastStepName: state.lastStepName,
+          };
+        }
       }
-    }
 
-    return {
-      cancelled: false,
-      exitCode: 0,
-      lastStepIndex: state.lastStepIndex,
-      lastStepName: state.lastStepName,
-    };
+      return {
+        cancelled: false,
+        exitCode: 0,
+        lastStepIndex: state.lastStepIndex,
+        lastStepName: state.lastStepName,
+      };
   })();
 
   return {

@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { generateManifest, type Manifest } from "material-icon-theme";
 
-import type { GitTreeEntry, GitTreeEntryIcon } from "#1mbdfxwwqqpa";
+import type { GitTreeEntry, GitTreeEntryIcon } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 
 const require = createRequire(import.meta.url);
@@ -41,13 +41,13 @@ function getManifestRootDir(): string {
   return manifestRootDirCache;
 }
 
-function lookupByExactName(associations: Record<string, string> | undefined, name: string): string {
+function lookupByExactName(associations: Record<string, string>|undefined, name: string): string {
   return text(
     associations && (associations[name] || associations[name.toLowerCase()]),
   );
 }
 
-function lookupByLongestExtension(associations: Record<string, string> | undefined, name: string): string {
+function lookupByLongestExtension(associations: Record<string, string>|undefined, name: string): string {
   if (!associations) return "";
 
   const parts = text(name).toLowerCase().split(".").filter(Boolean);
@@ -69,8 +69,8 @@ function resolveIconName(entry: GitTreeEntry, manifest: Manifest): string {
 
   return (
     lookupByExactName(manifest.fileNames, entry.name)
-    || lookupByLongestExtension(manifest.fileExtensions, entry.name)
-    || text(manifest.file)
+    ||lookupByLongestExtension(manifest.fileExtensions, entry.name)
+    ||text(manifest.file)
   );
 }
 

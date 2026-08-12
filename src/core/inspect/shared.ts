@@ -1,14 +1,11 @@
 import { GitHostError } from "#8974ac53d713";
-import type { GitBlob, GitRepositoryHandle, GitTreeEntry } from "#1mbdfxwwqqpa";
-import { normalizeRepositoryRelativePath } from "#390741ebf5ab";
+import type { GitBlob, GitRepositoryHandle, GitTreeEntry } from "#14021226ec9b";
+import { normalizeOptionalRepositoryRelativePath } from "#390741ebf5ab";
 import { text } from "#62f869522d1f";
 import { runGitBuffer } from "#96b00569f1f4";
 import { decodeBlobContent } from "./helpers.js";
 
-export function normalizeOptionalPath(value: unknown): string {
-  const raw = text(value);
-  return raw ? normalizeRepositoryRelativePath(raw) : "";
-}
+const normalizeOptionalPath = normalizeOptionalRepositoryRelativePath;
 
 export function formatGitTimestamp(epochSecondsInput: unknown, timezoneInput: unknown): string {
   const epochSeconds = Number(epochSecondsInput);
@@ -31,7 +28,7 @@ export function formatGitTimestamp(epochSecondsInput: unknown, timezoneInput: un
   return `${year}-${month}-${day}T${hour}:${minute}:${second}${timezone.slice(0, 3)}:${timezone.slice(3, 5)}`;
 }
 
-export async function readTreeEntryBlob(
+async function readTreeEntryBlob(
   repository: GitRepositoryHandle,
   ref: string,
   entry: GitTreeEntry,
@@ -40,9 +37,9 @@ export async function readTreeEntryBlob(
   const contentRes = await runGitBuffer(["show", objectSpec], { cwd: repository.path });
   if (!contentRes.ok) {
     throw new GitHostError("git_command_failed", text(contentRes.stderr, "Failed to read blob content."), {
-      path: entry.path,
-      ref,
-      repositoryId: repository.id,
+        path: entry.path,
+        ref,
+        repositoryId: repository.id,
     });
   }
 
@@ -54,3 +51,5 @@ export async function readTreeEntryBlob(
     ...decodeBlobContent(contentRes.stdout),
   };
 }
+
+export { normalizeOptionalPath, readTreeEntryBlob };

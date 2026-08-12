@@ -16,7 +16,7 @@ function isIdentifierStart(char: string) {
 }
 
 function isIdentifierChar(char: string) {
-  return /[A-Za-z0-9_-]/.test(char);
+  return isIdentifierStart(char) || /[0-9-]/.test(char);
 }
 
 function tokenizeQuotedString(source: string, input: string, start: number) {
@@ -35,7 +35,7 @@ function tokenizeQuotedString(source: string, input: string, start: number) {
     index += 1;
   }
   throw new GitHostError("forge_invalid_workflow_definition", "Unterminated workflow expression string literal.", {
-    expression: input,
+      expression: input,
   });
 }
 
@@ -104,7 +104,7 @@ function tokenizeExpression(input: string): ExpressionToken[] {
       continue;
     }
     throw new GitHostError("forge_invalid_workflow_definition", `Unsupported token "${char}" in workflow expression.`, {
-      expression: input,
+        expression: input,
     });
   }
   tokens.push({ type: "eof" });

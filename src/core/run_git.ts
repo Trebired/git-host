@@ -5,6 +5,7 @@ import {
 import { buildGitEnv } from "./run_git/env.js";
 import { runGit, runGitBuffer } from "./run_git/process.js";
 import {
+  assertRepositoryReady,
   cloneRepository,
   createInitialCommit,
   ensureHostedRepositoryConfig,
@@ -16,6 +17,7 @@ import {
 } from "./run_git/repository_setup.js";
 
 export {
+  assertRepositoryReady,
   buildGitEnv,
   cloneRepository,
   createInitialCommit,

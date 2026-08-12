@@ -1,5 +1,5 @@
 import { GitHostError } from "#8974ac53d713";
-import type { CreateGitApiHandlerOptions } from "#1mbdfxwwqqpa";
+import type { CreateGitApiHandlerOptions } from "#14021226ec9b";
 import { isTruthy, text } from "#62f869522d1f";
 import { parsePositiveInt } from "./response.js";
 import { parseGitApiRoute } from "./route.js";
@@ -12,14 +12,14 @@ async function runParameterizedReadAction(
 ) {
   if (route.action === "blame") {
     return await options.gitHost.readBlame(repositoryId, {
-      path: requireSearchPath(searchParams, "blame"),
-      ref: text(searchParams.get("ref")),
+        path: requireSearchPath(searchParams, "blame"),
+        ref: text(searchParams.get("ref")),
     });
   }
   if (route.action === "blob") {
     return await options.gitHost.readBlob(repositoryId, {
-      path: requireSearchPath(searchParams, "blob"),
-      ref: text(searchParams.get("ref")),
+        path: requireSearchPath(searchParams, "blob"),
+        ref: text(searchParams.get("ref")),
     });
   }
   if (route.action === "search") {
@@ -43,33 +43,33 @@ async function runGitApiAction(
 
   switch (route.action) {
     case "summary":
-      return await options.gitHost.readSummary(repositoryId, {
+    return await options.gitHost.readSummary(repositoryId, {
         commitLimit: parsePositiveInt(searchParams.get("commitLimit"), "commitLimit"),
-      });
+    });
     case "branches":
-      return await options.gitHost.listBranches(repositoryId);
+    return await options.gitHost.listBranches(repositoryId);
     case "commits":
-      return await options.gitHost.listCommits(repositoryId, {
+    return await options.gitHost.listCommits(repositoryId, {
         limit: parsePositiveInt(searchParams.get("limit"), "limit"),
         path: text(searchParams.get("path")),
         ref: text(searchParams.get("ref")),
-      });
+    });
     case "commit":
-      return await options.gitHost.readCommit(repositoryId, route.commitRef);
+    return await options.gitHost.readCommit(repositoryId, route.commitRef);
     case "tags":
-      return await options.gitHost.listTags(repositoryId);
+    return await options.gitHost.listTags(repositoryId);
     case "tag":
-      return await options.gitHost.readTag(repositoryId, route.tagName);
+    return await options.gitHost.readTag(repositoryId, route.tagName);
     case "tree":
-      return await options.gitHost.listTree(repositoryId, buildTreeOptions(searchParams));
+    return await options.gitHost.listTree(repositoryId, buildTreeOptions(searchParams));
     case "archive":
-      return await options.gitHost.readArchive(repositoryId, buildArchiveOptions(searchParams));
+    return await options.gitHost.readArchive(repositoryId, buildArchiveOptions(searchParams));
     case "linguist":
-      return await options.gitHost.readLinguist(repositoryId, {
+    return await options.gitHost.readLinguist(repositoryId, {
         ref: text(searchParams.get("ref")),
-      });
+    });
     default:
-      throw new GitHostError("git_command_failed", "Unsupported Git API action.");
+    throw new GitHostError("git_command_failed", "Unsupported Git API action.");
   }
 }
 

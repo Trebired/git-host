@@ -1,12 +1,12 @@
 import type { GitForgeActor } from "#rifbqbjmjgxy";
 
 type GitForgeWorkflowTriggerKind =
-  | "manual"
-  | "push"
-  | "release.create"
-  | "release.update"
-  | "tag.create"
-  | (string & {});
+|"manual"
+|"push"
+|"release.create"
+|"release.update"
+|"tag.create"
+|(string& {});
 
 type GitForgeWorkflowSchema = "gha-subset-v1" | "legacy-shell-v1";
 
@@ -59,12 +59,12 @@ type GitForgeWorkflowJobStep = {
   run?: string;
   shell?: string;
   uses?: string;
-  with?: Record<string, boolean | number | string>;
+  with?: Record<string, boolean|number|string>;
 };
 
 type GitForgeWorkflowJobMatrix = {
-  include?: Array<Record<string, boolean | number | string>>;
-  values: Record<string, Array<boolean | number | string>>;
+  include?: Array<Record<string, boolean|number|string>>;
+  values: Record<string, Array<boolean|number|string>>;
 };
 
 type GitForgeWorkflowJobStrategy = {

@@ -7,7 +7,8 @@ import {
   DEFAULT_MANAGED_EXCLUDE_HEADER,
   DEFAULT_MANAGED_EXCLUDE_PATTERNS,
 } from "#0bba403f3e43";
-import type { GitActor, GitCommandResult } from "#1mbdfxwwqqpa";
+import { GitHostError } from "#8974ac53d713";
+import type { GitActor, GitCommandResult, GitRepositoryHandle } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { buildGitEnv } from "./env.js";
 import { runGit } from "./process.js";
@@ -16,6 +17,16 @@ async function repositoryExists(workspaceRoot: string): Promise<boolean> {
   if (!fs.existsSync(workspaceRoot)) return false;
   const probe = await runGit(["rev-parse", "--git-dir"], { cwd: workspaceRoot });
   return probe.ok && Boolean(text(probe.stdout));
+}
+
+async function assertRepositoryReady(repository: GitRepositoryHandle): Promise<void> {
+  const hasRepo = await repositoryExists(repository.path);
+  if (!hasRepo) {
+    throw new GitHostError("repository_not_initialized", `Repository "${repository.id}" is not initialized.`, {
+        path: repository.path,
+        repositoryId: repository.id,
+    });
+  }
 }
 
 function isDirectoryEmpty(dirPath: string): boolean {
@@ -47,9 +58,9 @@ async function initRepository(workspaceRoot: string, initialBranch = DEFAULT_BRA
 
 async function ensureHostedRepositoryConfig(workspaceRoot: string): Promise<GitCommandResult> {
   for (const args of [
-    ["config", "receive.denyCurrentBranch", "updateInstead"],
-    ["config", "http.receivepack", "true"],
-    ["config", "http.uploadpack", "true"],
+      ["config", "receive.denyCurrentBranch", "updateInstead"],
+      ["config", "http.receivepack", "true"],
+      ["config", "http.uploadpack", "true"],
   ]) {
     const res = await runGit(args, { cwd: workspaceRoot });
     if (!res.ok) return res;
@@ -61,8 +72,8 @@ async function ensureHostedRepositoryConfig(workspaceRoot: string): Promise<GitC
 async function ensureManagedExcludeFile(workspaceRoot: string, options: { header?: string; patterns?: string[] } = {}) {
   const header = text(options.header, DEFAULT_MANAGED_EXCLUDE_HEADER);
   const patterns = Array.isArray(options.patterns) && options.patterns.length
-    ? options.patterns.map((entry) => text(entry)).filter(Boolean)
-    : Array.from(DEFAULT_MANAGED_EXCLUDE_PATTERNS);
+  ? options.patterns.map((entry) => text(entry)).filter(Boolean)
+  : Array.from(DEFAULT_MANAGED_EXCLUDE_PATTERNS);
 
   const infoDir = path.join(workspaceRoot, ".git", "info");
   const excludePath = path.join(infoDir, "exclude");
@@ -88,8 +99,8 @@ async function ensureManagedExcludeFile(workspaceRoot: string, options: { header
 
 async function createInitialCommit(workspaceRoot: string, actor: GitActor | null, message = DEFAULT_COMMIT_MESSAGE): Promise<GitCommandResult> {
   const addRes = await runGit(["add", "-A"], {
-    cwd: workspaceRoot,
-    env: buildGitEnv({ actor }),
+      cwd: workspaceRoot,
+      env: buildGitEnv({ actor }),
   });
   if (!addRes.ok) return addRes;
 
@@ -100,17 +111,17 @@ async function createInitialCommit(workspaceRoot: string, actor: GitActor | null
   if (clean) return { code: 0, ok: true, stderr: "", stdout: "" };
 
   return await runGit(["commit", "-m", text(message, DEFAULT_COMMIT_MESSAGE)], {
-    cwd: workspaceRoot,
-    env: buildGitEnv({ actor }),
+      cwd: workspaceRoot,
+      env: buildGitEnv({ actor }),
   });
 }
 
 async function cloneRepository(input: {
-  cloneUrl: string;
-  remoteUrl?: string;
-  workspaceRoot: string;
-  args?: string[];
-  env?: Record<string, string>;
+    cloneUrl: string;
+    remoteUrl?: string;
+    workspaceRoot: string;
+    args?: string[];
+    env?: Record<string, string>;
 }): Promise<GitCommandResult> {
   const cloneUrl = text(input.cloneUrl);
   const remoteUrl = text(input.remoteUrl) || cloneUrl;
@@ -118,8 +129,8 @@ async function cloneRepository(input: {
   const args = Array.isArray(input.args) ? input.args : [];
 
   const cloneRes = await runGit([...args, "clone", "--origin", "origin", cloneUrl, workspaceRoot], {
-    cwd: path.dirname(workspaceRoot),
-    env: input.env,
+      cwd: path.dirname(workspaceRoot),
+      env: input.env,
   });
   if (!cloneRes.ok) return cloneRes;
   if (remoteUrl && remoteUrl !== cloneUrl) {
@@ -130,6 +141,7 @@ async function cloneRepository(input: {
 }
 
 export {
+  assertRepositoryReady,
   cloneRepository,
   createInitialCommit,
   ensureHostedRepositoryConfig,

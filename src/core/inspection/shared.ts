@@ -8,8 +8,8 @@ import type {
   GitRepositoryHandle,
   GitRepositoryLinguist,
   MaybePromise,
-} from "#1mbdfxwwqqpa";
-import { normalizeRepositoryRelativePath } from "#390741ebf5ab";
+} from "#14021226ec9b";
+import { normalizeOptionalRepositoryRelativePath } from "#390741ebf5ab";
 import { text } from "#62f869522d1f";
 
 type InspectionProgressCallback = (event: GitInspectionProgressEvent) => MaybePromise<void>;
@@ -17,15 +17,12 @@ type InspectionProgressCallback = (event: GitInspectionProgressEvent) => MaybePr
 type InspectionProgressReporter = {
   emit: (
     phase: GitInspectionProgressPhase,
-    update?: Partial<Omit<GitInspectionProgressEvent, "emitted_at" | "phase" | "repository_id" | "requested_ref">>,
+    update?: Partial<Omit<GitInspectionProgressEvent, "emitted_at"|"phase"|"repository_id"|"requested_ref">>,
   ) => Promise<void>;
   emitLinguist: (event: GitLinguistProgressEvent) => Promise<void>;
 };
 
-function normalizeInspectionPath(value: unknown): string {
-  const raw = text(value);
-  return raw ? normalizeRepositoryRelativePath(raw) : "";
-}
+const normalizeInspectionPath = normalizeOptionalRepositoryRelativePath;
 
 function normalizeInspectionRef(value: unknown): GitInspectionRef {
   const raw = text(value);
@@ -107,17 +104,17 @@ function createInspectionProgressReporter(
       if (!callback) return;
 
       await callback({
-        commit: typeof update.commit === "string" ? update.commit : undefined,
-        emitted_at: new Date().toISOString(),
-        error: update.error,
-        message: text(update.message, phase),
-        percent: Number.isFinite(Number(update.percent)) ? Math.max(0, Math.min(100, Number(update.percent) || 0)) : 0,
-        phase,
-        raw_linguist: update.raw_linguist,
-        repository_id: repository.id,
-        requested_ref: requestedRef,
-        resolved_ref: update.resolved_ref === undefined ? undefined : update.resolved_ref,
-        source: update.source,
+          commit: typeof update.commit === "string" ? update.commit : undefined,
+          emitted_at: new Date().toISOString(),
+          error: update.error,
+          message: text(update.message, phase),
+          percent: Number.isFinite(Number(update.percent)) ? Math.max(0, Math.min(100, Number(update.percent) || 0)) : 0,
+          phase,
+          raw_linguist: update.raw_linguist,
+          repository_id: repository.id,
+          requested_ref: requestedRef,
+          resolved_ref: update.resolved_ref === undefined ? undefined : update.resolved_ref,
+          source: update.source,
       });
     },
 
@@ -125,17 +122,17 @@ function createInspectionProgressReporter(
       if (!callback) return;
 
       await callback({
-        commit: event.commit,
-        emitted_at: new Date().toISOString(),
-        error: event.error,
-        message: text(event.message, "Running repository linguist analysis."),
-        percent: Number.isFinite(Number(event.percent)) ? Math.max(0, Math.min(100, Number(event.percent) || 0)) : 0,
-        phase: "running_linguist",
-        raw_linguist: event,
-        repository_id: repository.id,
-        requested_ref: requestedRef,
-        resolved_ref: text(event.ref) || undefined,
-        source: "linguist",
+          commit: event.commit,
+          emitted_at: new Date().toISOString(),
+          error: event.error,
+          message: text(event.message, "Running repository linguist analysis."),
+          percent: Number.isFinite(Number(event.percent)) ? Math.max(0, Math.min(100, Number(event.percent) || 0)) : 0,
+          phase: "running_linguist",
+          raw_linguist: event,
+          repository_id: repository.id,
+          requested_ref: requestedRef,
+          resolved_ref: text(event.ref) || undefined,
+          source: "linguist",
       });
     },
   };

@@ -1,5 +1,5 @@
 import { GitHostError } from "#8974ac53d713";
-import type { GitFileContent, GitRepositoryHandle, GitWorkingTree, ReadWorkingTreeFileOptions } from "#1mbdfxwwqqpa";
+import type { GitFileContent, GitRepositoryHandle, GitWorkingTree, ReadWorkingTreeFileOptions } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { readRepositoryStatus, parseNumstatOutput } from "#1fu49obi0gq3";
 import { runGit, runGitBuffer } from "#96b00569f1f4";
@@ -19,7 +19,7 @@ function assertWorkingTreeResult(
 ) {
   if (result.ok) return;
   throw new GitHostError("git_command_failed", text(result.stderr, message), {
-    repositoryId,
+      repositoryId,
   });
 }
 
@@ -62,11 +62,11 @@ async function readRepositoryWorkingTree(repository: GitRepositoryHandle): Promi
   await assertRepositoryReady(repository);
 
   const [status, stagedNumstatRes, unstagedNumstatRes, stagedDiffRes, unstagedDiffRes] = await Promise.all([
-    readRepositoryStatus(repository.path),
-    runGit(["diff", "--cached", "--find-renames", "--numstat"], { cwd: repository.path }),
-    runGit(["diff", "--find-renames", "--numstat"], { cwd: repository.path }),
-    runGit(["diff", "--cached", "--find-renames"], { cwd: repository.path }),
-    runGit(["diff", "--find-renames"], { cwd: repository.path }),
+      readRepositoryStatus(repository.path),
+      runGit(["diff", "--cached", "--find-renames", "--numstat"], { cwd: repository.path }),
+      runGit(["diff", "--find-renames", "--numstat"], { cwd: repository.path }),
+      runGit(["diff", "--cached", "--find-renames"], { cwd: repository.path }),
+      runGit(["diff", "--find-renames"], { cwd: repository.path }),
   ]);
 
   assertWorkingTreeResult(stagedNumstatRes, repository.id, "Failed to read staged repository changes.");
@@ -92,30 +92,30 @@ async function readRepositoryStagedFile(
   const objectSpec = `:${filePath}`;
 
   const [revRes, sizeRes, contentRes] = await Promise.all([
-    runGit(["rev-parse", "--verify", objectSpec], { cwd: repository.path }),
-    runGit(["cat-file", "-s", objectSpec], { cwd: repository.path }),
-    runGitBuffer(["show", objectSpec], { cwd: repository.path }),
+      runGit(["rev-parse", "--verify", objectSpec], { cwd: repository.path }),
+      runGit(["cat-file", "-s", objectSpec], { cwd: repository.path }),
+      runGitBuffer(["show", objectSpec], { cwd: repository.path }),
   ]);
 
   if (!revRes.ok) {
     throw new GitHostError("git_command_failed", text(revRes.stderr, "Staged file does not exist."), {
-      path: filePath,
-      repositoryId: repository.id,
-      source: "staged",
+        path: filePath,
+        repositoryId: repository.id,
+        source: "staged",
     });
   }
   if (!sizeRes.ok) {
     throw new GitHostError("git_command_failed", text(sizeRes.stderr, "Failed to read staged file size."), {
-      path: filePath,
-      repositoryId: repository.id,
-      source: "staged",
+        path: filePath,
+        repositoryId: repository.id,
+        source: "staged",
     });
   }
   if (!contentRes.ok) {
     throw new GitHostError("git_command_failed", text(contentRes.stderr, "Failed to read staged file content."), {
-      path: filePath,
-      repositoryId: repository.id,
-      source: "staged",
+        path: filePath,
+        repositoryId: repository.id,
+        source: "staged",
     });
   }
 

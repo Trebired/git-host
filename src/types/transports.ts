@@ -7,38 +7,38 @@ import type { GitHost } from "./host.js";
 import type { GitRepositoryHandle } from "./repository.js";
 
 type GitApiResource =
-  | "action"
-  | "action_run"
-  | "action_run_events"
-  | "action_run_steps"
-  | "action_runs"
-  | "actions"
-  | "activity"
-  | "asset"
-  | "archive"
-  | "blame"
-  | "blob"
-  | "branches"
-  | "commit"
-  | "commits"
-  | "diff"
-  | "fork_sync"
-  | "forks"
-  | "linguist"
-  | "linguist_socket"
-  | "overview"
-  | "release"
-  | "releases"
-  | "search"
-  | "social"
-  | "stars"
-  | "summary"
-  | "tag"
-  | "tarball"
-  | "tags"
-  | "tree"
-  | "watch"
-  | "zipball";
+|"action"
+|"action_run"
+|"action_run_events"
+|"action_run_steps"
+|"action_runs"
+|"actions"
+|"activity"
+|"asset"
+|"archive"
+|"blame"
+|"blob"
+|"branches"
+|"commit"
+|"commits"
+|"diff"
+|"fork_sync"
+|"forks"
+|"linguist"
+|"linguist_socket"
+|"overview"
+|"release"
+|"releases"
+|"search"
+|"social"
+|"stars"
+|"summary"
+|"tag"
+|"tarball"
+|"tags"
+|"tree"
+|"watch"
+|"zipball";
 
 type GitApiAuthorizationResult = boolean | {
   allowed: boolean;
@@ -49,16 +49,16 @@ type GitApiAuthorizationResult = boolean | {
 
 type CreateGitApiHandlerOptions = {
   authorize?: (input: {
-    action: GitApiResource;
-    commitRef?: string;
-    method: string;
-    pathname: string;
-    remoteAddress: string;
-    repositoryId: string;
-    repositoryKey: string;
-    refName?: string;
-    request: IncomingMessage;
-    searchParams: URLSearchParams;
+      action: GitApiResource;
+      commitRef?: string;
+      method: string;
+      pathname: string;
+      remoteAddress: string;
+      repositoryId: string;
+      repositoryKey: string;
+      refName?: string;
+      request: IncomingMessage;
+      searchParams: URLSearchParams;
   }) => MaybePromise<GitApiAuthorizationResult>;
   basePath?: string;
   gitHost: GitHost;
@@ -67,11 +67,11 @@ type CreateGitApiHandlerOptions = {
   resolveRepositoryId?: (
     repositoryKey: string,
     request: IncomingMessage,
-  ) => MaybePromise<string | null>;
+  ) => MaybePromise<string|null>;
   verbose?: boolean;
 };
 
-type CreateGitApiSocketServerOptions = CreateGitApiHandlerOptions & {
+type CreateGitApiSocketServerOptions = CreateGitApiHandlerOptions& {
   httpServer: HttpServer;
   socketOptions?: Partial<SocketIoServerOptions>;
   socketPath?: string;
@@ -118,28 +118,28 @@ type GitHttpResolvedRepository = {
 type CreateGitHttpHandlerOptions = {
   activity?: GitForgeTransportActivityRecorder;
   authenticate?: (input: {
-    method: string;
-    pathname: string;
-    remoteAddress: string;
-    repository: GitRepositoryHandle;
-    repositoryKey: string;
-    request: IncomingMessage;
-    searchParams: URLSearchParams;
-    service: GitHttpService;
-    wantsWrite: boolean;
+      method: string;
+      pathname: string;
+      remoteAddress: string;
+      repository: GitRepositoryHandle;
+      repositoryKey: string;
+      request: IncomingMessage;
+      searchParams: URLSearchParams;
+      service: GitHttpService;
+      wantsWrite: boolean;
   }) => MaybePromise<GitHttpAuthenticationResult>;
   authorize?: (input: {
-    identity?: unknown;
-    method: string;
-    pathname: string;
-    remoteAddress: string;
-    remoteUser: string;
-    repository: GitRepositoryHandle;
-    repositoryKey: string;
-    request: IncomingMessage;
-    searchParams: URLSearchParams;
-    service: GitHttpService;
-    wantsWrite: boolean;
+      identity?: unknown;
+      method: string;
+      pathname: string;
+      remoteAddress: string;
+      remoteUser: string;
+      repository: GitRepositoryHandle;
+      repositoryKey: string;
+      request: IncomingMessage;
+      searchParams: URLSearchParams;
+      service: GitHttpService;
+      wantsWrite: boolean;
   }) => MaybePromise<GitHttpAuthorizationResult>;
   basePath?: string;
   logger?: GitHostLogger;
@@ -148,7 +148,7 @@ type CreateGitHttpHandlerOptions = {
   resolveRepository: (
     repositoryKey: string,
     request: IncomingMessage,
-  ) => MaybePromise<GitHttpResolvedRepository | GitRepositoryHandle | null>;
+  ) => MaybePromise<GitHttpResolvedRepository|GitRepositoryHandle|null>;
   verbose?: boolean;
 };
 
@@ -191,22 +191,22 @@ type GitSshAuditEvent = {
 type CreateGitSshServerOptions = {
   activity?: GitForgeTransportActivityRecorder;
   authenticate: (input: {
-    keyType: string;
-    publicKey: string;
-    publicKeyData: Buffer;
-    remoteAddress: string;
-    username: string;
+      keyType: string;
+      publicKey: string;
+      publicKeyData: Buffer;
+      remoteAddress: string;
+      username: string;
   }) => MaybePromise<GitSshAuthenticationResult>;
   authorize?: (input: {
-    command: string;
-    identity?: unknown;
-    remoteAddress: string;
-    remoteUser: string;
-    repository: GitRepositoryHandle;
-    repositoryKey: string;
-    service: GitSshService;
-    username: string;
-    wantsWrite: boolean;
+      command: string;
+      identity?: unknown;
+      remoteAddress: string;
+      remoteUser: string;
+      repository: GitRepositoryHandle;
+      repositoryKey: string;
+      service: GitSshService;
+      username: string;
+      wantsWrite: boolean;
   }) => MaybePromise<GitSshAuthorizationResult>;
   basePath?: string;
   hostKeys: string[];
@@ -221,7 +221,7 @@ type CreateGitSshServerOptions = {
       username: string;
       wantsWrite: boolean;
     },
-  ) => MaybePromise<GitSshResolvedRepository | GitRepositoryHandle | null>;
+  ) => MaybePromise<GitSshResolvedRepository|GitRepositoryHandle|null>;
   onAuditEvent?: (event: GitSshAuditEvent) => MaybePromise<void>;
   verbose?: boolean;
 };

@@ -51,8 +51,8 @@ function generateSshKeyPair(options: GenerateGitSshKeyPairOptions = {}): GitSshK
   }
 
   const generated = sshUtils.generateKeyPairSync(algorithm, {
-    bits: algorithm === "rsa" ? Math.max(2048, Number(options.bits) || 4096) : undefined,
-    comment: text(options.comment),
+      bits: algorithm === "rsa" ? Math.max(2048, Number(options.bits) || 4096) : undefined,
+      comment: text(options.comment),
   }) as { private: string; public: string };
 
   return {

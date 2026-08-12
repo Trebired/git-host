@@ -11,8 +11,10 @@ import type {
   GitArchiveUrlContext,
   GitRepositoryHandle,
   GitSourceArchiveFormat,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
+import { archiveContentType } from "#iu1kfw6vo4e1";
+import { normalizeHttpBasePath } from "#omwpz9vv7et8";
 
 type ResolvedArchiveRequest = {
   cache_entry: GitArchiveCacheEntry | null;
@@ -33,7 +35,7 @@ function normalizeArchiveFormat(value: unknown): {
   if (requested === "zip") return { format: "zip", requested: "zip" };
   if (requested === "tar" || requested === "tar.gz" || !requested) return { format: "tar.gz", requested: requested === "tar" ? "tar" : "tar.gz" };
   throw new GitHostError("archive_format_not_supported", `Archive format "${requested}" is not supported.`, {
-    format: requested,
+      format: requested,
   });
 }
 
@@ -43,10 +45,6 @@ function sanitizeArchiveComponent(value: string): string {
 
 function archiveExtension(format: GitSourceArchiveFormat): string {
   return format === "zip" ? "zip" : "tar.gz";
-}
-
-function archiveContentType(format: GitSourceArchiveFormat): string {
-  return format === "zip" ? "application/zip" : "application/gzip";
 }
 
 function buildArchiveCacheKey(repositoryId: string, resolvedCommit: string, format: GitSourceArchiveFormat, version: string): string {
@@ -73,18 +71,12 @@ function ensureRootDirectorySuffix(value: string): string {
   return trimmed ? `${trimmed}/` : "";
 }
 
-function normalizeBasePath(value: unknown): string {
-  const next = text(value).replace(/\/+$/g, "");
-  if (!next || next === "/") return "";
-  return next.startsWith("/") ? next : `/${next}`;
-}
-
 function encodePathSegment(value: string): string {
   return encodeURIComponent(value);
 }
 
 function buildArchivePath(repositoryKey: string, format: GitSourceArchiveFormat, ref: string, basePath?: string): string {
-  const normalizedBasePath = normalizeBasePath(basePath);
+  const normalizedBasePath = normalizeHttpBasePath(basePath);
   const route = format === "zip" ? "zipball" : "tarball";
   return `${normalizedBasePath}/repositories/${encodePathSegment(repositoryKey)}/${route}/${encodePathSegment(ref || "HEAD")}`;
 }
@@ -142,8 +134,8 @@ function resolveArchiveRootDirectory(
   };
   const candidate = ensureRootDirectorySuffix(
     text(input.rootDirectory)
-    || text(archiveOptions.resolveRootDirectory?.(hookInput))
-    || defaultRootDirectory,
+    ||text(archiveOptions.resolveRootDirectory?.(hookInput))
+    ||defaultRootDirectory,
   );
   return candidate || defaultRootDirectory;
 }
@@ -160,7 +152,7 @@ function resolveArchiveHref(
     rootDirectory?: string;
   },
 ): string {
-  const normalizedBasePath = normalizeBasePath(input.basePath);
+  const normalizedBasePath = normalizeHttpBasePath(input.basePath);
   const defaultPath = buildArchivePath(repositoryKey, input.format, input.ref, normalizedBasePath);
   const hookInput: GitArchiveUrlContext = {
     basePath: normalizedBasePath,

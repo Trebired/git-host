@@ -1,7 +1,24 @@
-import type { GitActor, GitHostLogger, GitHostLoggerAdapter, MaybePromise } from "#5a0e75b6bdb8";
+import type {
+  GitActor,
+  GitHostLogger,
+  GitHostLoggerAdapter,
+  MaybePromise,
+} from "#5a0e75b6bdb8";
 import type { GitForgeActivityRecorder } from "#4c94c22378b2";
-import { GitInspectionEmptyBehavior, GitInspectionProgressEvent, GitInspectionRef, GitLinguistProgressEvent, GitRepositoryHandle } from "#666a84ce027e";
-import type { GitHostArchiveOptions, OpenArchiveOptions, ReadArchiveOptions, ResolveArchiveLinksInput, ResolveArchiveOptions } from "./archive.js";
+import {
+  GitInspectionEmptyBehavior,
+  GitInspectionProgressEvent,
+  GitInspectionRef,
+  GitLinguistProgressEvent,
+  GitRepositoryHandle,
+} from "#666a84ce027e";
+import type {
+  GitHostArchiveOptions,
+  OpenArchiveOptions,
+  ReadArchiveOptions,
+  ResolveArchiveLinksInput,
+  ResolveArchiveOptions,
+} from "./archive.js";
 
 type BuildGitEnvOptions = {
   actor?: GitActor | null;
@@ -28,11 +45,13 @@ type CreateGitHostOptions = {
   loggerAdapter?: GitHostLoggerAdapter;
   managedExcludeHeader?: string;
   managedExcludePatterns?: string[];
-  resolveRepository: (repositoryId: string) => MaybePromise<GitRepositoryHandle | null>;
+  resolveRepository: (
+    repositoryId: string,
+  ) => MaybePromise<GitRepositoryHandle|null>;
   verbose?: boolean;
 };
 
-type EnsureRepositoryOptions = GitRemoteTransportOptions & {
+type EnsureRepositoryOptions = GitRemoteTransportOptions& {
   actor?: GitActor;
   cloneUrl?: string;
   commitLimit?: number;
@@ -142,7 +161,7 @@ type GitInspectionRefOptions = {
 
 type ResolveInspectionTargetOptions = GitInspectionRefOptions;
 
-type ReadTreeOptions = GitInspectionRefOptions & {
+type ReadTreeOptions = GitInspectionRefOptions& {
   ascii?: boolean;
   icons?: boolean;
   linguist?: boolean;
@@ -153,7 +172,7 @@ type ReadTreeOptions = GitInspectionRefOptions & {
   recursive?: boolean;
 };
 
-type ReadDirectoryOptions = GitInspectionRefOptions & {
+type ReadDirectoryOptions = GitInspectionRefOptions& {
   icons?: boolean;
   includeLineCounts?: boolean;
   linguist?: boolean;
@@ -162,14 +181,14 @@ type ReadDirectoryOptions = GitInspectionRefOptions & {
   path?: string;
 };
 
-type ReadFileOptions = GitInspectionRefOptions & {
+type ReadFileOptions = GitInspectionRefOptions& {
   includeIcon?: boolean;
   includeLanguage?: boolean;
   onProgress?: (event: GitInspectionProgressEvent) => MaybePromise<void>;
   path?: string;
 };
 
-type ReadRepositoryAnalysisOptions = GitInspectionRefOptions & {
+type ReadRepositoryAnalysisOptions = GitInspectionRefOptions& {
   ascii?: boolean;
   icons?: boolean;
   nested?: boolean;
@@ -213,14 +232,14 @@ type DiffOptions = {
   path?: string;
 };
 
-type FetchOptions = GitRemoteTransportOptions & {
+type FetchOptions = GitRemoteTransportOptions& {
   prune?: boolean;
   remote?: string;
   remoteUrl?: string;
   tags?: boolean;
 };
 
-type PullOptions = GitRemoteTransportOptions & {
+type PullOptions = GitRemoteTransportOptions& {
   actor?: GitActor;
   branch?: string;
   ffOnly?: boolean;
@@ -229,7 +248,7 @@ type PullOptions = GitRemoteTransportOptions & {
   remoteUrl?: string;
 };
 
-type PushOptions = GitRemoteTransportOptions & {
+type PushOptions = GitRemoteTransportOptions& {
   actor?: GitActor;
   branch?: string;
   remote?: string;

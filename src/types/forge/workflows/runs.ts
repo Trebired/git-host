@@ -16,13 +16,13 @@ type GitForgeWorkflowRunner = {
 };
 
 type GitForgeWorkflowRunStatus =
-  | "cancelled"
-  | "failed"
-  | "queued"
-  | "running"
-  | "skipped"
-  | "starting"
-  | "success";
+|"cancelled"
+|"failed"
+|"queued"
+|"running"
+|"skipped"
+|"starting"
+|"success";
 
 type GitForgeWorkflowRun = {
   branch: string | null;
@@ -51,12 +51,12 @@ type GitForgeWorkflowRun = {
 };
 
 type GitForgeWorkflowRunJobStatus =
-  | "cancelled"
-  | "failed"
-  | "queued"
-  | "running"
-  | "skipped"
-  | "success";
+|"cancelled"
+|"failed"
+|"queued"
+|"running"
+|"skipped"
+|"success";
 
 type GitForgeWorkflowRunJob = {
   current_step: string | null;
@@ -65,7 +65,7 @@ type GitForgeWorkflowRunJob = {
   id: string;
   index: number;
   job_id: string;
-  matrix?: Record<string, boolean | number | string>;
+  matrix?: Record<string, boolean|number|string>;
   name: string;
   needs?: string[];
   run_id: string;
@@ -77,12 +77,12 @@ type GitForgeWorkflowRunJob = {
 };
 
 type GitForgeWorkflowRunStepStatus =
-  | "cancelled"
-  | "failed"
-  | "queued"
-  | "running"
-  | "skipped"
-  | "success";
+|"cancelled"
+|"failed"
+|"queued"
+|"running"
+|"skipped"
+|"success";
 
 type GitForgeWorkflowRunStep = {
   command: string;
@@ -115,23 +115,23 @@ type GitForgeWorkflowRunArtifact = {
 };
 
 type GitForgeWorkflowRunEventType =
-  | "artifact.downloaded"
-  | "artifact.uploaded"
-  | "job.finished"
-  | "job.heartbeat"
-  | "job.output"
-  | "job.started"
-  | "release_asset.published"
-  | "run.accepted"
-  | "run.cancelled"
-  | "run.cancellation_requested"
-  | "run.failed"
-  | "run.finished"
-  | "run.status"
-  | "step.finished"
-  | "step.heartbeat"
-  | "step.output"
-  | "step.started";
+|"artifact.downloaded"
+|"artifact.uploaded"
+|"job.finished"
+|"job.heartbeat"
+|"job.output"
+|"job.started"
+|"release_asset.published"
+|"run.accepted"
+|"run.cancelled"
+|"run.cancellation_requested"
+|"run.failed"
+|"run.finished"
+|"run.status"
+|"step.finished"
+|"step.heartbeat"
+|"step.output"
+|"step.started";
 
 type GitForgeWorkflowRunEvent = {
   artifact_id?: string;
@@ -208,7 +208,7 @@ type RunGitForgeWorkflowInput = {
   commitHash?: string;
   env?: Record<string, string>;
   executionContext?: GitForgeWorkflowExecutionContext;
-  inputs?: Record<string, boolean | string>;
+  inputs?: Record<string, boolean|string>;
   ref?: string;
   secrets?: Record<string, string>;
   triggerContext?: Record<string, unknown>;
@@ -232,13 +232,13 @@ type GitForgeRepositoryOverview = {
 };
 
 type GitForgeActionsExecutionContextResolver = (input: {
-  actor: GitForgeActor;
-  repositoryId: string;
-  runInput: RunGitForgeWorkflowInput;
-  triggerContext: Record<string, unknown>;
-  triggerKind: GitForgeWorkflowTriggerKind;
-  workflow: GitForgeWorkflow;
-}) => MaybePromise<GitForgeWorkflowExecutionContext | null | undefined>;
+    actor: GitForgeActor;
+    repositoryId: string;
+    runInput: RunGitForgeWorkflowInput;
+    triggerContext: Record<string, unknown>;
+    triggerKind: GitForgeWorkflowTriggerKind;
+    workflow: GitForgeWorkflow;
+}) => MaybePromise<GitForgeWorkflowExecutionContext|null|undefined>;
 
 export type {
   CancelGitForgeWorkflowRunInput,

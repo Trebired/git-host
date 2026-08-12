@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 
-import type { GitArchiveCacheBackend, GitArchiveCacheEntry, GitArchiveCacheReadResult, GitArchiveCacheWriter } from "#1mbdfxwwqqpa";
+import type { GitArchiveCacheBackend, GitArchiveCacheEntry, GitArchiveCacheReadResult, GitArchiveCacheWriter } from "#14021226ec9b";
 
 type CreateFileSystemGitArchiveCacheOptions = {
   rootDir: string;
@@ -25,7 +25,7 @@ async function removeIfExists(filePath: string): Promise<void> {
   } catch {}
 }
 
-async function readEntryFromDisk(metadataPath: string, dataPath: string): Promise<GitArchiveCacheEntry | null> {
+async function readEntryFromDisk(metadataPath: string, dataPath: string): Promise<GitArchiveCacheEntry|null> {
   let raw = "";
   try {
     raw = await fs.promises.readFile(metadataPath, "utf8");
@@ -60,8 +60,8 @@ async function readEntryFromDisk(metadataPath: string, dataPath: string): Promis
   try {
     const now = new Date();
     await Promise.all([
-      fs.promises.utimes(metadataPath, now, now),
-      fs.promises.utimes(dataPath, now, now),
+        fs.promises.utimes(metadataPath, now, now),
+        fs.promises.utimes(dataPath, now, now),
     ]);
   } catch {}
 
@@ -122,20 +122,20 @@ function createArchiveCacheWriter(
     async abort() {
       stream.destroy();
       await Promise.all([
-        removeIfExists(tempDataPath),
-        removeIfExists(tempMetadataPath),
+          removeIfExists(tempDataPath),
+          removeIfExists(tempMetadataPath),
       ]);
     },
 
     async complete(entry: GitArchiveCacheEntry) {
       await fs.promises.writeFile(tempMetadataPath, JSON.stringify(entry, null, 2), "utf8");
-      await fs.promises.rename(tempDataPath, dataPath).catch(async () => {
-        await removeIfExists(dataPath);
-        await fs.promises.rename(tempDataPath, dataPath);
+      await fs.promises.rename(tempDataPath, dataPath).catch (async() => {
+          await removeIfExists(dataPath);
+          await fs.promises.rename(tempDataPath, dataPath);
       });
-      await fs.promises.rename(tempMetadataPath, metadataPath).catch(async () => {
-        await removeIfExists(metadataPath);
-        await fs.promises.rename(tempMetadataPath, metadataPath);
+      await fs.promises.rename(tempMetadataPath, metadataPath).catch (async() => {
+          await removeIfExists(metadataPath);
+          await fs.promises.rename(tempMetadataPath, metadataPath);
       });
     },
 
@@ -152,8 +152,8 @@ function createFileSystemGitArchiveCache(options: CreateFileSystemGitArchiveCach
       const metadataFiles = await listMetadataFiles(rootDir);
       let deleted = 0;
 
-      await Promise.all(metadataFiles.map(async (metadataPath) => {
-        deleted += await cleanupMetadataFile(metadataPath, now);
+      await Promise.all(metadataFiles.map(async(metadataPath) => {
+            deleted += await cleanupMetadataFile(metadataPath, now);
       }));
 
       return deleted;
@@ -164,7 +164,7 @@ function createFileSystemGitArchiveCache(options: CreateFileSystemGitArchiveCach
       return await readEntryFromDisk(metadataPath, dataPath);
     },
 
-    async openReadStream(cacheKey): Promise<GitArchiveCacheReadResult | null> {
+    async openReadStream(cacheKey): Promise<GitArchiveCacheReadResult|null> {
       const { dataPath, metadataPath } = cachePaths(rootDir, cacheKey);
       const entry = await readEntryFromDisk(metadataPath, dataPath);
       if (!entry) return null;

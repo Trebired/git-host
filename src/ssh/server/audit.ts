@@ -1,16 +1,9 @@
 import { buildGitHostLogGroup } from "#0bba403f3e43";
 import { resolveLogger } from "#5a29135e56c1";
-import type { CreateGitSshServerOptions, GitSshAuditEvent } from "#1mbdfxwwqqpa";
+import type { CreateGitSshServerOptions, GitSshAuditEvent } from "#14021226ec9b";
+import { emitAsyncEvent } from "#38ephfxhlt3m";
 
 const SSH_LOG_GROUP = buildGitHostLogGroup("ssh");
-
-function emitSshAuditEvent(
-  onAuditEvent: ((event: GitSshAuditEvent) => unknown) | undefined,
-  event: GitSshAuditEvent,
-) {
-  if (typeof onAuditEvent !== "function") return;
-  void Promise.resolve(onAuditEvent(event)).catch(() => {});
-}
 
 function reportSshAuditEvent(
   options: CreateGitSshServerOptions,
@@ -18,7 +11,7 @@ function reportSshAuditEvent(
   verbose: boolean,
   event: GitSshAuditEvent,
 ) {
-  emitSshAuditEvent(options.onAuditEvent, event);
+  emitAsyncEvent(options.onAuditEvent, event);
 
   if (event.outcome === "completed") {
     if (!verbose) return;

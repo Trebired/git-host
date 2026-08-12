@@ -32,24 +32,24 @@ type GitForgeActionsStorage = {
   listWorkflowRunJobs(runId: string, filters?: GitForgeWorkflowRunJobFilters): MaybePromise<GitForgeWorkflowRunJob[]>;
   listWorkflowRunSteps(runId: string, filters?: GitForgeWorkflowRunStepFilters): MaybePromise<GitForgeWorkflowRunStep[]>;
   listWorkflowRuns(repositoryId: string, filters?: GitForgeWorkflowRunFilters): MaybePromise<GitForgeWorkflowRun[]>;
-  readWorkflowRun(repositoryId: string, runId: string): MaybePromise<GitForgeWorkflowRun | null>;
-  readWorkflowRunArtifact(runId: string, artifactId: string): MaybePromise<GitForgeWorkflowRunArtifact | null>;
-  readWorkflowRunJob(runId: string, jobRunId: string): MaybePromise<GitForgeWorkflowRunJob | null>;
+  readWorkflowRun(repositoryId: string, runId: string): MaybePromise<GitForgeWorkflowRun|null>;
+  readWorkflowRunArtifact(runId: string, artifactId: string): MaybePromise<GitForgeWorkflowRunArtifact|null>;
+  readWorkflowRunJob(runId: string, jobRunId: string): MaybePromise<GitForgeWorkflowRunJob|null>;
   updateWorkflowRun(
     repositoryId: string,
     runId: string,
-    input: Partial<Omit<GitForgeWorkflowRun, "created_at" | "created_by" | "id" | "repository_id" | "workflow_id">>,
-  ): MaybePromise<GitForgeWorkflowRun | null>;
+    input: Partial<Omit<GitForgeWorkflowRun, "created_at"|"created_by"|"id"|"repository_id"|"workflow_id">>,
+  ): MaybePromise<GitForgeWorkflowRun|null>;
   updateWorkflowRunJob(
     runId: string,
     jobRunId: string,
-    input: Partial<Omit<GitForgeWorkflowRunJob, "id" | "index" | "job_id" | "name" | "run_id" | "runs_on">>,
-  ): MaybePromise<GitForgeWorkflowRunJob | null>;
+    input: Partial<Omit<GitForgeWorkflowRunJob, "id"|"index"|"job_id"|"name"|"run_id"|"runs_on">>,
+  ): MaybePromise<GitForgeWorkflowRunJob|null>;
   updateWorkflowRunStep(
     runId: string,
     stepId: string,
-    input: Partial<Omit<GitForgeWorkflowRunStep, "command" | "id" | "index" | "kind" | "name" | "run_id">>,
-  ): MaybePromise<GitForgeWorkflowRunStep | null>;
+    input: Partial<Omit<GitForgeWorkflowRunStep, "command"|"id"|"index"|"kind"|"name"|"run_id">>,
+  ): MaybePromise<GitForgeWorkflowRunStep|null>;
 };
 
 type GitForgeActionsEnvironmentOptions = {
@@ -77,7 +77,7 @@ type GitForgeLocalRunnerChildSpec = {
 };
 
 type GitForgeLocalRunnerOptions = {
-  beforeSpawn?: (child: GitForgeLocalRunnerChildSpec) => MaybePromise<GitForgeLocalRunnerChildSpec | void>;
+  beforeSpawn?: (child: GitForgeLocalRunnerChildSpec) => MaybePromise<GitForgeLocalRunnerChildSpec|void>;
   execTimeoutMs?: number;
   gid?: number;
   uid?: number;
@@ -90,15 +90,15 @@ type CreateGitForgeActionsOptions = {
   localRunner?: GitForgeLocalRunnerOptions;
   localRunnerLabels?: string[];
   redactOutput?: (input: {
-    chunk: string;
-    run: GitForgeWorkflowRun;
-    step: GitForgeWorkflowRunStep;
-    stream: "stderr" | "stdout";
+      chunk: string;
+      run: GitForgeWorkflowRun;
+      step: GitForgeWorkflowRunStep;
+      stream: "stderr" | "stdout";
   }) => MaybePromise<string>;
   resolveExecutionContext?: GitForgeActionsExecutionContextResolver;
   runner?: Partial<GitForgeWorkflowRunner>;
   runnerBinaryPath?: string;
-  resolveWorkflowRoot?: (repositoryId: string) => MaybePromise<string | null | undefined>;
+  resolveWorkflowRoot?: (repositoryId: string) => MaybePromise<string|null|undefined>;
   releaseAssetsRoot?: string;
   shell?: string;
   workflowRoot?: string;
@@ -114,7 +114,7 @@ type GitForgeWorkflowExecutionResolverInput = {
   workflow: GitForgeWorkflow;
 };
 
-void (0 as unknown as GitForgeWorkflowExecutionResolverInput | GitForgeWorkflowExecutionContext | null);
+void(0 as unknown as GitForgeWorkflowExecutionResolverInput | GitForgeWorkflowExecutionContext | null);
 
 export type {
   CreateGitForgeActionsOptions,

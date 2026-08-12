@@ -4,7 +4,7 @@ import { GitHostError } from "#8974ac53d713";
 import type {
   GitForgeWorkflowRun,
   GitForgeWorkflowRunJob,
-} from "#1mbdfxwwqqpa";
+} from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 
 import { normalizeEnv } from "#0v8uzq2zukc8";
@@ -26,15 +26,15 @@ type JobExecutor = ReturnType<typeof import("#arhpamot5o19").createJobExecutor>;
 function readExecutionContext(context: RuntimeContext, run: GitForgeWorkflowRun) {
   return context.runExecutionContexts.get(run.id) || {
     actor: (run.execution_context?.actor && typeof run.execution_context.actor === "object")
-      ? run.execution_context.actor as Record<string, unknown>
-      : undefined,
+    ? run.execution_context.actor as Record<string, unknown>
+    : undefined,
     env: normalizeEnv(run.execution_context?.env) || {},
     inputs: (run.trigger_context?.inputs && typeof run.trigger_context.inputs === "object")
-      ? run.trigger_context.inputs as Record<string, boolean | string>
-      : {},
+    ? run.trigger_context.inputs as Record<string, boolean|string>
+    : {},
     metadata: (run.execution_context?.metadata && typeof run.execution_context.metadata === "object")
-      ? run.execution_context.metadata as Record<string, unknown>
-      : undefined,
+    ? run.execution_context.metadata as Record<string, unknown>
+    : undefined,
     secrets: {},
   } satisfies ResolvedExecutionContext;
 }
@@ -43,16 +43,16 @@ async function startRunExecution(context: RuntimeContext, repositoryId: string, 
   let run = await context.runtimeSupport.readRequiredRun(repositoryId, runId);
   if (isTerminalRunStatus(run.status)) return { done: true as const, run };
   run = await context.runtimeSupport.updateRun(repositoryId, runId, {
-    runner: context.runner,
-    started_at: nowIso(),
-    status: "starting",
-    summary: "Preparing workflow run.",
+      runner: context.runner,
+      started_at: nowIso(),
+      status: "starting",
+      summary: "Preparing workflow run.",
   });
   await context.runtimeSupport.emitRunEvent(run, {
-    metadata: { runner: context.runner },
-    status: "starting",
-    summary: run.summary,
-    type: "run.status",
+      metadata: { runner: context.runner },
+      status: "starting",
+      summary: run.summary,
+      type: "run.status",
   });
   return { done: false as const, run };
 }
@@ -63,18 +63,18 @@ function resolveNextRunnableJobIndex(
   completedByJobId: Map<string, GitForgeWorkflowRunJob[]>,
 ) {
   return pendingJobs.findIndex((job) => (
-    (job.needs || []).every((need) => {
-      const results = completedByJobId.get(need) || [];
-      const expected = allJobs.filter((entry) => entry.job_id === need).length;
-      return results.length === expected && results.every((entry) => isTerminalJobStatus(entry.status));
-    })
+      (job.needs || []).every((need) => {
+          const results = completedByJobId.get(need) || [];
+          const expected = allJobs.filter((entry) => entry.job_id === need).length;
+          return results.length === expected && results.every((entry) => isTerminalJobStatus(entry.status));
+      })
   ));
 }
 
 function buildNeeds(nextJob: GitForgeWorkflowRunJob, completedByJobId: Map<string, GitForgeWorkflowRunJob[]>) {
   return Object.fromEntries((nextJob.needs || []).map((need) => {
-    const statuses = (completedByJobId.get(need) || []).map((entry) => entry.status);
-    return [need, { result: aggregateJobStatus(statuses) }] as const;
+        const statuses = (completedByJobId.get(need) || []).map((entry) => entry.status);
+        return [need, { result: aggregateJobStatus(statuses) }] as const;
   }));
 }
 
@@ -96,19 +96,19 @@ async function runPendingJobs(
     const nextIndex = resolveNextRunnableJobIndex(allJobs, pendingJobs, completedByJobId);
     if (nextIndex < 0) {
       throw new GitHostError("forge_invalid_workflow_definition", `Workflow "${workflow.id}" has no runnable job order.`, {
-        workflowId: workflow.id,
+          workflowId: workflow.id,
       });
     }
     const nextJob = pendingJobs.splice(nextIndex, 1)[0]!;
     const finishedJob = await executeJob({
-      activeState,
-      artifactsRoot,
-      execution,
-      jobRun: nextJob,
-      needs: buildNeeds(nextJob, completedByJobId),
-      repositoryPath,
-      run,
-      workflow,
+        activeState,
+        artifactsRoot,
+        execution,
+        jobRun: nextJob,
+        needs: buildNeeds(nextJob, completedByJobId),
+        repositoryPath,
+        run,
+        workflow,
     });
     const existing = completedByJobId.get(finishedJob.job_id) || [];
     existing.push(finishedJob);
@@ -123,39 +123,39 @@ async function finalizeCompletedRun(context: RuntimeContext, run: GitForgeWorkfl
     const failedJob = jobs.find((job) => job.status === "failed");
     await context.runtimeSupport.markQueuedJobsAndSteps(run.id, "skipped");
     return await context.runtimeSupport.finalizeRun(run, {
-      eventType: "run.failed",
-      status: "failed",
-      summary: text(failedJob?.summary, "Workflow run failed."),
+        eventType: "run.failed",
+        status: "failed",
+        summary: text(failedJob?.summary, "Workflow run failed."),
     });
   }
   if (jobs.some((job) => job.status === "cancelled")) {
     await context.runtimeSupport.markQueuedJobsAndSteps(run.id, "cancelled");
     return await context.runtimeSupport.finalizeRun(run, {
-      eventType: "run.cancelled",
-      status: "cancelled",
-      summary: "Workflow run cancelled.",
+        eventType: "run.cancelled",
+        status: "cancelled",
+        summary: "Workflow run cancelled.",
     });
   }
   if (jobs.every((job) => job.status === "skipped")) {
     return await context.runtimeSupport.finalizeRun(run, {
-      eventType: "run.finished",
-      status: "skipped",
-      summary: "Workflow run was skipped.",
+        eventType: "run.finished",
+        status: "skipped",
+        summary: "Workflow run was skipped.",
     });
   }
   return await context.runtimeSupport.finalizeRun(run, {
-    eventType: "run.finished",
-    status: "success",
-    summary: "Workflow run completed successfully.",
+      eventType: "run.finished",
+      status: "success",
+      summary: "Workflow run completed successfully.",
   });
 }
 
 async function handleRunFailure(context: RuntimeContext, run: GitForgeWorkflowRun, cancelRequested: boolean, error: unknown) {
   await context.runtimeSupport.markQueuedJobsAndSteps(run.id, cancelRequested ? "cancelled" : "skipped");
   return await context.runtimeSupport.finalizeRun(run, {
-    eventType: cancelRequested ? "run.cancelled" : "run.failed",
-    status: cancelRequested ? "cancelled" : "failed",
-    summary: cancelRequested
+      eventType: cancelRequested ? "run.cancelled" : "run.failed",
+      status: cancelRequested ? "cancelled" : "failed",
+      summary: cancelRequested
       ? "Workflow run cancelled."
       : (error instanceof Error ? error.message : "Workflow run failed."),
   });
@@ -184,9 +184,9 @@ function createRunExecutor(context: RuntimeContext, executeJob: JobExecutor) {
       if (result.cancelled) {
         await context.runtimeSupport.markQueuedJobsAndSteps(started.run.id, "cancelled");
         return await context.runtimeSupport.finalizeRun(started.run, {
-          eventType: "run.cancelled",
-          status: "cancelled",
-          summary: "Workflow run cancelled.",
+            eventType: "run.cancelled",
+            status: "cancelled",
+            summary: "Workflow run cancelled.",
         });
       }
       return await finalizeCompletedRun(context, started.run);

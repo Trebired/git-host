@@ -9,8 +9,8 @@ import type {
   GitTagDetail,
   GitTagSummary,
   ListCommitsOptions,
-} from "#1mbdfxwwqqpa";
-import { normalizeRepositoryRelativePath } from "#390741ebf5ab";
+} from "#14021226ec9b";
+import { normalizeOptionalRepositoryRelativePath } from "#390741ebf5ab";
 import { text } from "#62f869522d1f";
 import { readRepositoryOperationState } from "./operation_state.js";
 import { repositoryExists, runGit } from "./run_git.js";
@@ -24,9 +24,16 @@ import {
   parseTagsOutput,
 } from "./repository/parsers.js";
 
-async function readRepositoryStatus(workspaceRoot: string): Promise<GitRepositoryStatus> {
-  const statusRes = await runGit(["status", "--porcelain=v1", "--branch"], { cwd: workspaceRoot });
-  if (!statusRes.ok) throw new Error(text(statusRes.stderr, "Failed to read repository status."));
+async function readRepositoryStatus(
+  workspaceRoot: string,
+): Promise<GitRepositoryStatus> {
+  const statusRes = await runGit(["status", "--porcelain=v1", "--branch"], {
+      cwd: workspaceRoot,
+  });
+  if (!statusRes.ok)
+  throw new Error(
+    text(statusRes.stderr, "Failed to read repository status."),
+  );
 
   return {
     ...parseStatusOutput(statusRes.stdout),
@@ -34,30 +41,57 @@ async function readRepositoryStatus(workspaceRoot: string): Promise<GitRepositor
   };
 }
 
-async function readRepositoryBranches(workspaceRoot: string): Promise<GitBranchSummary[]> {
+async function readRepositoryBranches(
+  workspaceRoot: string,
+): Promise<GitBranchSummary[]> {
   const branchRes = await runGit(
-    ["for-each-ref", "--format=%(refname:short)%09%(HEAD)%09%(upstream:short)%09%(objectname)", "refs/heads"],
+    [
+      "for-each-ref",
+      "--format=%(refname:short)%09%(HEAD)%09%(upstream:short)%09%(objectname)",
+      "refs/heads",
+    ],
     { cwd: workspaceRoot },
   );
-  if (!branchRes.ok) throw new Error(text(branchRes.stderr, "Failed to read repository branches."));
+  if (!branchRes.ok)
+  throw new Error(
+    text(branchRes.stderr, "Failed to read repository branches."),
+  );
   return parseBranchesOutput(branchRes.stdout);
 }
 
-async function readRepositoryRemotes(workspaceRoot: string): Promise<GitRemoteSummary[]> {
+async function readRepositoryRemotes(
+  workspaceRoot: string,
+): Promise<GitRemoteSummary[]> {
   const remoteRes = await runGit(["remote", "-v"], { cwd: workspaceRoot });
-  if (!remoteRes.ok) throw new Error(text(remoteRes.stderr, "Failed to read repository remotes."));
+  if (!remoteRes.ok)
+  throw new Error(
+    text(remoteRes.stderr, "Failed to read repository remotes."),
+  );
   return parseRemotesOutput(remoteRes.stdout);
 }
 
-function normalizeOptionalPath(value: unknown): string {
-  const raw = text(value);
-  return raw ? normalizeRepositoryRelativePath(raw) : "";
-}
+const normalizeOptionalPath = normalizeOptionalRepositoryRelativePath;
 
 const TAG_FIELD_SEPARATOR = "\u001f";
-const TAG_FORMAT = `--format=%(refname:short)${TAG_FIELD_SEPARATOR}%(objectname)${TAG_FIELD_SEPARATOR}%(objectname:short)${TAG_FIELD_SEPARATOR}%(objecttype)${TAG_FIELD_SEPARATOR}%(taggername)${TAG_FIELD_SEPARATOR}%(taggeremail:trim)${TAG_FIELD_SEPARATOR}%(taggerdate:iso-strict)${TAG_FIELD_SEPARATOR}%(subject)${TAG_FIELD_SEPARATOR}%(*objectname)${TAG_FIELD_SEPARATOR}%(*objectname:short)${TAG_FIELD_SEPARATOR}%(*objecttype)`;
+const TAG_FORMAT_FIELDS = [
+  "%(refname:short)",
+  "%(objectname)",
+  "%(objectname:short)",
+  "%(objecttype)",
+  "%(taggername)",
+  "%(taggeremail:trim)",
+  "%(taggerdate:iso-strict)",
+  "%(subject)",
+  "%(*objectname)",
+  "%(*objectname:short)",
+  "%(*objecttype)",
+];
+const TAG_FORMAT = `--format=${TAG_FORMAT_FIELDS.join(TAG_FIELD_SEPARATOR)}`;
 
-async function readRepositoryCommits(workspaceRoot: string, options: ListCommitsOptions = {}): Promise<GitCommitSummary[]> {
+async function readRepositoryCommits(
+  workspaceRoot: string,
+  options: ListCommitsOptions = {},
+): Promise<GitCommitSummary[]> {
   const args = [
     "log",
     text(options.ref, "HEAD"),
@@ -71,40 +105,40 @@ async function readRepositoryCommits(workspaceRoot: string, options: ListCommits
   const logRes = await runGit(args, { cwd: workspaceRoot });
   if (!logRes.ok) {
     const stderr = text(logRes.stderr);
-    if (stderr.includes("does not have any commits yet") || stderr.includes("unknown revision or path not in the working tree")) return [];
+    if (
+      stderr.includes("does not have any commits yet") ||
+        stderr.includes("unknown revision or path not in the working tree")
+    )
+    return [];
     throw new Error(stderr || "Failed to read repository history.");
   }
   return parseCommitLogOutput(logRes.stdout);
 }
 
-async function readRepositoryTags(workspaceRoot: string): Promise<GitTagSummary[]> {
+async function readRepositoryTags(
+  workspaceRoot: string,
+): Promise<GitTagSummary[]> {
   const tagRes = await runGit(
-    [
-      "for-each-ref",
-      "--sort=-creatordate",
-      TAG_FORMAT,
-      "refs/tags",
-    ],
+    ["for-each-ref", "--sort=-creatordate", TAG_FORMAT, "refs/tags"],
     { cwd: workspaceRoot },
   );
-  if (!tagRes.ok) throw new Error(text(tagRes.stderr, "Failed to read repository tags."));
+  if (!tagRes.ok)
+  throw new Error(text(tagRes.stderr, "Failed to read repository tags."));
   return parseTagsOutput(tagRes.stdout);
 }
 
-async function readRepositoryTag(workspaceRoot: string, tagNameInput: unknown): Promise<GitTagDetail> {
+async function readRepositoryTag(
+  workspaceRoot: string,
+  tagNameInput: unknown,
+): Promise<GitTagDetail> {
   const tagName = text(tagNameInput);
   if (!tagName) throw new Error("Tag name is required.");
 
   const [tagRes, catRes] = await Promise.all([
-    runGit(
-      [
-        "for-each-ref",
-        TAG_FORMAT,
-        `refs/tags/${tagName}`,
-      ],
-      { cwd: workspaceRoot },
-    ),
-    runGit(["cat-file", "-p", `refs/tags/${tagName}`], { cwd: workspaceRoot }),
+      runGit(["for-each-ref", TAG_FORMAT, `refs/tags/${tagName}`], {
+          cwd: workspaceRoot,
+      }),
+      runGit(["cat-file", "-p", `refs/tags/${tagName}`], { cwd: workspaceRoot }),
   ]);
   const summary = parseTagsOutput(tagRes.stdout)[0];
   if (!tagRes.ok || !summary) {
@@ -125,32 +159,50 @@ async function readRepositoryTag(workspaceRoot: string, tagNameInput: unknown): 
 }
 
 async function readRepositoryHead(workspaceRoot: string) {
-  const branchRes = await runGit(["symbolic-ref", "--short", "HEAD"], { cwd: workspaceRoot });
-  const fallbackBranchRes = branchRes.ok ? branchRes : await runGit(["rev-parse", "--abbrev-ref", "HEAD"], { cwd: workspaceRoot });
+  const branchRes = await runGit(["symbolic-ref", "--short", "HEAD"], {
+      cwd: workspaceRoot,
+  });
+  const fallbackBranchRes = branchRes.ok
+  ? branchRes
+  : await runGit(["rev-parse", "--abbrev-ref", "HEAD"], {
+      cwd: workspaceRoot,
+  });
   const headRes = await runGit(["rev-parse", "HEAD"], { cwd: workspaceRoot });
-  const shortHeadRes = await runGit(["rev-parse", "--short", "HEAD"], { cwd: workspaceRoot });
-  const originHeadRes = await runGit(["symbolic-ref", "--short", "refs/remotes/origin/HEAD"], { cwd: workspaceRoot });
+  const shortHeadRes = await runGit(["rev-parse", "--short", "HEAD"], {
+      cwd: workspaceRoot,
+  });
+  const originHeadRes = await runGit(
+    ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"],
+    { cwd: workspaceRoot },
+  );
 
   return {
     current_branch: fallbackBranchRes.ok ? text(fallbackBranchRes.stdout) : "",
     default_branch: originHeadRes.ok
-      ? text(originHeadRes.stdout).replace(/^origin\//, "") || DEFAULT_BRANCH
-      : (fallbackBranchRes.ok ? text(fallbackBranchRes.stdout) : DEFAULT_BRANCH),
+    ? text(originHeadRes.stdout).replace(/^origin\//, "") || DEFAULT_BRANCH
+    : fallbackBranchRes.ok
+    ? text(fallbackBranchRes.stdout)
+    : DEFAULT_BRANCH,
     head_commit: headRes.ok ? text(headRes.stdout) : "",
     head_short: shortHeadRes.ok ? text(shortHeadRes.stdout) : "",
   };
 }
 
-async function buildRepositorySummary(repository: GitRepositoryHandle, options: { commitLimit?: number } = {}): Promise<GitRepositorySummary> {
+async function buildRepositorySummary(
+  repository: GitRepositoryHandle,
+  options: { commitLimit?: number } = {},
+): Promise<GitRepositorySummary> {
   const hasRepo = await repositoryExists(repository.path);
   if (!hasRepo) throw new Error("Repository is not initialized.");
 
   const [status, branches, remotes, commits, head] = await Promise.all([
-    readRepositoryStatus(repository.path),
-    readRepositoryBranches(repository.path),
-    readRepositoryRemotes(repository.path),
-    readRepositoryCommits(repository.path, { limit: options.commitLimit || 10 }),
-    readRepositoryHead(repository.path),
+      readRepositoryStatus(repository.path),
+      readRepositoryBranches(repository.path),
+      readRepositoryRemotes(repository.path),
+      readRepositoryCommits(repository.path, {
+          limit: options.commitLimit || 10,
+      }),
+      readRepositoryHead(repository.path),
   ]);
   const origin = remotes.find((entry) => text(entry.name) === "origin");
 

@@ -2,10 +2,10 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 
 import { buildGitHostLogGroup } from "#0bba403f3e43";
 import { resolveLogger } from "#5a29135e56c1";
-import type { CreateGitForgeApiHandlerOptions } from "#1mbdfxwwqqpa";
+import type { CreateGitForgeApiHandlerOptions } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
 import { isArchiveDownloadAction, writeArchiveDownload, writeReleaseAssetDownload } from "#1uaqd3hnpa5k";
-import type { GitForgeActor } from "#1mbdfxwwqqpa";
+import type { GitForgeActor } from "#14021226ec9b";
 import { runGitApiAction } from "#53fe5bbf2789";
 import {
   applyAuthorizationHeaders,
@@ -27,8 +27,8 @@ async function handleGitForgeApiRequest(
   const route = parseGitForgeApiRoute(request.url.pathname, options.basePath);
   if (!route) {
     writeJson(req, res, 404, {
-      ok: false,
-      error: { code: "route_not_found", message: "Git forge API route not found." },
+        ok: false,
+        error: { code: "route_not_found", message: "Git forge API route not found." },
     });
     return;
   }
@@ -75,11 +75,11 @@ function rejectUnsupportedForgeMethod(
   if (allowedMethods.includes(method)) return false;
   res.setHeader("allow", allowedMethods.join(", "));
   writeJson(req, res, 405, {
-    ok: false,
-    error: {
-      code: "method_not_allowed",
-      message: `Supported methods: ${allowedMethods.join(", ")}.`,
-    },
+      ok: false,
+      error: {
+        code: "method_not_allowed",
+        message: `Supported methods: ${allowedMethods.join(", ")}.`,
+      },
   });
   return true;
 }
@@ -93,8 +93,8 @@ async function resolveForgeRepository(
   const repositoryId = text(options.resolveRepositoryId ? await options.resolveRepositoryId(repositoryKey, req) : repositoryKey);
   if (repositoryId) return { repositoryId, repositoryKey };
   writeJson(req, res, 404, {
-    ok: false,
-    error: { code: "repository_not_found", message: "Repository not found." },
+      ok: false,
+      error: { code: "repository_not_found", message: "Repository not found." },
   });
   return null;
 }
@@ -108,23 +108,23 @@ async function authorizeForgeRequest(
   repositoryContext: { repositoryId: string; repositoryKey: string },
 ) {
   const result = options.authorize
-    ? await options.authorize({
+  ? await options.authorize({
       action: route.action,
       actor,
-      assetId: "assetId" in route ? route.assetId : undefined,
+      assetId: "assetId"in route ? route.assetId : undefined,
       method: request.method,
       operation: routeOperation(route, request.method),
       pathname: request.url.pathname,
-      runId: "runId" in route ? route.runId : undefined,
-      releaseId: "releaseId" in route ? route.releaseId : undefined,
+      runId: "runId"in route ? route.runId : undefined,
+      releaseId: "releaseId"in route ? route.releaseId : undefined,
       remoteAddress: text(req.socket && req.socket.remoteAddress),
       repositoryId: repositoryContext.repositoryId,
       repositoryKey: repositoryContext.repositoryKey,
       request: req,
       resource: route.resource,
       searchParams: request.url.searchParams,
-    })
-    : undefined;
+  })
+  : undefined;
   return authorizationAllowed(result);
 }
 
@@ -138,17 +138,17 @@ function writeForgeDenied(
 ) {
   if (isArchiveDownloadAction(action)) {
     request.logger.warn(request.logGroup, "archive download denied", {
-      action,
-      method: request.method,
-      pathname: request.url.pathname,
-      repositoryId: repositoryContext.repositoryId,
-      repositoryKey: repositoryContext.repositoryKey,
-      status: auth.status || 403,
+        action,
+        method: request.method,
+        pathname: request.url.pathname,
+        repositoryId: repositoryContext.repositoryId,
+        repositoryKey: repositoryContext.repositoryKey,
+        status: auth.status || 403,
     });
   }
   writeJson(req, res, auth.status || 403, {
-    ok: false,
-    error: { code: "permission_denied", message: auth.message || "Permission denied." },
+      ok: false,
+      error: { code: "permission_denied", message: auth.message || "Permission denied." },
   });
 }
 
@@ -169,26 +169,26 @@ async function maybeWriteForgeDownload(
 ): Promise<boolean> {
   if (isArchiveDownloadAction(route.action)) {
     request.logger.info(request.logGroup, "archive download authorized", {
-      action: route.action,
-      method: request.method,
-      pathname: request.url.pathname,
-      repositoryId: repositoryContext.repositoryId,
-      repositoryKey: repositoryContext.repositoryKey,
+        action: route.action,
+        method: request.method,
+        pathname: request.url.pathname,
+        repositoryId: repositoryContext.repositoryId,
+        repositoryKey: repositoryContext.repositoryKey,
     });
     await writeArchiveDownload(req, res, options.gitHost, {
-      ref: "refName" in route ? route.refName : "HEAD",
-      repositoryId: repositoryContext.repositoryId,
-      repositoryKey: repositoryContext.repositoryKey,
-      routeAction: route.action,
+        ref: "refName"in route ? route.refName : "HEAD",
+        repositoryId: repositoryContext.repositoryId,
+        repositoryKey: repositoryContext.repositoryKey,
+        routeAction: route.action,
     });
     return true;
   }
   if (route.action === "asset") {
     await writeReleaseAssetDownload(req, res, options.forge, {
-      assetId: route.assetId,
-      releaseId: route.releaseId,
-      repositoryId: repositoryContext.repositoryId,
-      repositoryKey: repositoryContext.repositoryKey,
+        assetId: route.assetId,
+        releaseId: route.releaseId,
+        repositoryId: repositoryContext.repositoryId,
+        repositoryKey: repositoryContext.repositoryKey,
     });
     return true;
   }
@@ -219,18 +219,18 @@ function writeForgeSuccess(
 ) {
   if (request.verbose) {
     request.logger.info(request.logGroup, "forge api action completed", {
-      action,
-      method: request.method,
-      pathname: request.url.pathname,
-      repositoryId: repositoryContext.repositoryId,
+        action,
+        method: request.method,
+        pathname: request.url.pathname,
+        repositoryId: repositoryContext.repositoryId,
     });
   }
   writeJson(req, res, 200, {
-    action,
-    data,
-    ok: true,
-    repository_id: repositoryContext.repositoryId,
-    repository_key: repositoryContext.repositoryKey,
+      action,
+      data,
+      ok: true,
+      repository_id: repositoryContext.repositoryId,
+      repository_key: repositoryContext.repositoryKey,
   });
 }
 
@@ -243,11 +243,11 @@ function writeForgeError(
   error: unknown,
 ) {
   request.logger.error(request.logGroup, "forge api action failed", {
-    action,
-    error: error instanceof Error ? error.message : String(error),
-    method: request.method,
-    pathname: request.url.pathname,
-    repositoryId,
+      action,
+      error: error instanceof Error ? error.message : String(error),
+      method: request.method,
+      pathname: request.url.pathname,
+      repositoryId,
   });
   writeJson(req, res, statusForError(error), serializeError(error));
 }
