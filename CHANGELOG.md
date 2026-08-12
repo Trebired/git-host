@@ -4,6 +4,10 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.1.16
+
+- Adopted the external `@trebired/code-discipline-config` preset and updated Code Discipline tooling to `@trebired/code-discipline@^6.0.9`.
+
 ## 3.1.15
 
 - Updated the Code Discipline devDependency and lockfile to public `@trebired/code-discipline@^5.5.2`.
