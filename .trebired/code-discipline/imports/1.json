@@ -142,6 +142,7 @@
   "#pgt3n58dubd8": "./src/core/archive/shared.ts",
   "#pj4g6du01gys": "./src/core/actions/runner.ts",
   "#pvpm4i6ibun0": "./src/api/forge/actions.ts",
+  "#pzoh1su8nfjh": "./.trebired/logger/config.ts",
   "#qqqsbhnm9zbd": "./src/core/forge_actions/runtime/queue.ts",
   "#raiyak36g4hu": "./src/core/inspect/search_archive.ts",
   "#rbszg8l3vatn": "./src/core/inspect/history.ts",
