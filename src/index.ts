@@ -6,6 +6,17 @@ export {
   DEFAULT_MANAGED_EXCLUDE_HEADER,
   DEFAULT_MANAGED_EXCLUDE_PATTERNS,
 } from "./constants.js";
+export {
+  GIT_HOST_PROJECT_CONFIG_PATH,
+  defineConfig,
+  findConfig,
+  findConfigSync,
+  loadCachedConfigSync,
+  loadConfig,
+  loadConfigSync,
+  mergeActionsOptions,
+  normalizeConfig,
+} from "./config/index.js";
 export { RepositoryLockManager } from "./core/locks.js";
 export { readRepositoryOperationState } from "./core/operation_state.js";
 export { createFileSystemGitArchiveCache } from "./core/archive_cache_filesystem.js";
@@ -282,3 +293,9 @@ export type {
   UpdateGitForgeReleaseInput,
   UpdateGitForgeWorkflowInput,
 } from "./types/index.ts";
+export type {
+  GitHostConfig,
+  LoadGitHostConfigOptions,
+  LoadedGitHostConfig,
+  NormalizedGitHostConfig,
+} from "./config/index.js";
