@@ -1,6 +1,7 @@
 import { createJobStepSupport } from "./forge_actions/job/steps.js";
 import { createRuntimeEngine } from "./forge_actions/runtime/engine.js";
 import { createRuntimeSupport } from "./forge_actions/runtime_support.js";
+import { loadCachedConfigSync, mergeActionsOptions } from "#onnm7706acsy";
 import {
   ensureActionsStorage,
   isTerminalRunStatus,
@@ -16,17 +17,21 @@ import type {
 } from "./forge_actions/shared.js";
 
 function createGitForgeActionsRuntime(options: CreateGitForgeActionsRuntimeOptions) {
+  const resolvedOptions = {
+    ...options,
+    actions: mergeActionsOptions(loadCachedConfigSync().actions, options.actions),
+  };
   const storage = ensureActionsStorage(options.storage);
   const runListeners = new Map<string, Set<WorkflowRunListener>>();
   const runSequences = new Map<string, number>();
   const runExecutionContexts = new Map<string, ResolvedExecutionContext>();
   const queuedRuns: WorkflowQueueItem[] = [];
   const activeRuns = new Map<string, ActiveRunState>();
-  const runner = normalizeRunner(options.actions);
+  const runner = normalizeRunner(resolvedOptions.actions);
 
-  warnForUnsafeRunnerOptions(options.actions, runner);
+  warnForUnsafeRunnerOptions(resolvedOptions.actions, runner);
   const runtimeSupport = createRuntimeSupport({
-      options,
+      options: resolvedOptions,
       runListeners,
       runSequences,
       runner,
@@ -35,7 +40,7 @@ function createGitForgeActionsRuntime(options: CreateGitForgeActionsRuntimeOptio
   const jobStepSupport = createJobStepSupport({
       emitRunEvent: runtimeSupport.emitRunEvent,
       markQueuedStepsForJob: runtimeSupport.markQueuedStepsForJob,
-      options,
+      options: resolvedOptions,
       runner,
       storage,
       updateJob: runtimeSupport.updateJob,
@@ -45,7 +50,7 @@ function createGitForgeActionsRuntime(options: CreateGitForgeActionsRuntimeOptio
   return createRuntimeEngine({
       activeRuns,
       jobStepSupport,
-      options,
+      options: resolvedOptions,
       processingRef: { value: false },
       queuedRuns,
       runExecutionContexts,

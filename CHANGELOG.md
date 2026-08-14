@@ -4,9 +4,15 @@ All notable changes to `@trebired/git-host` will be documented here.
 
 This project follows semantic versioning once published.
 
+## 3.2.0
+
+- Updated the shared Trebired config dependency to `@trebired/configs@^0.1.2`.
+- Added public `.trebired/git-host/config.ts` support through `@trebired/git-host/config`.
+- Git forge actions runtime creation now merges configured runner and environment defaults before explicit caller options.
+
 ## 3.1.16
 
-- Adopted the external `@trebired/code-discipline-config` preset and updated Code Discipline tooling to `@trebired/code-discipline@^6.0.9`.
+- Adopted the external `@trebired/configs` preset and updated Code Discipline tooling to `@trebired/code-discipline@^6.0.9`.
 
 ## 3.1.15
 
