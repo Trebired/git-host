@@ -3,6 +3,7 @@ import fsPromises from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { PACKAGE_VERSION } from "#5wurj14e1j4l";
 import type {
   GitHostConfig,
   LoadedGitHostConfig,
@@ -12,7 +13,10 @@ import type {
 import { defineConfig, normalizeConfig } from "./normalize.js";
 
 const GIT_HOST_PROJECT_CONFIG_PATH = ".trebired/git-host/config.ts";
-const EMPTY_CONFIG = Object.freeze(normalizeConfig({}));
+const EMPTY_CONFIG = Object.freeze(normalizeConfig(
+    { forVersion: PACKAGE_VERSION },
+    { requireForVersion: false },
+));
 
 let cachedConfigs = new Map<string, LoadedGitHostConfig>();
 
@@ -98,7 +102,7 @@ function missingConfig(): LoadedGitHostConfig {
 
 function loadedConfig(configPath: string, config: GitHostConfig): LoadedGitHostConfig {
   return {
-    config: normalizeConfig(config),
+    config: normalizeConfig(config, { configPath, requireForVersion: true }),
     configPath,
     dependencies: [configPath],
   };

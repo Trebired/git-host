@@ -8,7 +8,7 @@ import type {
 import { text } from "#62f869522d1f";
 import { fetchRepository } from "#1a2e563ea829";
 import { repositoryExists, runGit } from "#96b00569f1f4";
-import { nowIso } from "#7h6tal11dmqz";
+import { nowIso } from "@trebired/utils";
 
 function assertActor(actor: GitForgeActor | undefined | null): GitForgeActor {
   if (!actor || !text(actor.id)) {

@@ -19,7 +19,7 @@ import {
   type WorkflowExpressionContext,
 } from "#6fxc5ur8a90x";
 import { resolveRefName } from "#evdr4zn4ntk5";
-import { nowIso } from "#7h6tal11dmqz";
+import { nowIso } from "@trebired/utils";
 import { warnForUnsafeRunnerOptions } from "./runner_warnings.js";
 
 const ACTIVITY_LISTENER_SYMBOL = Symbol.for (
