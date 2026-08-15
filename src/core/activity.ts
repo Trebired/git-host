@@ -12,7 +12,7 @@ import type {
   GitSshAuditEvent,
 } from "#14021226ec9b";
 import { text } from "#62f869522d1f";
-import { nowIso } from "#7h6tal11dmqz";
+import { nowIso } from "@trebired/utils";
 import { runGit } from "./run_git.js";
 
 function normalizeActivityValues<T extends string>(value: T | T[] | undefined): string[] {
