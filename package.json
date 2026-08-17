@@ -5,13 +5,10 @@
       "displayName": "Trebired",
       "name": "trebired",
       "website": "https://trebired.com"
-    },
-    "creator": {
-      "name": "Miroslav Machynka"
     }
   },
   "name": "@trebired/git-host",
-  "version": "3.2.5",
+  "version": "3.2.6",
   "description": "Embeddable Git host and forge for Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository automation, and backend APIs.",
   "type": "module",
   "private": false,
@@ -58,7 +55,7 @@
   "dependencies": {
     "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.4.6",
     "@package/result": "npm:@trebired/result@^1.1.6",
-    "@trebired/utils": "^0.4.5",
+    "@trebired/utils": "^0.6.0",
     "js-yaml": "^4.3.1",
     "linguist-js": "^3.0.2",
     "material-icon-theme": "^5.37.0",
