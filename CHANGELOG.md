@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.7
+
+- Updated the logger-adapter dependency so git host, forge, API, socket, SSH, and HTTP entry points do not emit duplicate package initialization logs.
+
 ## 3.2.6
 
 - Removed dead `config.creator` from `package.json`.
