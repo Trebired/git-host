@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.8
+
+- Updated the result dependency range to the current package release so consumers do not retain older nested logger-adapter installs.
+
 ## 3.2.7
 
 - Updated the logger-adapter dependency so git host, forge, API, socket, SSH, and HTTP entry points do not emit duplicate package initialization logs.
