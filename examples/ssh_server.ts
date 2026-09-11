@@ -5,6 +5,9 @@ import path from "node:path";
 
 import { createGitHost, createGitSshServer, resolveRepositoryPath } from "#fcd73bf294d5";
 import { createExampleRepositoryResolver } from "./repository.js";
+import { resolveLogger } from "@package/logger-adapter";
+
+const log = resolveLogger({ source: "@trebired/git-host" });
 
 const authorizedKey = String(process.env.GIT_HOST_AUTHORIZED_KEY || "").trim();
 
@@ -52,5 +55,5 @@ const sshServer: any = createGitSshServer({
 });
 
 sshServer.listen(2222, "127.0.0.1", () => {
-    console.log("git clone ssh://git@127.0.0.1:2222/demo.git");
+    log.info("example.ssh-server", "git clone ssh://git@127.0.0.1:2222/demo.git");
 });

@@ -4,6 +4,9 @@ import path from "node:path";
 
 import { createGitHost, resolveRepositoryPath } from "#fcd73bf294d5";
 import { createExampleRepositoryResolver } from "./repository.js";
+import { resolveLogger } from "@package/logger-adapter";
+
+const log = resolveLogger({ source: "@trebired/git-host" });
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "@package-git-host-"));
 const repositoriesRoot = path.join(root, "repos");
@@ -26,4 +29,4 @@ const summary = await gitHost.ensureRepository("demo", {
     },
 });
 
-console.log(summary.repository);
+log.info("example.dummy", "repository", { repository: summary.repository });

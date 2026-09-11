@@ -76,6 +76,8 @@ function createActionsRuntime(options: CreateGitForgeOptions) {
   ? createGitForgeActionsRuntime({
       actions: options.actions,
       gitHost: options.gitHost,
+      logger: options.logger,
+      loggerAdapter: options.loggerAdapter,
       releases: options.storage.releases,
       storage: options.storage.actions,
   })
