@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.3.1
+
+- Changed the two Actions runner safety warnings, `actions.environment.inheritProcessEnv` enabled and a root runner without a uid drop or sandbox, to go through the forge's `logger` / `loggerAdapter` under the `actions.runner` group. They were written with `console.warn`, so an application routing git-host logs elsewhere still got them on the raw console, outside its log format.
+- Changed the verification scripts and examples to print through `@trebired/logger-adapter` instead of `console` and `process.stdout`.
+
 ## 3.3.0
 
 - Changed the `forVersion` check to pass the config object to `resolveForVersion()`, which `@trebired/utils` 0.9.0 requires. A config that does not declare `forVersion` as its first key now fails instead of loading.

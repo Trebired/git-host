@@ -58,6 +58,8 @@ type WorkflowRunListener = (
 type CreateGitForgeActionsRuntimeOptions = {
   actions: CreateGitForgeActionsOptions | undefined;
   gitHost: import("#14021226ec9b").CreateGitForgeOptions["gitHost"];
+  logger?: import("#14021226ec9b").CreateGitForgeOptions["logger"];
+  loggerAdapter?: import("#14021226ec9b").CreateGitForgeOptions["loggerAdapter"];
   releases: import("#14021226ec9b").CreateGitForgeOptions["storage"]["releases"];
   storage: GitForgeActionsStorage;
 };

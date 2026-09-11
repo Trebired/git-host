@@ -8,6 +8,9 @@ import {
   expectedHostRunnerName,
   runnerBinaryNameForTarget,
 } from "./runner-targets.mjs";
+import { resolveLogger } from "@package/logger-adapter";
+
+const log = resolveLogger({ source: "@trebired/git-host" });
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const tempRoot = path.join(rootDir, ".tmp", "verify-pack");
@@ -27,7 +30,7 @@ async function main() {
   validateRunnerEntries(tarballEntries, resolveRunnerScope());
   await runConsumerSmokeTest(tarballPath);
 
-  console.log("Pack verification succeeded.");
+  log.info("verify-pack", "Pack verification succeeded.");
 }
 
 async function resetTempRoot() {

@@ -5,6 +5,9 @@ import path from "node:path";
 
 import { createGitApiHandler, createGitHost, resolveRepositoryPath } from "#fcd73bf294d5";
 import { createExampleRepositoryResolver } from "./repository.js";
+import { resolveLogger } from "@package/logger-adapter";
+
+const log = resolveLogger({ source: "@trebired/git-host" });
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "@package-git-host-api-"));
 const repositoriesRoot = path.join(root, "repos");
@@ -33,5 +36,5 @@ const apiServer = createServer(createGitApiHandler({
 }));
 
 apiServer.listen(3100, "127.0.0.1", () => {
-    console.log("http://127.0.0.1:3100/api/git/repositories/demo/summary");
+    log.info("example.api-server", "http://127.0.0.1:3100/api/git/repositories/demo/summary");
 });

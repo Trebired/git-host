@@ -5,6 +5,9 @@ import path from "node:path";
 
 import { createGitHost, createGitHttpHandler, resolveRepositoryPath } from "#fcd73bf294d5";
 import { createExampleRepositoryResolver } from "./repository.js";
+import { resolveLogger } from "@package/logger-adapter";
+
+const log = resolveLogger({ source: "@trebired/git-host" });
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), "@package-git-host-http-"));
 const repositoriesRoot = path.join(root, "repos");
@@ -33,5 +36,5 @@ const server = createServer(createGitHttpHandler({
 }));
 
 server.listen(3000, "127.0.0.1", () => {
-    console.log(`git clone http://127.0.0.1:3000/git/demo.git`);
+    log.info("example.http-server", `git clone http://127.0.0.1:3000/git/demo.git`);
 });

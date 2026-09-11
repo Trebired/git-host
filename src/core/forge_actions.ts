@@ -2,6 +2,7 @@ import { createJobStepSupport } from "./forge_actions/job/steps.js";
 import { createRuntimeEngine } from "./forge_actions/runtime/engine.js";
 import { createRuntimeSupport } from "./forge_actions/runtime_support.js";
 import { loadCachedConfigSync, mergeActionsOptions } from "#onnm7706acsy";
+import { resolveLogger } from "#5a29135e56c1";
 import {
   ensureActionsStorage,
   isTerminalRunStatus,
@@ -29,7 +30,7 @@ function createGitForgeActionsRuntime(options: CreateGitForgeActionsRuntimeOptio
   const activeRuns = new Map<string, ActiveRunState>();
   const runner = normalizeRunner(resolvedOptions.actions);
 
-  warnForUnsafeRunnerOptions(resolvedOptions.actions, runner);
+  warnForUnsafeRunnerOptions(resolvedOptions.actions, runner, resolveLogger(options.logger, options.loggerAdapter));
   const runtimeSupport = createRuntimeSupport({
       options: resolvedOptions,
       runListeners,

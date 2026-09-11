@@ -8,6 +8,9 @@ import {
   runnerBinaryNameForTarget,
   runnerBuildConfigForTarget,
 } from "#4shewkcrh4gz";
+import { resolveLogger } from "@package/logger-adapter";
+
+const log = resolveLogger({ source: "@trebired/git-host" });
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const requestedTarget = readTarget() || hostRunnerTarget();
@@ -40,7 +43,7 @@ if (result.status !== 0) {
   process.exit(result.status || 1);
 }
 
-console.log(`actions runner ready at ${outputPath}`);
+log.info("build.runner", `actions runner ready at ${outputPath}`);
 
 function readTarget() {
   const index = process.argv.indexOf("--target");
