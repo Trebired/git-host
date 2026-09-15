@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.3.2
+
+- Moved to `@trebired/logger-adapter` 0.6.0, which depends on `@trebired/logger` 3.0.0.
+- Updated the shipped `.trebired/logger/config.ts` `forVersion` to `3.0.0`. The logger checks `forVersion` by major and minor version, so under `@trebired/logger` 3.0 the old `2.7.0` value failed the check and this package's log prefix was dropped.
+
 ## 3.3.1
 
 - Changed the two Actions runner safety warnings, `actions.environment.inheritProcessEnv` enabled and a root runner without a uid drop or sandbox, to go through the forge's `logger` / `loggerAdapter` under the `actions.runner` group. They were written with `console.warn`, so an application routing git-host logs elsewhere still got them on the raw console, outside its log format.
