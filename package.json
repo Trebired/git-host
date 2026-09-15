@@ -8,7 +8,7 @@
     }
   },
   "name": "@trebired/git-host",
-  "version": "3.3.1",
+  "version": "3.3.2",
   "description": "Embeddable Git host and forge for Bun apps with real Git CLI execution, smart HTTP and SSH transports, repository automation, and backend APIs.",
   "type": "module",
   "private": false,
@@ -53,7 +53,7 @@
     "verify:pack": "bun ./scripts/verify-pack.mjs"
   },
   "dependencies": {
-    "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.4.19",
+    "@package/logger-adapter": "npm:@trebired/logger-adapter@^0.6.0",
     "@package/result": "npm:@trebired/result@^1.2.8",
     "@trebired/utils": "^0.9.3",
     "js-yaml": "^4.3.1",
