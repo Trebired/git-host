@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "category": "package",
+  "subcategory": "tooling",
+  "status": "active",
+  "npm": "@trebired/git-host",
+  "description": {
+    "en": "An embeddable Git host with real Git execution over HTTP and SSH.",
+    "cs": "Vestavitelný Git hosting se skutečným Gitem přes HTTP a SSH."
+  }
+}
